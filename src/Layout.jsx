@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -18,25 +18,22 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      // Set language from user preference
       if (user.language) {
         setLanguage(user.language);
       }
       
-      // Redirect if no role selected
       if (!user.user_role && currentPageName !== 'RoleSelection') {
         navigate(createPageUrl('RoleSelection'));
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
-  // Pages without bottom nav
   const noNavPages = ['RoleSelection', 'SignAgreement', 'CreateAgreement', 'AddProperty', 'PropertyDetail', 'TenantPhotos', 'EditProperty'];
   const showNav = user?.user_role && !noNavPages.includes(currentPageName);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-50 flex items-center justify-center">
         <div className="space-y-4 w-full max-w-sm p-6">
           <Skeleton className="h-8 w-48 mx-auto" />
           <Skeleton className="h-32 w-full" />
@@ -47,7 +44,42 @@ function LayoutContent({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <style>{`
+        :root {
+          --primary: 220 90% 56%;
+          --primary-foreground: 0 0% 100%;
+        }
+        
+        .bg-blue-50 { background-color: rgb(239 246 255); }
+        .bg-blue-100 { background-color: rgb(219 234 254); }
+        .bg-blue-200 { background-color: rgb(191 219 254); }
+        .bg-blue-500 { background-color: rgb(59 130 246); }
+        .bg-blue-600 { background-color: rgb(37 99 235); }
+        .bg-blue-700 { background-color: rgb(29 78 216); }
+        .bg-blue-800 { background-color: rgb(30 64 175); }
+        
+        .text-blue-50 { color: rgb(239 246 255); }
+        .text-blue-100 { color: rgb(219 234 254); }
+        .text-blue-500 { color: rgb(59 130 246); }
+        .text-blue-600 { color: rgb(37 99 235); }
+        .text-blue-700 { color: rgb(29 78 216); }
+        .text-blue-800 { color: rgb(30 64 175); }
+        .text-blue-900 { color: rgb(30 58 138); }
+        
+        .border-blue-200 { border-color: rgb(191 219 254); }
+        .border-blue-300 { border-color: rgb(147 197 253); }
+        
+        .from-blue-50 { --tw-gradient-from: rgb(239 246 255); }
+        .from-blue-100 { --tw-gradient-from: rgb(219 234 254); }
+        .from-blue-600 { --tw-gradient-from: rgb(37 99 235); }
+        .to-blue-50 { --tw-gradient-to: rgb(239 246 255); }
+        .to-blue-700 { --tw-gradient-to: rgb(29 78 216); }
+        .to-blue-800 { --tw-gradient-to: rgb(30 64 175); }
+        
+        .hover\\:bg-blue-500:hover { background-color: rgb(59 130 246); }
+        .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
+      `}</style>
       {children}
       {showNav && <BottomNav userRole={user?.user_role} />}
     </div>

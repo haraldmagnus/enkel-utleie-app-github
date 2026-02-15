@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
+import FinnImport from '@/components/FinnImport';
 
 export default function AddProperty() {
   const navigate = useNavigate();
@@ -20,7 +22,13 @@ export default function AddProperty() {
     name: '',
     address: '',
     description: '',
-    monthly_rent: ''
+    monthly_rent: '',
+    finn_code: '',
+    property_type: '',
+    size_sqm: '',
+    bedrooms: '',
+    floor: '',
+    facilities: []
   });
 
   const { data: user } = useQuery({
@@ -42,6 +50,22 @@ export default function AddProperty() {
     }
   });
 
+  const handleFinnImport = (data) => {
+    setFormData({
+      ...formData,
+      name: data.name || '',
+      address: data.address || '',
+      description: data.description || '',
+      monthly_rent: data.monthly_rent?.toString() || '',
+      finn_code: data.finn_code || '',
+      property_type: data.property_type || '',
+      size_sqm: data.size_sqm?.toString() || '',
+      bedrooms: data.bedrooms?.toString() || '',
+      floor: data.floor || '',
+      facilities: data.facilities || []
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (existingProperties.length >= 5) return;
@@ -49,6 +73,8 @@ export default function AddProperty() {
     createMutation.mutate({
       ...formData,
       monthly_rent: formData.monthly_rent ? Number(formData.monthly_rent) : null,
+      size_sqm: formData.size_sqm ? Number(formData.size_sqm) : null,
+      bedrooms: formData.bedrooms ? Number(formData.bedrooms) : null,
       landlord_id: user.id,
       status: 'vacant'
     });
@@ -57,17 +83,18 @@ export default function AddProperty() {
   const canAddMore = existingProperties.length < 5;
 
   return (
-    <div className="pb-20">
-      <div className="bg-white border-b px-4 py-4">
+    <div className="pb-20 bg-gradient-to-b from-blue-50 to-white min-h-screen">
+      <div className="bg-blue-600 text-white px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="icon"
+            className="text-white hover:bg-blue-500"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-slate-900">{t('addProperty')}</h1>
+          <h1 className="text-xl font-bold">{t('addProperty')}</h1>
         </div>
       </div>
 
@@ -84,6 +111,9 @@ export default function AddProperty() {
           </Card>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Finn.no Import */}
+            <FinnImport onImport={handleFinnImport} />
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Eiendomsdetaljer</CardTitle>
@@ -111,15 +141,49 @@ export default function AddProperty() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="monthly_rent">{t('monthlyRent')} (kr)</Label>
-                  <Input
-                    id="monthly_rent"
-                    type="number"
-                    value={formData.monthly_rent}
-                    onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
-                    placeholder="12000"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="monthly_rent">{t('monthlyRent')} (kr)</Label>
+                    <Input
+                      id="monthly_rent"
+                      type="number"
+                      value={formData.monthly_rent}
+                      onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                      placeholder="12000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="size_sqm">Størrelse (m²)</Label>
+                    <Input
+                      id="size_sqm"
+                      type="number"
+                      value={formData.size_sqm}
+                      onChange={(e) => setFormData({ ...formData, size_sqm: e.target.value })}
+                      placeholder="65"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bedrooms">Soverom</Label>
+                    <Input
+                      id="bedrooms"
+                      type="number"
+                      value={formData.bedrooms}
+                      onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
+                      placeholder="2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="property_type">Type bolig</Label>
+                    <Input
+                      id="property_type"
+                      value={formData.property_type}
+                      onChange={(e) => setFormData({ ...formData, property_type: e.target.value })}
+                      placeholder="Leilighet"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -132,6 +196,17 @@ export default function AddProperty() {
                     rows={3}
                   />
                 </div>
+
+                {formData.facilities?.length > 0 && (
+                  <div>
+                    <Label>Fasiliteter</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.facilities.map((f, i) => (
+                        <Badge key={i} className="bg-blue-100 text-blue-700">{f}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

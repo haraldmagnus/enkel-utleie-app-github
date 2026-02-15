@@ -70,7 +70,7 @@ export default function Dashboard() {
   return (
     <div className="pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-b-3xl">
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
         <h1 className="text-xl font-semibold mb-1">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
         <p className="text-blue-100 text-sm">Her er oversikten din</p>
       </div>

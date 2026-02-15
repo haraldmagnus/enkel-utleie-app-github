@@ -1,16 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, FileText, Check } from 'lucide-react';
+import { ArrowLeft, FileText, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
+import BankIDSignature from '@/components/BankIDSignature';
+
+const STANDARD_TERMS = `STANDARD LEIEAVTALE FOR BOLIG
+
+1. LEIEFORHOLDET
+Denne avtalen regulerer leieforholdet mellom utleier og leietaker for den angitte boligen. Avtalen er utformet i henhold til Husleieloven.
+
+2. LEIEBELØP OG BETALING
+- Leien forfaller til betaling den angitte dato hver måned
+- Leien betales til oppgitt kontonummer
+- Ved forsinket betaling påløper forsinkelsesrente etter gjeldende satser
+
+3. DEPOSITUM
+- Depositumet skal stå på særskilt depositumskonto
+- Depositumet tilbakebetales ved utflytting, fratrukket eventuelle krav fra utleier
+- Utleier kan ikke disponere depositumet uten leietakers samtykke
+
+4. VEDLIKEHOLD
+- Leietaker plikter å behandle boligen med tilbørlig aktsomhet
+- Mindre vedlikehold og utskifting av forbruksmateriell påhviler leietaker
+- Større vedlikehold og utbedringer påhviler utleier
+
+5. ORDENSREGLER
+- Leietaker plikter å følge eventuelle ordensregler for eiendommen
+- Leietaker skal vise hensyn til naboer
+- Husdyrhold og røyking reguleres av avtalen
+
+6. FREMLEIE
+- Fremleie er ikke tillatt uten skriftlig samtykke fra utleier
+
+7. OPPSIGELSE
+- Oppsigelse skal skje skriftlig
+- Oppsigelsestiden løper fra første dag i måneden etter oppsigelsen
+
+8. UTFLYTTING
+- Ved utflytting skal boligen tilbakeleveres i samme stand som ved overtakelse
+- Normal slitasje aksepteres
+- Utflyttingsbefaring gjennomføres sammen med utleier
+
+9. TVISTER
+- Tvister søkes løst i minnelighet
+- Ved uenighet kan saken bringes inn for Husleietvistutvalget`;
 
 export default function CreateAgreement() {
   const navigate = useNavigate();
@@ -25,9 +68,19 @@ export default function CreateAgreement() {
     end_date: '',
     monthly_rent: '',
     deposit: '',
-    terms: '',
-    landlord_signed: false
+    deposit_account: '',
+    rent_due_day: '1',
+    rent_account: '',
+    utilities_included: false,
+    utilities_description: '',
+    notice_period_months: '3',
+    pets_allowed: false,
+    smoking_allowed: false,
+    terms: STANDARD_TERMS,
+    landlord_address: ''
   });
+
+  const [isSigning, setIsSigning] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -41,6 +94,16 @@ export default function CreateAgreement() {
     enabled: !!propertyId
   });
 
+  useEffect(() => {
+    if (property?.monthly_rent) {
+      setFormData(prev => ({
+        ...prev,
+        monthly_rent: property.monthly_rent.toString(),
+        deposit: (property.monthly_rent * 3).toString()
+      }));
+    }
+  }, [property]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.RentalAgreement.create(data),
     onSuccess: () => {
@@ -49,64 +112,101 @@ export default function CreateAgreement() {
     }
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
+  const handleBankIDSign = (bankIdRef) => {
     createMutation.mutate({
       rental_unit_id: propertyId,
       landlord_id: user.id,
       tenant_id: property?.tenant_id || null,
       landlord_name: user.full_name,
+      landlord_address: formData.landlord_address,
       start_date: formData.start_date,
       end_date: formData.end_date || null,
       monthly_rent: Number(formData.monthly_rent),
       deposit: formData.deposit ? Number(formData.deposit) : null,
+      deposit_account: formData.deposit_account,
+      rent_due_day: Number(formData.rent_due_day),
+      rent_account: formData.rent_account,
+      utilities_included: formData.utilities_included,
+      utilities_description: formData.utilities_description,
+      notice_period_months: Number(formData.notice_period_months),
+      pets_allowed: formData.pets_allowed,
+      smoking_allowed: formData.smoking_allowed,
       terms: formData.terms,
-      landlord_signed: formData.landlord_signed,
-      landlord_signed_date: formData.landlord_signed ? new Date().toISOString() : null,
-      status: formData.landlord_signed ? 'pending_tenant' : 'draft'
+      landlord_signed: true,
+      landlord_signed_date: new Date().toISOString(),
+      landlord_bankid_ref: bankIdRef,
+      status: 'pending_tenant'
     });
   };
 
+  const handleSaveDraft = () => {
+    createMutation.mutate({
+      rental_unit_id: propertyId,
+      landlord_id: user.id,
+      tenant_id: property?.tenant_id || null,
+      landlord_name: user.full_name,
+      landlord_address: formData.landlord_address,
+      start_date: formData.start_date,
+      end_date: formData.end_date || null,
+      monthly_rent: Number(formData.monthly_rent),
+      deposit: formData.deposit ? Number(formData.deposit) : null,
+      deposit_account: formData.deposit_account,
+      rent_due_day: Number(formData.rent_due_day),
+      rent_account: formData.rent_account,
+      utilities_included: formData.utilities_included,
+      utilities_description: formData.utilities_description,
+      notice_period_months: Number(formData.notice_period_months),
+      pets_allowed: formData.pets_allowed,
+      smoking_allowed: formData.smoking_allowed,
+      terms: formData.terms,
+      landlord_signed: false,
+      status: 'draft'
+    });
+  };
+
+  const isFormValid = formData.start_date && formData.monthly_rent;
+
   return (
-    <div className="pb-20">
-      <div className="bg-white border-b px-4 py-4">
+    <div className="pb-20 bg-gradient-to-b from-blue-50 to-white min-h-screen">
+      <div className="bg-blue-600 text-white px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="icon"
+            className="text-white hover:bg-blue-500"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-slate-900">{t('createAgreement')}</h1>
+          <h1 className="text-xl font-bold">{t('createAgreement')}</h1>
         </div>
       </div>
 
       <div className="p-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           {property && (
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="bg-blue-100 border-blue-300">
               <CardContent className="p-4">
                 <p className="text-sm text-blue-800">
                   Oppretter avtale for: <strong>{property.name}</strong>
                 </p>
+                <p className="text-xs text-blue-600">{property.address}</p>
               </CardContent>
             </Card>
           )}
 
+          {/* Grunnleggende info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Avtaledetaljer
+                <FileText className="w-4 h-4" /> Leieperiode og beløp
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="start_date">{t('startDate')} *</Label>
+                  <Label>{t('startDate')} *</Label>
                   <Input
-                    id="start_date"
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
@@ -114,9 +214,8 @@ export default function CreateAgreement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="end_date">{t('endDate')}</Label>
+                  <Label>{t('endDate')}</Label>
                   <Input
-                    id="end_date"
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
@@ -126,75 +225,185 @@ export default function CreateAgreement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="monthly_rent">{t('monthlyRent')} (kr) *</Label>
+                  <Label>{t('monthlyRent')} (kr) *</Label>
                   <Input
-                    id="monthly_rent"
                     type="number"
                     value={formData.monthly_rent}
                     onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
-                    placeholder="12000"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="deposit">{t('deposit')} (kr)</Label>
+                  <Label>{t('deposit')} (kr)</Label>
                   <Input
-                    id="deposit"
                     type="number"
                     value={formData.deposit}
                     onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
-                    placeholder="36000"
                   />
                 </div>
               </div>
-
-              <div>
-                <Label htmlFor="terms">{t('terms')}</Label>
-                <Textarea
-                  id="terms"
-                  value={formData.terms}
-                  onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
-                  placeholder="Skriv inn eventuelle tilleggsvilkår..."
-                  rows={4}
-                />
-              </div>
             </CardContent>
           </Card>
 
+          {/* Betalingsdetaljer */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="sign"
-                  checked={formData.landlord_signed}
-                  onCheckedChange={(checked) => setFormData({ ...formData, landlord_signed: checked })}
+            <CardHeader>
+              <CardTitle className="text-base">Betalingsdetaljer</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Kontonummer for husleie</Label>
+                <Input
+                  value={formData.rent_account}
+                  onChange={(e) => setFormData({ ...formData, rent_account: e.target.value })}
+                  placeholder="1234.56.78901"
                 />
+              </div>
+
+              <div>
+                <Label>Depositumskonto</Label>
+                <Input
+                  value={formData.deposit_account}
+                  onChange={(e) => setFormData({ ...formData, deposit_account: e.target.value })}
+                  placeholder="1234.56.78901"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="sign" className="font-medium cursor-pointer">
-                    Signer avtalen nå
-                  </Label>
-                  <p className="text-sm text-slate-500">
-                    Ved å krysse av bekrefter du at du godtar vilkårene i denne leieavtalen
-                  </p>
+                  <Label>Forfallsdag</Label>
+                  <Select 
+                    value={formData.rent_due_day}
+                    onValueChange={(v) => setFormData({ ...formData, rent_due_day: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 5, 10, 15, 20, 25].map(d => (
+                        <SelectItem key={d} value={d.toString()}>{d}. hver måned</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Oppsigelsestid</Label>
+                  <Select 
+                    value={formData.notice_period_months}
+                    onValueChange={(v) => setFormData({ ...formData, notice_period_months: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 måned</SelectItem>
+                      <SelectItem value="2">2 måneder</SelectItem>
+                      <SelectItem value="3">3 måneder</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Regler */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Regler og betingelser</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Strøm/vann inkludert</Label>
+                  <p className="text-xs text-slate-500">Er strøm og vann inkludert i leien?</p>
+                </div>
+                <Switch
+                  checked={formData.utilities_included}
+                  onCheckedChange={(c) => setFormData({ ...formData, utilities_included: c })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Husdyr tillatt</Label>
+                  <p className="text-xs text-slate-500">Kan leietaker ha husdyr?</p>
+                </div>
+                <Switch
+                  checked={formData.pets_allowed}
+                  onCheckedChange={(c) => setFormData({ ...formData, pets_allowed: c })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Røyking tillatt</Label>
+                  <p className="text-xs text-slate-500">Er røyking tillatt innendørs?</p>
+                </div>
+                <Switch
+                  checked={formData.smoking_allowed}
+                  onCheckedChange={(c) => setFormData({ ...formData, smoking_allowed: c })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Vilkår */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('terms')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={formData.terms}
+                onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
+                rows={10}
+                className="text-xs"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Utleier info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Utleiers informasjon</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>Navn</Label>
+                  <Input value={user?.full_name || ''} disabled className="bg-slate-50" />
+                </div>
+                <div>
+                  <Label>Adresse</Label>
+                  <Input
+                    value={formData.landlord_address}
+                    onChange={(e) => setFormData({ ...formData, landlord_address: e.target.value })}
+                    placeholder="Din adresse"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* BankID Signering */}
+          {isFormValid && (
+            <BankIDSignature 
+              onSign={handleBankIDSign}
+              isLoading={createMutation.isPending}
+              userName={user?.full_name}
+              documentType="leieavtale"
+            />
+          )}
+
           <Button 
-            type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={createMutation.isPending}
+            variant="outline"
+            className="w-full"
+            onClick={handleSaveDraft}
+            disabled={!isFormValid || createMutation.isPending}
           >
-            {formData.landlord_signed && <Check className="w-4 h-4 mr-2" />}
-            {createMutation.isPending 
-              ? 'Oppretter...' 
-              : formData.landlord_signed 
-                ? 'Opprett og signer' 
-                : 'Opprett utkast'
-            }
+            Lagre som utkast (uten signering)
           </Button>
-        </form>
+        </div>
       </div>
     </div>
   );
