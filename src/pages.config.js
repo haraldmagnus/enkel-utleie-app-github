@@ -56,6 +56,12 @@ import CreateAgreement from './pages/CreateAgreement';
 import Finances from './pages/Finances';
 import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
+import TenantDashboard from './pages/TenantDashboard';
+import SignAgreement from './pages/SignAgreement';
+import TenantPhotos from './pages/TenantPhotos';
+import Settings from './pages/Settings';
+import EditProperty from './pages/EditProperty';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -68,9 +74,15 @@ export const PAGES = {
     "Finances": Finances,
     "CalendarPage": CalendarPage,
     "Chat": Chat,
+    "TenantDashboard": TenantDashboard,
+    "SignAgreement": SignAgreement,
+    "TenantPhotos": TenantPhotos,
+    "Settings": Settings,
+    "EditProperty": EditProperty,
 }
 
 export const pagesConfig = {
     mainPage: "RoleSelection",
     Pages: PAGES,
+    Layout: __Layout,
 };
