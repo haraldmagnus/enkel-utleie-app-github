@@ -47,8 +47,30 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import RoleSelection from './pages/RoleSelection';
+import Dashboard from './pages/Dashboard';
+import Properties from './pages/Properties';
+import AddProperty from './pages/AddProperty';
+import PropertyDetail from './pages/PropertyDetail';
+import CreateAgreement from './pages/CreateAgreement';
+import Finances from './pages/Finances';
+import CalendarPage from './pages/CalendarPage';
+import Chat from './pages/Chat';
 
-export const pagesConfig = {
-	Pages: {}
+
+export const PAGES = {
+    "RoleSelection": RoleSelection,
+    "Dashboard": Dashboard,
+    "Properties": Properties,
+    "AddProperty": AddProperty,
+    "PropertyDetail": PropertyDetail,
+    "CreateAgreement": CreateAgreement,
+    "Finances": Finances,
+    "CalendarPage": CalendarPage,
+    "Chat": Chat,
 }
 
+export const pagesConfig = {
+    mainPage: "RoleSelection",
+    Pages: PAGES,
+};
