@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
-import NotificationBell from '@/components/NotificationBell';
+import PageHeader from '@/components/PageHeader';
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -91,21 +91,10 @@ export default function Dashboard() {
 
   return (
     <div className="pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-semibold flex-1">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
-          <div className="flex gap-1">
-            <NotificationBell />
-            <Link to={createPageUrl('Settings')}>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-        <p className="text-blue-100 text-sm">Her er oversikten din</p>
-      </div>
+      <PageHeader 
+        title={`Hei, ${user?.full_name?.split(' ')[0] || 'Utleier'}!`}
+        subtitle="Her er oversikten din"
+      />
 
       <div className="p-4 -mt-6 space-y-4">
         {/* Quick Stats */}
