@@ -46,12 +46,14 @@ export default function RoleSelection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center p-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Building2 className="w-8 h-8 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Velkommen til Utleieoversikt</h1>
-        <p className="text-slate-600">Velg din rolle for å komme i gang</p>
+      <div className="w-full max-w-md mb-8">
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6991d7088775a722bc661371/0219b64a7_Skjermbilde2026-02-16kl205358.png" 
+          alt="Boligflyt Logo" 
+          className="w-48 mb-6"
+        />
+        <h1 className="text-2xl font-bold text-slate-900 mb-2 text-left">Velkommen til Boligflyt</h1>
+        <p className="text-slate-600 text-left">Velg din rolle for å komme i gang</p>
       </div>
 
       <div className="w-full max-w-md space-y-4">
