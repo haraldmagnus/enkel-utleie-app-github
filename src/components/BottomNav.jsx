@@ -1,14 +1,19 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building2, Wallet, Calendar, MessageSquare } from 'lucide-react';
+import { Home, Building2, Wallet, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { createPageUrl } from '@/utils';
+import { getHomeRoute } from '@/lib/roleUtils';
 
 export default function BottomNav({ userRole }) {
   const location = useLocation();
   const { t } = useLanguage();
   
-  console.log('🔵 BottomNav: userRole =', userRole);
+  console.log('🔵 BottomNav mounted:', { 
+    userRole, 
+    currentPath: location.pathname,
+    homeRoute: getHomeRoute(userRole)
+  });
   
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
@@ -21,7 +26,8 @@ export default function BottomNav({ userRole }) {
   const tenantLinks = [
     { to: 'TenantDashboard', icon: Home, label: t('home') },
     { to: 'CalendarPage', icon: Calendar, label: t('calendar') },
-    { to: 'Chat', icon: MessageSquare, label: t('chat') }
+    { to: 'Chat', icon: MessageSquare, label: t('chat') },
+    { to: 'Settings', icon: Settings, label: t('settings') }
   ];
   
   const links = userRole === 'landlord' ? landlordLinks : tenantLinks;
@@ -48,7 +54,12 @@ export default function BottomNav({ userRole }) {
               key={to}
               to={createPageUrl(to)}
               onClick={() => {
-                console.log('🔵 BottomNav: Navigating to', to, '| Role:', userRole);
+                console.log('🔵 BottomNav CLICK:', { 
+                  navigatingTo: to, 
+                  userRole, 
+                  fromPath: location.pathname,
+                  toUrl: createPageUrl(to)
+                });
               }}
               className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors ${
                 isActive 

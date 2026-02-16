@@ -19,20 +19,22 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me()
   });
 
-  // Redirect tenant users to TenantDashboard
+  // Redirect if user is on wrong dashboard for their role
   React.useEffect(() => {
     if (user) {
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveRole = user.user_role || roleOverride;
+      const effectiveRole = user.active_role || user.user_role || roleOverride;
       
-      console.log('🔵 Dashboard: User role check:', { 
+      console.log('🔵 Dashboard (Landlord): Role check:', { 
+        active_role: user.active_role,
         user_role: user.user_role, 
         roleOverride, 
-        effectiveRole 
+        effectiveRole,
+        currentPage: 'Dashboard'
       });
       
       if (effectiveRole === 'tenant') {
-        console.log('⚠️ Dashboard: Tenant detected, redirecting to TenantDashboard');
+        console.log('⚠️ Dashboard: Tenant on landlord page - REDIRECTING to TenantDashboard');
         window.location.href = createPageUrl('TenantDashboard');
       }
     }
