@@ -73,11 +73,57 @@ export default function PropertyDetail() {
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
     
-    console.log('🔵 Inviting tenant:', { email: inviteEmail, role: 'user' });
+    console.log('🔵 Inviting tenant:', { email: inviteEmail, role: 'user', propertyId });
     
     try {
-      const result = await base44.users.inviteUser(inviteEmail, 'user');
-      console.log('✅ Tenant invitation sent:', result);
+      // Generate unique token
+      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      
+      // Create invitation record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
+      
+      const invitation = await base44.entities.TenantInvitation.create({
+        rental_unit_id: propertyId,
+        landlord_id: user.id,
+        tenant_email: inviteEmail.toLowerCase().trim(),
+        token: token,
+        status: 'pending',
+        expires_at: expiresAt.toISOString()
+      });
+      
+      console.log('✅ Invitation created:', invitation);
+      
+      // Generate invitation link
+      const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
+      
+      // Send platform invitation (gets user into the app)
+      await base44.users.inviteUser(inviteEmail, 'user');
+      
+      // Send custom email with property-specific link
+      await base44.integrations.Core.SendEmail({
+        to: inviteEmail,
+        subject: `Invitasjon til å bli leietaker i ${property.name}`,
+        body: `
+Hei!
+
+Du er invitert til å bli leietaker i følgende bolig:
+
+${property.name}
+${property.address}
+Månedlig leie: ${property.monthly_rent.toLocaleString()} kr
+
+Klikk på lenken under for å akseptere invitasjonen:
+${inviteUrl}
+
+Invitasjonen er gyldig i 7 dager.
+
+Hilsen
+${user.full_name || user.email}
+        `.trim()
+      });
+      
+      console.log('✅ Invitation email sent to:', inviteEmail);
       
       updateMutation.mutate({
         tenant_email: inviteEmail,
@@ -86,6 +132,7 @@ export default function PropertyDetail() {
       
       setShowInviteDialog(false);
       setInviteEmail('');
+      alert('Invitasjon sendt! Leietaker vil motta en e-post med lenke for å akseptere.');
     } catch (error) {
       console.error('❌ Failed to invite tenant:', error);
       alert('Kunne ikke sende invitasjon: ' + error.message);
@@ -205,8 +252,20 @@ export default function PropertyDetail() {
                       variant="outline"
                       size="sm"
                       className="w-full border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => {
+                      onClick={async () => {
                         if (confirm('Er du sikker på at du vil kansellere invitasjonen?')) {
+                          // Cancel all pending invitations for this property
+                          const invitations = await base44.entities.TenantInvitation.filter({
+                            rental_unit_id: propertyId,
+                            status: 'pending'
+                          });
+                          
+                          for (const inv of invitations) {
+                            await base44.entities.TenantInvitation.update(inv.id, {
+                              status: 'cancelled'
+                            });
+                          }
+                          
                           updateMutation.mutate({
                             tenant_email: null,
                             status: 'vacant'
