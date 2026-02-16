@@ -11,7 +11,6 @@ export default function BottomNav({ userRole }) {
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
     { to: 'Properties', icon: Building2, label: t('properties') },
-    { to: 'Finances', icon: Wallet, label: t('finances') },
     { to: 'CalendarPage', icon: Calendar, label: t('calendar') },
     { to: 'Chat', icon: MessageSquare, label: t('chat') }
   ];
@@ -27,8 +26,8 @@ export default function BottomNav({ userRole }) {
   // Check if current page matches any link (including nested routes)
   const isLinkActive = (linkTo) => {
     const path = location.pathname;
-    if (linkTo === 'Dashboard' && (path.includes('Dashboard') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty'))) {
-      return path.includes('Dashboard') || path.includes('PropertyDetail');
+    if (linkTo === 'Dashboard') {
+      return path.includes('Dashboard');
     }
     if (linkTo === 'Properties' && (path.includes('Properties') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty'))) {
       return true;
