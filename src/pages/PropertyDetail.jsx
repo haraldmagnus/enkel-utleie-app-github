@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, Building2, MapPin, Users, FileText, Camera, 
-  Mail, Trash2, Edit2, Check, X
+  Mail, Trash2, Edit2, Check, X, UserPlus, Wallet, Wrench
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,11 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
+import PropertyFinances from '@/components/PropertyFinances';
+import ManualTenantForm from '@/components/ManualTenantForm';
+import AgreementUpload from '@/components/AgreementUpload';
+import MaintenanceLog from '@/components/MaintenanceLog';
+import DocumentationChecklist from '@/components/DocumentationChecklist';
 
 export default function PropertyDetail() {
   const navigate = useNavigate();
@@ -29,6 +34,7 @@ export default function PropertyDetail() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showManualTenantDialog, setShowManualTenantDialog] = useState(false);
   const [uploadingType, setUploadingType] = useState(null);
 
   const { data: user } = useQuery({
@@ -142,12 +148,14 @@ export default function PropertyDetail() {
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-4 pb-24">
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="overview">Oversikt</TabsTrigger>
-            <TabsTrigger value="photos">Bilder</TabsTrigger>
-            <TabsTrigger value="agreement">Avtale</TabsTrigger>
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="overview" className="text-xs px-1">Oversikt</TabsTrigger>
+            <TabsTrigger value="finances" className="text-xs px-1">Økonomi</TabsTrigger>
+            <TabsTrigger value="photos" className="text-xs px-1">Bilder</TabsTrigger>
+            <TabsTrigger value="agreement" className="text-xs px-1">Avtale</TabsTrigger>
+            <TabsTrigger value="maintenance" className="text-xs px-1">Vedlikehold</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -162,12 +170,20 @@ export default function PropertyDetail() {
                 {property.status === 'vacant' ? (
                   <div className="text-center py-4">
                     <p className="text-slate-500 text-sm mb-3">Ingen leietaker tilknyttet</p>
-                    <Button 
-                      onClick={() => setShowInviteDialog(true)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Mail className="w-4 h-4 mr-2" /> {t('inviteTenant')}
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        onClick={() => setShowInviteDialog(true)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Mail className="w-4 h-4 mr-2" /> {t('inviteTenant')}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setShowManualTenantDialog(true)}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" /> Sett som utleid manuelt
+                      </Button>
+                    </div>
                   </div>
                 ) : property.status === 'pending_invitation' ? (
                   <div className="bg-yellow-50 p-3 rounded-lg">
@@ -175,6 +191,31 @@ export default function PropertyDetail() {
                       Invitasjon sendt til: <strong>{property.tenant_email}</strong>
                     </p>
                     <p className="text-xs text-yellow-600 mt-1">Venter på at leietaker aksepterer</p>
+                  </div>
+                ) : property.manual_tenant_name ? (
+                  <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                    <p className="text-sm text-blue-800">
+                      Leietaker: <strong>{property.manual_tenant_name}</strong>
+                    </p>
+                    {property.manual_tenant_phone && (
+                      <p className="text-xs text-blue-700">Tlf: {property.manual_tenant_phone}</p>
+                    )}
+                    {property.manual_tenant_email && (
+                      <p className="text-xs text-blue-700">E-post: {property.manual_tenant_email}</p>
+                    )}
+                    {property.manual_lease_start && (
+                      <p className="text-xs text-blue-600">
+                        Leieperiode: {property.manual_lease_start} {property.manual_lease_end ? `- ${property.manual_lease_end}` : '→'}
+                      </p>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowManualTenantDialog(true)}
+                      className="mt-2"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" /> Rediger
+                    </Button>
                   </div>
                 ) : (
                   <div className="bg-blue-50 p-3 rounded-lg">
@@ -217,6 +258,13 @@ export default function PropertyDetail() {
           </TabsContent>
 
           <TabsContent value="photos" className="space-y-4">
+            {/* Documentation Checklist */}
+            <DocumentationChecklist 
+              property={property} 
+              onUpdate={(data) => updateMutation.mutate(data)}
+              isLoading={updateMutation.isPending}
+            />
+
             {/* Move-in Photos */}
             <Card>
               <CardHeader className="pb-2">
@@ -298,12 +346,31 @@ export default function PropertyDetail() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="finances" className="space-y-4">
+            <PropertyFinances propertyId={propertyId} landlordId={user?.id} />
+          </TabsContent>
+
           <TabsContent value="agreement" className="space-y-4">
+            {/* Uploaded PDF Agreement */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Last opp leieavtale (PDF)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AgreementUpload 
+                  property={property} 
+                  onUpdate={(data) => updateMutation.mutate(data)}
+                  isLoading={updateMutation.isPending}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Digital Agreement */}
             {agreement ? (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> {t('rentalAgreement')}
+                    <FileText className="w-4 h-4" /> Digital {t('rentalAgreement')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -339,7 +406,7 @@ export default function PropertyDetail() {
               <Card>
                 <CardContent className="p-6 text-center">
                   <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 text-sm mb-3">Ingen leieavtale opprettet</p>
+                  <p className="text-slate-500 text-sm mb-3">Ingen digital leieavtale opprettet</p>
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}`))}
@@ -349,6 +416,10 @@ export default function PropertyDetail() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="space-y-4">
+            <MaintenanceLog propertyId={propertyId} landlordId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>
@@ -407,6 +478,18 @@ export default function PropertyDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manual Tenant Dialog */}
+      <ManualTenantForm
+        open={showManualTenantDialog}
+        onOpenChange={setShowManualTenantDialog}
+        property={property}
+        onSave={(data) => {
+          updateMutation.mutate(data);
+          setShowManualTenantDialog(false);
+        }}
+        isLoading={updateMutation.isPending}
+      />
     </div>
   );
 }
