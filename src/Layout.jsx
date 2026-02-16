@@ -33,36 +33,61 @@ function LayoutContent({ children, currentPageName }) {
   useEffect(() => {
     if (!isLoading && user) {
       console.log('🔵 Layout: User loaded:', { 
-        email: user.email, 
+        email: user.email,
+        active_role: user.active_role, 
         user_role: user.user_role,
-        currentPage: currentPageName 
+        currentPage: currentPageName,
+        timestamp: new Date().toISOString()
       });
       
       if (user.language) {
         setLanguage(user.language);
       }
       
-      // Check localStorage fallback for app owner
+      // Determine effective role (single source of truth)
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveUserRole = user.user_role || roleOverride;
+      const effectiveUserRole = user.active_role || user.user_role || roleOverride;
+      
+      console.log('🔵 Layout: Role determination:', { 
+        priority1_active_role: user.active_role,
+        priority2_user_role: user.user_role,
+        priority3_localStorage: roleOverride,
+        EFFECTIVE_ROLE: effectiveUserRole,
+        currentPage: currentPageName
+      });
       
       // Profile completion check for tenants (but not on CompleteProfile page itself)
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
+      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
       if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
         const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
         if (needsProfile) {
-          console.log('🔵 Layout: Tenant profile incomplete, redirecting to CompleteProfile');
+          console.log('⚠️ Layout: Tenant profile incomplete → CompleteProfile');
           navigate(createPageUrl('CompleteProfile'), { replace: true });
           return;
         }
       }
       
-      if (!user.user_role && !roleOverride && currentPageName !== 'RoleSelection') {
-        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
+      // If no role is determined, redirect to role selection
+      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
+        console.log('⚠️ Layout: No role determined → RoleSelection');
         navigate(createPageUrl('RoleSelection'), { replace: true });
-      } else if (roleOverride && !user.user_role) {
-        console.log('🔵 Layout: Using role from localStorage:', roleOverride);
-        // Allow navigation to continue with override
+        return;
+      }
+      
+      // FAILSAFE: Detect if on wrong dashboard
+      const isOnLandlordDash = currentPageName === 'Dashboard';
+      const isOnTenantDash = currentPageName === 'TenantDashboard';
+      
+      if (effectiveUserRole === 'landlord' && isOnTenantDash) {
+        console.log('🚨 FAILSAFE: Landlord stuck on TenantDashboard → Dashboard');
+        navigate(createPageUrl('Dashboard'), { replace: true });
+        return;
+      }
+      
+      if (effectiveUserRole === 'tenant' && isOnLandlordDash) {
+        console.log('🚨 FAILSAFE: Tenant stuck on Dashboard → TenantDashboard');
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+        return;
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
@@ -71,14 +96,16 @@ function LayoutContent({ children, currentPageName }) {
   const noNavPages = ['RoleSelection'];
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
   
-  // For admin users, always use roleOverride if it exists
-  const effectiveRole = (user?.user_role === 'admin' && roleOverride) ? roleOverride : (user?.user_role || roleOverride);
+  // Determine effective role: active_role > user_role > roleOverride
+  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
   
-  console.log('🔵 Layout: Effective role calculation:', {
+  console.log('🔵 Layout: Navigation render:', {
+    activeRole: user?.active_role,
     userRole: user?.user_role,
     roleOverride,
     effectiveRole,
-    currentPage: currentPageName
+    currentPage: currentPageName,
+    showingNav: effectiveRole && !noNavPages.includes(currentPageName)
   });
   
   const showNav = effectiveRole && !noNavPages.includes(currentPageName);
