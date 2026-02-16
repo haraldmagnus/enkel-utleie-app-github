@@ -187,24 +187,31 @@ Utleieoversikt - Din komplette utleieløsning`;
           throw new Error(`E-posttjeneste feilet: ${emailError.message}`);
         }
       } else {
-        // NEW USERS: Use platform invite (only way to reach external emails)
-        console.log('🔵 [INVITE DEBUG] Sending platform invite (NEW USER):', {
-          emailType: 'PLATFORM_INVITATION',
+        // NEW USERS: Create pending request + send platform invite
+        console.log('🔵 [INVITE DEBUG] Creating pending request for new user:', {
+          emailType: 'PENDING_REQUEST',
           to: cleanEmail,
-          role: 'user',
-          note: 'Platform will send generic signup email. Property details shown after login via pending invitation check.'
+          propertyId,
+          landlordId: user.id
         });
 
         try {
-          await base44.users.inviteUser(cleanEmail, 'user');
-          console.log('✅ [INVITE DEBUG] Platform invitation sent (new user will see property details after signup)');
-        } catch (platformError) {
-          console.error('❌ [INVITE DEBUG] Platform invite failed:', {
-            error: platformError,
-            message: platformError.message,
-            stack: platformError.stack
+          // Create pending request that will be processed after signup
+          await base44.entities.PendingTenantRequest.create({
+            rental_unit_id: propertyId,
+            landlord_id: user.id,
+            tenant_email: cleanEmail,
+            status: 'pending_signup',
+            invitation_sent_date: new Date().toISOString()
           });
-          throw new Error(`Kunne ikke sende invitasjon: ${platformError.message}`);
+          console.log('✅ [INVITE DEBUG] Pending request created');
+
+          // Send platform signup invite
+          await base44.users.inviteUser(cleanEmail, 'user');
+          console.log('✅ [INVITE DEBUG] Platform invitation sent - user will receive property invite after signup');
+        } catch (error) {
+          console.error('❌ [INVITE DEBUG] Failed to create pending request:', error);
+          throw new Error(`Kunne ikke sende invitasjon: ${error.message}`);
         }
       }
       
