@@ -98,6 +98,21 @@ export default function Invite() {
       }
       
       const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+      // Mark related notification as read
+      try {
+        const notifications = await base44.entities.Notification.filter({
+          user_id: user.id,
+          related_id: invitation.id,
+          read: false
+        });
+        for (const notif of notifications) {
+          await base44.entities.Notification.update(notif.id, { read: true });
+        }
+        console.log('✅ Notification(s) marked as read');
+      } catch (e) {
+        console.log('⚠️ Could not update notifications:', e);
+      }
+      
       console.log('✅ [STATE: DONE] Acceptance complete:', { needsProfile });
       
       return { needsProfile, alreadyAccepted: false };

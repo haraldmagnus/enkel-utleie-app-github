@@ -107,10 +107,12 @@ export default function PropertyDetail() {
       
       // Check if user exists in system
       let userExists = false;
+      let existingUserId = null;
       try {
         const existingUsers = await base44.entities.User.filter({ email: cleanEmail });
         userExists = existingUsers.length > 0;
-        console.log(`ℹ️ User ${cleanEmail} ${userExists ? 'EXISTS' : 'NEW'} in system`);
+        existingUserId = existingUsers[0]?.id;
+        console.log(`ℹ️ User ${cleanEmail} ${userExists ? 'EXISTS' : 'NEW'} in system`, { userId: existingUserId });
       } catch (e) {
         console.log('⚠️ Could not check user existence:', e);
       }
@@ -157,6 +159,24 @@ Utleieoversikt
         }
       } else {
         console.log('ℹ️ Skipping platform invite (user exists or self-invite)');
+      }
+      
+      // Create in-app notification if user exists
+      if (userExists && existingUserId) {
+        try {
+          await base44.entities.Notification.create({
+            user_id: existingUserId,
+            type: 'agreement',
+            title: 'Ny invitasjon',
+            message: `${user.full_name || 'En utleier'} inviterer deg til ${property.name}`,
+            rental_unit_id: propertyId,
+            related_id: invitation.id,
+            read: false
+          });
+          console.log('✅ In-app notification created for existing user');
+        } catch (notifError) {
+          console.log('⚠️ Could not create notification:', notifError);
+        }
       }
       
       // Update property status
