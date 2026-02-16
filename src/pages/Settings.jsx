@@ -79,10 +79,19 @@ export default function Settings() {
   const handleRoleChange = async (newRole) => {
     console.log('🔵 Settings: Changing active role to:', newRole);
     
+    // Check if profile is complete before switching
+    const needsProfile = !user?.full_name || !user?.birth_date || !user?.phone_number;
+    if (needsProfile) {
+      console.log('🔵 Settings: Profile incomplete, redirecting to CompleteProfile first');
+      navigate(createPageUrl('CompleteProfile'), { replace: true });
+      return;
+    }
+    
     try {
       await base44.auth.updateMe({ active_role: newRole });
       localStorage.setItem('user_role_override', newRole);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
       
       // Navigate to appropriate dashboard
       if (newRole === 'landlord') {
@@ -248,7 +257,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Active Role Switcher */}
+        {/* Active Role Switcher - Always visible */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -261,14 +270,14 @@ export default function Settings() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Button
-                variant={user?.active_role === 'landlord' || user?.user_role === 'landlord' ? 'default' : 'outline'}
+                variant={(user?.active_role === 'landlord' || (!user?.active_role && user?.user_role === 'landlord')) ? 'default' : 'outline'}
                 onClick={() => handleRoleChange('landlord')}
                 className="w-full"
               >
                 {t('landlord')}
               </Button>
               <Button
-                variant={user?.active_role === 'tenant' || (user?.user_role === 'tenant' && !user?.active_role) ? 'default' : 'outline'}
+                variant={(user?.active_role === 'tenant' || (!user?.active_role && user?.user_role === 'tenant')) ? 'default' : 'outline'}
                 onClick={() => handleRoleChange('tenant')}
                 className="w-full"
               >
