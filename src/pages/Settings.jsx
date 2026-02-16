@@ -32,8 +32,6 @@ export default function Settings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [phone, setPhone] = useState('');
-  const [editingName, setEditingName] = useState(false);
-  const [fullName, setFullName] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -66,43 +64,6 @@ export default function Settings() {
     setEditingPhone(false);
   };
 
-  const handleNameSave = async () => {
-    try {
-      await base44.auth.updateMe({ full_name: fullName });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setEditingName(false);
-    } catch (e) {
-      console.error('Could not update name:', e);
-    }
-  };
-
-  const handleRoleChange = async (newRole) => {
-    console.log('🔵 Settings: Changing active role to:', newRole);
-    
-    try {
-      await base44.auth.updateMe({ active_role: newRole });
-      localStorage.setItem('user_role_override', newRole);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      // Navigate to appropriate dashboard
-      if (newRole === 'landlord') {
-        navigate(createPageUrl('Dashboard'), { replace: true });
-      } else {
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-      }
-    } catch (e) {
-      console.log('Could not update via API, using localStorage');
-      localStorage.setItem('user_role_override', newRole);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      if (newRole === 'landlord') {
-        navigate(createPageUrl('Dashboard'), { replace: true });
-      } else {
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-      }
-    }
-  };
-
   const handleLogout = async () => {
     try {
       // Clear user role before logout
@@ -124,35 +85,15 @@ export default function Settings() {
   };
 
   const handleHardReset = async () => {
-    console.log('🔵 Hard reset: Starting...');
-    console.log('🔵 Hard reset: Current user:', { 
-      roles: user?.roles, 
-      active_role: user?.active_role,
-      user_role: user?.user_role 
-    });
-    
     try {
-      // Save server-side role before clearing
-      const savedActiveRole = user?.active_role || user?.user_role;
-      console.log('🔵 Hard reset: Saved active role:', savedActiveRole);
-      
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Restore active role immediately after clear
-      if (savedActiveRole) {
-        localStorage.setItem('user_role_override', savedActiveRole);
-        console.log('🔵 Hard reset: Restored active role to localStorage');
-      }
-      
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
-      
       window.location.reload();
     } catch (e) {
-      console.error('🔵 Hard reset error:', e);
       window.location.reload();
     }
   };
@@ -187,31 +128,7 @@ export default function Settings() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <span className="text-slate-600">Navn</span>
-              {editingName ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Fullt navn"
-                    className="w-40 h-8"
-                  />
-                  <Button size="sm" onClick={handleNameSave}>Lagre</Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{user?.full_name || '-'}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setFullName(user?.full_name || '');
-                      setEditingName(true);
-                    }}
-                  >
-                    Endre
-                  </Button>
-                </div>
-              )}
+              <span className="font-medium">{user?.full_name}</span>
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <span className="text-slate-600">E-post</span>
@@ -245,35 +162,11 @@ export default function Settings() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Active Role Switcher */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="w-4 h-4" /> Aktiv rolle
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-500 mb-3">
-              Bytt mellom utleier- og leietaker-visning
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={user?.active_role === 'landlord' || user?.user_role === 'landlord' ? 'default' : 'outline'}
-                onClick={() => handleRoleChange('landlord')}
-                className="w-full"
-              >
-                {t('landlord')}
-              </Button>
-              <Button
-                variant={user?.active_role === 'tenant' || (user?.user_role === 'tenant' && !user?.active_role) ? 'default' : 'outline'}
-                onClick={() => handleRoleChange('tenant')}
-                className="w-full"
-              >
-                {t('tenant')}
-              </Button>
+            <div className="flex items-center justify-between py-2 border-t">
+              <span className="text-slate-600">Rolle</span>
+              <span className="font-medium capitalize">
+                {user?.user_role === 'landlord' ? t('landlord') : t('tenant')}
+              </span>
             </div>
           </CardContent>
         </Card>

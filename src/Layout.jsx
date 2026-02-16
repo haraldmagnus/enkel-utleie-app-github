@@ -42,17 +42,9 @@ function LayoutContent({ children, currentPageName }) {
         setLanguage(user.language);
       }
       
-      // Determine effective role
+      // Check localStorage fallback for app owner
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveUserRole = user.active_role || user.user_role || roleOverride;
-      
-      console.log('🔵 Layout: Role check:', { 
-        active_role: user.active_role,
-        user_role: user.user_role,
-        roleOverride,
-        effectiveUserRole,
-        currentPage: currentPageName
-      });
+      const effectiveUserRole = user.user_role || roleOverride;
       
       // Profile completion check for tenants (but not on CompleteProfile page itself)
       const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
@@ -65,10 +57,12 @@ function LayoutContent({ children, currentPageName }) {
         }
       }
       
-      // If no role is determined, redirect to role selection
-      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
+      if (!user.user_role && !roleOverride && currentPageName !== 'RoleSelection') {
         console.log('🔵 Layout: No role found, redirecting to RoleSelection');
         navigate(createPageUrl('RoleSelection'), { replace: true });
+      } else if (roleOverride && !user.user_role) {
+        console.log('🔵 Layout: Using role from localStorage:', roleOverride);
+        // Allow navigation to continue with override
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
@@ -77,11 +71,10 @@ function LayoutContent({ children, currentPageName }) {
   const noNavPages = ['RoleSelection'];
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
   
-  // Determine effective role: active_role > user_role > roleOverride
-  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+  // For admin users, always use roleOverride if it exists
+  const effectiveRole = (user?.user_role === 'admin' && roleOverride) ? roleOverride : (user?.user_role || roleOverride);
   
   console.log('🔵 Layout: Effective role calculation:', {
-    activeRole: user?.active_role,
     userRole: user?.user_role,
     roleOverride,
     effectiveRole,

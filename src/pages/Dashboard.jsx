@@ -23,10 +23,9 @@ export default function Dashboard() {
   React.useEffect(() => {
     if (user) {
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveRole = user.active_role || user.user_role || roleOverride;
+      const effectiveRole = user.user_role || roleOverride;
       
       console.log('🔵 Dashboard: User role check:', { 
-        active_role: user.active_role,
         user_role: user.user_role, 
         roleOverride, 
         effectiveRole 
