@@ -58,7 +58,17 @@ function LayoutContent({ children, currentPageName }) {
   // Show nav on all pages except RoleSelection
   const noNavPages = ['RoleSelection'];
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
-  const effectiveRole = user?.user_role || roleOverride;
+  
+  // For admin users, always use roleOverride if it exists
+  const effectiveRole = (user?.user_role === 'admin' && roleOverride) ? roleOverride : (user?.user_role || roleOverride);
+  
+  console.log('🔵 Layout: Effective role calculation:', {
+    userRole: user?.user_role,
+    roleOverride,
+    effectiveRole,
+    currentPage: currentPageName
+  });
+  
   const showNav = effectiveRole && !noNavPages.includes(currentPageName);
 
   if (isLoading) {
