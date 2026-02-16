@@ -94,6 +94,15 @@ export default function CreateAgreement() {
     enabled: !!propertyId
   });
 
+  const { data: tenant } = useQuery({
+    queryKey: ['tenant', property?.tenant_id],
+    queryFn: async () => {
+      const users = await base44.entities.User.filter({ id: property.tenant_id });
+      return users[0];
+    },
+    enabled: !!property?.tenant_id
+  });
+
   useEffect(() => {
     if (property?.monthly_rent) {
       setFormData(prev => ({
@@ -118,6 +127,8 @@ export default function CreateAgreement() {
       landlord_id: user.id,
       tenant_id: property?.tenant_id || null,
       landlord_name: user.full_name,
+      tenant_name: tenant?.full_name || property?.tenant_email || '',
+      tenant_address: '',
       landlord_address: formData.landlord_address,
       start_date: formData.start_date,
       end_date: formData.end_date || null,
@@ -145,6 +156,8 @@ export default function CreateAgreement() {
       landlord_id: user.id,
       tenant_id: property?.tenant_id || null,
       landlord_name: user.full_name,
+      tenant_name: tenant?.full_name || property?.tenant_email || '',
+      tenant_address: '',
       landlord_address: formData.landlord_address,
       start_date: formData.start_date,
       end_date: formData.end_date || null,
@@ -191,6 +204,22 @@ export default function CreateAgreement() {
                   Oppretter avtale for: <strong>{property.name}</strong>
                 </p>
                 <p className="text-xs text-blue-600">{property.address}</p>
+                {tenant && (
+                  <p className="text-xs text-blue-700 mt-2">
+                    Leietaker: <strong>{tenant.full_name || tenant.email}</strong>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {property?.tenant_id && tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number) && (
+            <Card className="bg-yellow-50 border-yellow-300">
+              <CardContent className="p-4">
+                <p className="text-sm text-yellow-800 font-medium">⚠️ Mangler leietakerinformasjon</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Leietaker må fullføre sin profil før avtalen kan signeres og ferdigstilles
+                </p>
               </CardContent>
             </Card>
           )}
@@ -385,6 +414,37 @@ export default function CreateAgreement() {
             </CardContent>
           </Card>
 
+          {/* Leietaker informasjon */}
+          {tenant && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Leietakers informasjon</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Navn</Label>
+                    <Input value={tenant.full_name || tenant.email || 'Ikke oppgitt'} disabled className="bg-slate-50" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Fødselsdato</Label>
+                      <Input value={tenant.birth_date || 'Ikke oppgitt'} disabled className="bg-slate-50" />
+                    </div>
+                    <div>
+                      <Label>Telefon</Label>
+                      <Input value={tenant.phone_number || 'Ikke oppgitt'} disabled className="bg-slate-50" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>E-post</Label>
+                    <Input value={tenant.email} disabled className="bg-slate-50" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* BankID Signering */}
           {isFormValid && (
             <BankIDSignature 
@@ -392,7 +452,14 @@ export default function CreateAgreement() {
               isLoading={createMutation.isPending}
               userName={user?.full_name}
               documentType="leieavtale"
+              disabled={tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number)}
             />
+          )}
+
+          {tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number) && (
+            <p className="text-sm text-center text-yellow-700 bg-yellow-50 p-3 rounded-lg">
+              Avtalen kan ikke signeres før leietaker har fullført sin profil
+            </p>
           )}
 
           <Button 

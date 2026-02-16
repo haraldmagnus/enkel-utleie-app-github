@@ -44,6 +44,18 @@ function LayoutContent({ children, currentPageName }) {
       
       // Check localStorage fallback for app owner
       const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveUserRole = user.user_role || roleOverride;
+      
+      // Profile completion check for tenants (but not on CompleteProfile page itself)
+      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
+      if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
+        const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+        if (needsProfile) {
+          console.log('🔵 Layout: Tenant profile incomplete, redirecting to CompleteProfile');
+          navigate(createPageUrl('CompleteProfile'), { replace: true });
+          return;
+        }
+      }
       
       if (!user.user_role && !roleOverride && currentPageName !== 'RoleSelection') {
         console.log('🔵 Layout: No role found, redirecting to RoleSelection');

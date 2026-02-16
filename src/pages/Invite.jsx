@@ -82,11 +82,27 @@ export default function Invite() {
       }
 
       console.log('✅ Invitation accepted successfully');
+      
+      // Check if tenant profile is complete
+      const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+      console.log('🔵 Profile check:', { 
+        hasFullName: !!user.full_name, 
+        hasBirthDate: !!user.birth_date, 
+        hasPhoneNumber: !!user.phone_number,
+        needsProfile 
+      });
+      
+      return { needsProfile };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invitation'] });
       queryClient.invalidateQueries({ queryKey: ['rentalUnits'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Redirect based on profile completeness
+      if (data.needsProfile) {
+        navigate(createPageUrl('CompleteProfile'), { replace: true });
+      }
     }
   });
 
