@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Building2, Wallet, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { createPageUrl } from '@/utils';
-import { getHomeRoute } from '@/lib/roleUtils';
+import { getHomeRoute } from '@/components/roleUtils';
 
 export default function BottomNav({ userRole }) {
   const location = useLocation();
