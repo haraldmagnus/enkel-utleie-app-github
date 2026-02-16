@@ -67,27 +67,21 @@ function LayoutContent({ children, currentPageName }) {
         return;
       }
       
-      // CRITICAL: Profile completion gate for tenants
-      // ONLY block navigation if profile is truly incomplete
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
+      // Profile completion - SOFT GATE (not blocking navigation)
+      // Show banner/reminder but allow app usage
       const isProfileComplete = !!(user.full_name && user.birth_date && user.phone_number);
       
-      console.log('🔵 [LAYOUT GUARD] Profile gate check:', {
+      console.log('🔵 [LAYOUT GUARD] Profile status:', {
         currentPage: currentPageName,
         effectiveRole: effectiveUserRole,
         isProfileComplete,
         full_name: user.full_name ? '✓' : '✗',
         birth_date: user.birth_date ? '✓' : '✗',
-        phone_number: user.phone_number ? '✓' : '✗',
-        isAllowedPage: allowedPages.includes(currentPageName),
-        shouldBlock: effectiveUserRole === 'tenant' && !isProfileComplete && !allowedPages.includes(currentPageName)
+        phone_number: user.phone_number ? '✓' : '✗'
       });
       
-      if (effectiveUserRole === 'tenant' && !isProfileComplete && !allowedPages.includes(currentPageName)) {
-        console.log('🚨 [LAYOUT GUARD] BLOCKING: Profile incomplete → CompleteProfile');
-        navigate(createPageUrl('CompleteProfile'), { replace: true });
-        return;
-      }
+      // NOTE: Profile gate DISABLED - users can navigate freely
+      // Profile completion only required for specific actions (signing agreements)
       
       // FAILSAFE: Detect if on wrong dashboard
       const isOnLandlordDash = currentPageName === 'Dashboard';

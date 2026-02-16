@@ -26,33 +26,19 @@ export default function CompleteProfile() {
     queryFn: () => base44.auth.me()
   });
 
-  // Debug: Check if profile is already complete
+  // Pre-populate form and check completion
   React.useEffect(() => {
     if (user) {
       const isProfileComplete = !!(user.full_name && user.birth_date && user.phone_number);
       console.log('🔵 [COMPLETE PROFILE] User loaded:', {
         userId: user.id,
         email: user.email,
-        full_name: user.full_name,
-        birth_date: user.birth_date,
-        phone_number: user.phone_number,
+        full_name: user.full_name || 'MISSING',
+        birth_date: user.birth_date || 'MISSING',
+        phone_number: user.phone_number || 'MISSING',
         isProfileComplete,
-        returnTo,
-        shouldShowForm: !isProfileComplete
+        returnTo
       });
-
-      // If profile is already complete, skip this page
-      if (isProfileComplete) {
-        console.log('✅ [COMPLETE PROFILE] Profile already complete, redirecting...');
-        if (returnTo) {
-          navigate(returnTo, { replace: true });
-        } else {
-          const roleOverride = localStorage.getItem('user_role_override');
-          const effectiveRole = user?.active_role || user?.user_role || roleOverride;
-          navigate(createPageUrl(effectiveRole === 'landlord' ? 'Dashboard' : 'TenantDashboard'), { replace: true });
-        }
-        return;
-      }
 
       // Pre-populate form with existing user data
       setFormData({
@@ -60,8 +46,13 @@ export default function CompleteProfile() {
         birth_date: user.birth_date || '',
         phone_number: user.phone_number || ''
       });
+
+      // If already complete, allow redirect but don't force it
+      if (isProfileComplete && returnTo) {
+        console.log('✅ [COMPLETE PROFILE] Profile complete, can skip to:', returnTo);
+      }
     }
-  }, [user, returnTo]);
+  }, [user, returnTo, navigate]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
