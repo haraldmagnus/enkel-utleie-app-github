@@ -194,11 +194,28 @@ export default function PropertyDetail() {
                     </div>
                   </div>
                 ) : property.status === 'pending_invitation' ? (
-                  <div className="bg-yellow-50 p-3 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      Invitasjon sendt til: <strong>{property.tenant_email}</strong>
-                    </p>
-                    <p className="text-xs text-yellow-600 mt-1">Venter på at leietaker aksepterer</p>
+                  <div className="bg-yellow-50 p-3 rounded-lg space-y-3">
+                    <div>
+                      <p className="text-sm text-yellow-800">
+                        Invitasjon sendt til: <strong>{property.tenant_email}</strong>
+                      </p>
+                      <p className="text-xs text-yellow-600 mt-1">Venter på at leietaker aksepterer</p>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        if (confirm('Er du sikker på at du vil kansellere invitasjonen?')) {
+                          updateMutation.mutate({
+                            tenant_email: null,
+                            status: 'vacant'
+                          });
+                        }
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-2" /> Kanseller invitasjon
+                    </Button>
                   </div>
                 ) : property.manual_tenant_name ? (
                   <div className="bg-blue-50 p-3 rounded-lg space-y-2">
