@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, Building2, MapPin, Users, FileText, Camera, 
-  Mail, Trash2, Edit2, Check, X, UserPlus, Wallet, Wrench
+  Mail, Trash2, Edit2, Check, X, UserPlus, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,6 @@ import { createPageUrl } from '@/utils';
 import PropertyFinances from '@/components/PropertyFinances';
 import ManualTenantForm from '@/components/ManualTenantForm';
 import AgreementUpload from '@/components/AgreementUpload';
-import MaintenanceLog from '@/components/MaintenanceLog';
 import DocumentationChecklist from '@/components/DocumentationChecklist';
 
 export default function PropertyDetail() {
@@ -74,13 +73,23 @@ export default function PropertyDetail() {
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
     
-    await base44.users.inviteUser(inviteEmail, 'user');
-    updateMutation.mutate({
-      tenant_email: inviteEmail,
-      status: 'pending_invitation'
-    });
-    setShowInviteDialog(false);
-    setInviteEmail('');
+    console.log('🔵 Inviting tenant:', { email: inviteEmail, role: 'user' });
+    
+    try {
+      const result = await base44.users.inviteUser(inviteEmail, 'user');
+      console.log('✅ Tenant invitation sent:', result);
+      
+      updateMutation.mutate({
+        tenant_email: inviteEmail,
+        status: 'pending_invitation'
+      });
+      
+      setShowInviteDialog(false);
+      setInviteEmail('');
+    } catch (error) {
+      console.error('❌ Failed to invite tenant:', error);
+      alert('Kunne ikke sende invitasjon: ' + error.message);
+    }
   };
 
   const handlePhotoUpload = async (e, type) => {
@@ -150,12 +159,11 @@ export default function PropertyDetail() {
 
       <div className="p-4 pb-24">
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="overview" className="text-xs px-1">Oversikt</TabsTrigger>
             <TabsTrigger value="finances" className="text-xs px-1">Økonomi</TabsTrigger>
             <TabsTrigger value="photos" className="text-xs px-1">Bilder</TabsTrigger>
             <TabsTrigger value="agreement" className="text-xs px-1">Avtale</TabsTrigger>
-            <TabsTrigger value="maintenance" className="text-xs px-1">Vedlikehold</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -416,10 +424,6 @@ export default function PropertyDetail() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="maintenance" className="space-y-4">
-            <MaintenanceLog propertyId={propertyId} landlordId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>
