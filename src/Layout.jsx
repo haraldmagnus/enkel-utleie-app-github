@@ -11,10 +11,23 @@ function LayoutContent({ children, currentPageName }) {
   const navigate = useNavigate();
   const { setLanguage } = useLanguage();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
+
+  useEffect(() => {
+    // Handle localStorage/auth errors
+    if (error) {
+      console.error('Auth error:', error);
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.log('Storage clear error:', e);
+      }
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -28,7 +41,8 @@ function LayoutContent({ children, currentPageName }) {
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
-  const noNavPages = ['RoleSelection', 'SignAgreement', 'CreateAgreement', 'AddProperty', 'PropertyDetail', 'TenantPhotos', 'EditProperty'];
+  // Show nav on all pages except RoleSelection
+  const noNavPages = ['RoleSelection'];
   const showNav = user?.user_role && !noNavPages.includes(currentPageName);
 
   if (isLoading) {
@@ -43,12 +57,26 @@ function LayoutContent({ children, currentPageName }) {
     );
   }
 
+  const themeStyles = user?.theme === 'pink' ? `
+    :root {
+      --primary: 330 80% 60%;
+      --primary-foreground: 0 0% 100%;
+    }
+  ` : `
+    :root {
+      --primary: 220 90% 56%;
+      --primary-foreground: 0 0% 100%;
+    }
+  `;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <style>{`
-        :root {
-          --primary: 220 90% 56%;
-          --primary-foreground: 0 0% 100%;
+        ${themeStyles}
+        
+        /* Safe area for iPhone */
+        .pb-safe {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         .bg-blue-50 { background-color: rgb(239 246 255); }

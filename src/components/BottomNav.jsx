@@ -23,12 +23,24 @@ export default function BottomNav({ userRole }) {
   ];
   
   const links = userRole === 'landlord' ? landlordLinks : tenantLinks;
+
+  // Check if current page matches any link (including nested routes)
+  const isLinkActive = (linkTo) => {
+    const path = location.pathname;
+    if (linkTo === 'Dashboard' && (path.includes('Dashboard') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty'))) {
+      return path.includes('Dashboard') || path.includes('PropertyDetail');
+    }
+    if (linkTo === 'Properties' && (path.includes('Properties') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty'))) {
+      return true;
+    }
+    return path.includes(linkTo);
+  };
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-50">
-      <div className="flex justify-around items-center max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 pb-safe">
+      <div className="flex justify-around items-center max-w-lg mx-auto px-2 py-2">
         {links.map(({ to, icon: Icon, label }) => {
-          const isActive = location.pathname.includes(to);
+          const isActive = isLinkActive(to);
           return (
             <Link
               key={to}
