@@ -66,15 +66,16 @@ export default function TenantDashboard() {
     queryKey: ['pendingInvitations', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
+      console.log('🔵 [TENANT DASH] Checking pending invitations for:', user.email.toLowerCase());
       const invites = await base44.entities.TenantInvitation.filter({
         tenant_email: user.email.toLowerCase(),
         status: 'pending'
       });
-      console.log('🔵 Pending invitations:', invites.length);
+      console.log('🔵 [TENANT DASH] Found pending invitations:', invites.length);
       return invites;
     },
     enabled: !!user?.email,
-    refetchInterval: 30000
+    refetchInterval: 5000
   });
 
   if (isLoading) {
