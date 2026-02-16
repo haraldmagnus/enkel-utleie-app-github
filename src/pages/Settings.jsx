@@ -119,77 +119,136 @@ export default function Settings() {
     
     try {
       const userId = user?.id;
-      console.log('🔵 [DELETE ACCOUNT] Deleting data for user:', userId);
+      const userEmail = user?.email;
+      console.log('🔵 [DELETE ACCOUNT] Target user:', { userId, email: userEmail });
       
-      // Delete all user-related data
-      // 1. Delete rental units (landlord)
+      let deleteStats = {
+        properties: 0,
+        unlinkedProperties: 0,
+        agreements: 0,
+        messages: 0,
+        notifications: 0,
+        invitations: 0,
+        events: 0,
+        finances: 0,
+        maintenanceTasks: 0,
+        paymentReminders: 0
+      };
+      
+      // 1. Delete rental units (landlord owns)
       const ownedProperties = await base44.entities.RentalUnit.filter({ landlord_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Found properties to delete:', ownedProperties.length);
+      console.log('🔵 [DELETE ACCOUNT] Properties to delete:', ownedProperties.length);
       for (const prop of ownedProperties) {
         await base44.entities.RentalUnit.delete(prop.id);
+        deleteStats.properties++;
       }
       
       // 2. Unlink from tenant properties
       const tenantProperties = await base44.entities.RentalUnit.filter({ tenant_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Found tenant properties to unlink:', tenantProperties.length);
+      console.log('🔵 [DELETE ACCOUNT] Tenant properties to unlink:', tenantProperties.length);
       for (const prop of tenantProperties) {
         await base44.entities.RentalUnit.update(prop.id, { 
-          tenant_id: null, 
+          tenant_id: null,
+          tenant_email: null,
           status: 'vacant' 
         });
+        deleteStats.unlinkedProperties++;
       }
       
       // 3. Delete agreements
       const agreements = await base44.entities.RentalAgreement.filter({ tenant_id: userId });
       const landlordAgreements = await base44.entities.RentalAgreement.filter({ landlord_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Deleting agreements:', agreements.length + landlordAgreements.length);
-      for (const agr of [...agreements, ...landlordAgreements]) {
+      const allAgreements = [...agreements, ...landlordAgreements];
+      console.log('🔵 [DELETE ACCOUNT] Agreements to delete:', allAgreements.length);
+      for (const agr of allAgreements) {
         await base44.entities.RentalAgreement.delete(agr.id);
+        deleteStats.agreements++;
       }
       
-      // 4. Delete messages
+      // 4. Delete messages (sent by user)
       const messages = await base44.entities.ChatMessage.filter({ sender_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Deleting messages:', messages.length);
+      console.log('🔵 [DELETE ACCOUNT] Messages to delete:', messages.length);
       for (const msg of messages) {
         await base44.entities.ChatMessage.delete(msg.id);
+        deleteStats.messages++;
       }
       
       // 5. Delete notifications
       const notifications = await base44.entities.Notification.filter({ user_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Deleting notifications:', notifications.length);
+      console.log('🔵 [DELETE ACCOUNT] Notifications to delete:', notifications.length);
       for (const notif of notifications) {
         await base44.entities.Notification.delete(notif.id);
+        deleteStats.notifications++;
       }
       
-      // 6. Delete invitations
-      const invitations = await base44.entities.TenantInvitation.filter({ tenant_email: user?.email });
+      // 6. Delete invitations (received and sent)
+      const invitations = await base44.entities.TenantInvitation.filter({ tenant_email: userEmail.toLowerCase() });
       const sentInvitations = await base44.entities.TenantInvitation.filter({ landlord_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Deleting invitations:', invitations.length + sentInvitations.length);
-      for (const inv of [...invitations, ...sentInvitations]) {
+      const allInvitations = [...invitations, ...sentInvitations];
+      console.log('🔵 [DELETE ACCOUNT] Invitations to delete:', allInvitations.length);
+      for (const inv of allInvitations) {
         await base44.entities.TenantInvitation.delete(inv.id);
+        deleteStats.invitations++;
       }
       
-      // 7. Delete calendar events
-      const events = await base44.entities.CalendarEvent.list('-created_date', 1000);
-      const userEvents = events.filter(e => e.created_by === user?.email);
-      console.log('🔵 [DELETE ACCOUNT] Deleting calendar events:', userEvents.length);
+      // 7. Delete calendar events (created by user)
+      const allEvents = await base44.entities.CalendarEvent.list('-created_date', 1000);
+      const userEvents = allEvents.filter(e => e.created_by === userEmail);
+      console.log('🔵 [DELETE ACCOUNT] Calendar events to delete:', userEvents.length);
       for (const event of userEvents) {
         await base44.entities.CalendarEvent.delete(event.id);
+        deleteStats.events++;
       }
       
       // 8. Delete financial entries
       const finances = await base44.entities.FinancialEntry.filter({ landlord_id: userId });
-      console.log('🔵 [DELETE ACCOUNT] Deleting financial entries:', finances.length);
+      console.log('🔵 [DELETE ACCOUNT] Financial entries to delete:', finances.length);
       for (const fin of finances) {
         await base44.entities.FinancialEntry.delete(fin.id);
+        deleteStats.finances++;
       }
       
-      console.log('✅ [DELETE ACCOUNT] All data deleted successfully');
+      // 9. Delete maintenance tasks
+      const tasks = await base44.entities.MaintenanceTask.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Maintenance tasks to delete:', tasks.length);
+      for (const task of tasks) {
+        await base44.entities.MaintenanceTask.delete(task.id);
+        deleteStats.maintenanceTasks++;
+      }
+      
+      // 10. Delete payment reminders
+      const reminders = await base44.entities.PaymentReminder.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Payment reminders to delete:', reminders.length);
+      for (const reminder of reminders) {
+        await base44.entities.PaymentReminder.delete(reminder.id);
+        deleteStats.paymentReminders++;
+      }
+      
+      console.log('✅ [DELETE ACCOUNT] ===== DELETION COMPLETE =====');
+      console.log('✅ [DELETE ACCOUNT] Stats:', deleteStats);
+      console.log('⚠️ [DELETE ACCOUNT] NOTE: Auth user still exists in provider.');
+      console.log('⚠️ [DELETE ACCOUNT] User can still login but will have no data.');
+      console.log('⚠️ [DELETE ACCOUNT] For complete deletion, backend functions needed.');
+      
+      // Anonymize user profile (since we can't delete auth user without backend functions)
+      try {
+        await base44.auth.updateMe({
+          full_name: 'Deleted User',
+          phone_number: null,
+          birth_date: null,
+          active_role: null,
+          user_role: null,
+          gdpr_consent: false
+        });
+        console.log('✅ [DELETE ACCOUNT] User profile anonymized');
+      } catch (e) {
+        console.log('⚠️ [DELETE ACCOUNT] Could not anonymize profile:', e);
+      }
       
       // Close dialog before logout
       setShowDeleteDialog(false);
       
-      // Now logout with full cleanup
+      // Full logout with cleanup
       await handleLogout();
       
     } catch (error) {
