@@ -169,7 +169,7 @@ export default function Settings() {
                 size="sm"
                 onClick={() => navigate(createPageUrl('RoleSelection'))}
               >
-                {user?.user_role === 'landlord' ? t('landlord') : t('tenant')}
+                {(user?.active_role || user?.user_role) === 'landlord' ? t('landlord') : t('tenant')}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
