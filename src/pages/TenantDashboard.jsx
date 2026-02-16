@@ -1,8 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, FileText, Camera, Calendar, MessageSquare, ArrowRight, Check, X } from 'lucide-react';
+import { Building2, FileText, Camera, Calendar, MessageSquare, ArrowRight, Check, X, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import PageHeader from '@/components/PageHeader';
 
 export default function TenantDashboard() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -61,6 +62,21 @@ export default function TenantDashboard() {
     enabled: !!property?.id
   });
 
+  const { data: pendingInvitations = [] } = useQuery({
+    queryKey: ['pendingInvitations', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const invites = await base44.entities.TenantInvitation.filter({
+        tenant_email: user.email.toLowerCase(),
+        status: 'pending'
+      });
+      console.log('🔵 Pending invitations:', invites.length);
+      return invites;
+    },
+    enabled: !!user?.email,
+    refetchInterval: 30000
+  });
+
   if (isLoading) {
     return (
       <div className="p-4 space-y-4">
@@ -95,6 +111,34 @@ export default function TenantDashboard() {
       />
 
       <div className="p-4 -mt-6 space-y-4">
+        {/* Pending Invitations */}
+        {pendingInvitations.length > 0 && (
+          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">
+                    {pendingInvitations.length === 1 ? 'Ny invitasjon!' : `${pendingInvitations.length} nye invitasjoner!`}
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Du har mottatt invitasjon til en bolig. Klikk under for å se detaljer og akseptere.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => navigate(createPageUrl(`Invite?token=${pendingInvitations[0].token}`))}
+                  >
+                    Se invitasjon
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Property Card */}
         <Card className="bg-white shadow-md">
           <CardContent className="p-4">
