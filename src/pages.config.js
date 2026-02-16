@@ -50,10 +50,12 @@
 import AddProperty from './pages/AddProperty';
 import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
+import CompleteProfile from './pages/CompleteProfile';
 import CreateAgreement from './pages/CreateAgreement';
 import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
 import Finances from './pages/Finances';
+import Invite from './pages/Invite';
 import Notifications from './pages/Notifications';
 import PaymentReminders from './pages/PaymentReminders';
 import Properties from './pages/Properties';
@@ -64,8 +66,6 @@ import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
 import YearlyReport from './pages/YearlyReport';
-import Invite from './pages/Invite';
-import CompleteProfile from './pages/CompleteProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -73,10 +73,12 @@ export const PAGES = {
     "AddProperty": AddProperty,
     "CalendarPage": CalendarPage,
     "Chat": Chat,
+    "CompleteProfile": CompleteProfile,
     "CreateAgreement": CreateAgreement,
     "Dashboard": Dashboard,
     "EditProperty": EditProperty,
     "Finances": Finances,
+    "Invite": Invite,
     "Notifications": Notifications,
     "PaymentReminders": PaymentReminders,
     "Properties": Properties,
@@ -87,8 +89,6 @@ export const PAGES = {
     "TenantDashboard": TenantDashboard,
     "TenantPhotos": TenantPhotos,
     "YearlyReport": YearlyReport,
-    "Invite": Invite,
-    "CompleteProfile": CompleteProfile,
 }
 
 export const pagesConfig = {
