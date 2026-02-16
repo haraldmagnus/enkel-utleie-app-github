@@ -66,6 +66,12 @@ export default function Settings() {
 
   const handleLogout = async () => {
     try {
+      // Clear user role before logout
+      await base44.auth.updateMe({ user_role: null });
+    } catch (e) {
+      console.log('Could not clear role:', e);
+    }
+    try {
       localStorage.clear();
       sessionStorage.clear();
       if ('caches' in window) {
@@ -75,7 +81,7 @@ export default function Settings() {
     } catch (e) {
       console.log('Clear error:', e);
     }
-    base44.auth.logout(createPageUrl('RoleSelection'));
+    base44.auth.logout();
   };
 
   const handleHardReset = async () => {
