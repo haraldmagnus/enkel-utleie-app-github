@@ -73,7 +73,8 @@ export default function PropertyDetail() {
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
     
-    console.log('🔵 Inviting tenant:', { email: inviteEmail, role: 'user', propertyId });
+    const cleanEmail = inviteEmail.toLowerCase().trim();
+    console.log('🔵 Inviting tenant:', { email: cleanEmail, propertyId });
     
     try {
       // Generate unique token
@@ -86,7 +87,7 @@ export default function PropertyDetail() {
       const invitation = await base44.entities.TenantInvitation.create({
         rental_unit_id: propertyId,
         landlord_id: user.id,
-        tenant_email: inviteEmail.toLowerCase().trim(),
+        tenant_email: cleanEmail,
         token: token,
         status: 'pending',
         expires_at: expiresAt.toISOString()
@@ -97,45 +98,65 @@ export default function PropertyDetail() {
       // Generate invitation link
       const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
       
-      // Send platform invitation (gets user into the app)
-      await base44.users.inviteUser(inviteEmail, 'user');
-      
-      // Send custom email with property-specific link
+      // Send email with invitation link (supports both new and existing users)
       await base44.integrations.Core.SendEmail({
-        to: inviteEmail,
-        subject: `Invitasjon til å bli leietaker i ${property.name}`,
+        to: cleanEmail,
+        from_name: user.full_name || 'Utleieoversikt',
+        subject: `Invitasjon til ${property.name}`,
         body: `
 Hei!
 
 Du er invitert til å bli leietaker i følgende bolig:
 
-${property.name}
+📍 ${property.name}
 ${property.address}
-Månedlig leie: ${property.monthly_rent.toLocaleString()} kr
+${property.monthly_rent ? `💰 Månedlig leie: ${property.monthly_rent.toLocaleString()} kr` : ''}
 
 Klikk på lenken under for å akseptere invitasjonen:
 ${inviteUrl}
 
-Invitasjonen er gyldig i 7 dager.
+${!user.full_name ? '' : `\nUtleier: ${user.full_name}`}
 
-Hilsen
-${user.full_name || user.email}
+⏰ Invitasjonen er gyldig i 7 dager.
+
+---
+Utleieoversikt - Din komplette utleieløsning
         `.trim()
       });
       
-      console.log('✅ Invitation email sent to:', inviteEmail);
+      console.log('✅ Invitation email sent to:', cleanEmail);
+      
+      // Try to send platform invitation for new users (optional, doesn't fail if user exists)
+      try {
+        await base44.users.inviteUser(cleanEmail, 'user');
+        console.log('✅ Platform invitation sent');
+      } catch (inviteError) {
+        console.log('ℹ️ Could not send platform invite (user may already exist):', inviteError.message);
+        // Continue anyway - email was sent successfully
+      }
       
       updateMutation.mutate({
-        tenant_email: inviteEmail,
+        tenant_email: cleanEmail,
         status: 'pending_invitation'
       });
       
       setShowInviteDialog(false);
       setInviteEmail('');
-      alert('Invitasjon sendt! Leietaker vil motta en e-post med lenke for å akseptere.');
+      alert('✅ Invitasjon sendt!\n\nLeietaker vil motta en e-post med lenke for å akseptere invitasjonen.');
     } catch (error) {
       console.error('❌ Failed to invite tenant:', error);
-      alert('Kunne ikke sende invitasjon: ' + error.message);
+      
+      // Better error messages
+      let errorMsg = 'Kunne ikke sende invitasjon.';
+      if (error.message.includes('email')) {
+        errorMsg = 'E-posttjeneste feilet. Kontakt support.';
+      } else if (error.message.includes('SendEmail')) {
+        errorMsg = 'E-post kunne ikke sendes. Sjekk at e-postadressen er korrekt.';
+      } else {
+        errorMsg = `Feil: ${error.message}`;
+      }
+      
+      alert(errorMsg);
     }
   };
 

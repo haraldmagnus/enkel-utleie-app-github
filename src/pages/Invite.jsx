@@ -57,6 +57,12 @@ export default function Invite() {
         throw new Error('EXPIRED');
       }
 
+      // Check if already accepted (idempotency)
+      if (invitation.status === 'accepted') {
+        console.log('ℹ️ Invitation already accepted - idempotent operation');
+        return { needsProfile: false, alreadyAccepted: true };
+      }
+
       // Update invitation status
       await base44.entities.TenantInvitation.update(invitation.id, {
         status: 'accepted',
@@ -67,18 +73,20 @@ export default function Invite() {
       // Link tenant to property
       await base44.entities.RentalUnit.update(invitation.rental_unit_id, {
         tenant_id: user.id,
-        tenant_email: user.email,
+        tenant_email: user.email.toLowerCase(),
         status: 'occupied'
       });
 
-      // Update user role if needed
-      if (!user.user_role) {
-        try {
-          await base44.auth.updateMe({ user_role: 'tenant' });
-        } catch (e) {
-          console.log('Could not update role via API, using localStorage fallback');
-          localStorage.setItem('user_role_override', 'tenant');
-        }
+      // Set active_role to tenant (ensures proper navigation)
+      try {
+        await base44.auth.updateMe({ 
+          active_role: 'tenant',
+          user_role: user.user_role || 'tenant'
+        });
+        console.log('✅ Active role set to tenant');
+      } catch (e) {
+        console.log('⚠️ Could not update role via API, using localStorage fallback');
+        localStorage.setItem('user_role_override', 'tenant');
       }
 
       console.log('✅ Invitation accepted successfully');
@@ -92,7 +100,7 @@ export default function Invite() {
         needsProfile 
       });
       
-      return { needsProfile };
+      return { needsProfile, alreadyAccepted: false };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invitation'] });
@@ -112,12 +120,22 @@ export default function Invite() {
     if (!user || !invitation) return;
     if (processing) return;
 
-    // Auto-accept if status is pending and not expired
-    if (invitation.status === 'pending' && new Date(invitation.expires_at) > new Date()) {
-      if (user.email.toLowerCase() === invitation.tenant_email.toLowerCase()) {
-        setProcessing(true);
-        acceptMutation.mutate();
-      }
+    // Auto-accept if status is pending and not expired and email matches
+    const isExpired = new Date(invitation.expires_at) < new Date();
+    const emailMatches = user.email.toLowerCase() === invitation.tenant_email.toLowerCase();
+    
+    console.log('🔵 Auto-accept check:', {
+      status: invitation.status,
+      isExpired,
+      emailMatches,
+      userEmail: user.email,
+      tenantEmail: invitation.tenant_email
+    });
+
+    if (invitation.status === 'pending' && !isExpired && emailMatches) {
+      console.log('✅ Auto-accepting invitation...');
+      setProcessing(true);
+      acceptMutation.mutate();
     }
   }, [user, invitation, token, userLoading, inviteLoading, processing]);
 
