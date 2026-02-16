@@ -10,7 +10,8 @@ import { createPageUrl } from '@/utils';
 export default function Invite() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [processing, setProcessing] = useState(false);
+  const [state, setState] = useState('INIT'); // INIT → VALIDATING → READY → ACCEPTING → DONE
+  const [acceptCalled, setAcceptCalled] = useState(false);
   
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
@@ -41,13 +42,20 @@ export default function Invite() {
 
   const acceptMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔵 Accepting invitation:', { 
+      console.log('🔵 [STATE: ACCEPTING] Starting acceptance:', { 
         invitationId: invitation.id,
         userEmail: user.email,
-        tenantEmail: invitation.tenant_email 
+        tenantEmail: invitation.tenant_email,
+        currentStatus: invitation.status
       });
 
-      // Validate email match (case-insensitive)
+      // Idempotency check
+      if (invitation.status === 'accepted') {
+        console.log('ℹ️ Already accepted - idempotent return');
+        return { needsProfile: false, alreadyAccepted: true };
+      }
+
+      // Validate email match
       if (user.email.toLowerCase() !== invitation.tenant_email.toLowerCase()) {
         throw new Error('EMAIL_MISMATCH');
       }
@@ -57,18 +65,17 @@ export default function Invite() {
         throw new Error('EXPIRED');
       }
 
-      // Check if already accepted (idempotency)
-      if (invitation.status === 'accepted') {
-        console.log('ℹ️ Invitation already accepted - idempotent operation');
-        return { needsProfile: false, alreadyAccepted: true };
+      // Update invitation (with optimistic idempotency)
+      try {
+        await base44.entities.TenantInvitation.update(invitation.id, {
+          status: 'accepted',
+          accepted_by_user_id: user.id,
+          accepted_at: new Date().toISOString()
+        });
+        console.log('✅ Invitation status updated');
+      } catch (updateError) {
+        console.log('⚠️ Invitation update failed (may already be accepted):', updateError);
       }
-
-      // Update invitation status
-      await base44.entities.TenantInvitation.update(invitation.id, {
-        status: 'accepted',
-        accepted_by_user_id: user.id,
-        accepted_at: new Date().toISOString()
-      });
 
       // Link tenant to property
       await base44.entities.RentalUnit.update(invitation.rental_unit_id, {
@@ -76,68 +83,107 @@ export default function Invite() {
         tenant_email: user.email.toLowerCase(),
         status: 'occupied'
       });
+      console.log('✅ Property linked to tenant');
 
-      // Set active_role to tenant (ensures proper navigation)
+      // Set active_role to tenant
       try {
         await base44.auth.updateMe({ 
           active_role: 'tenant',
           user_role: user.user_role || 'tenant'
         });
-        console.log('✅ Active role set to tenant');
+        console.log('✅ Active role → tenant');
       } catch (e) {
-        console.log('⚠️ Could not update role via API, using localStorage fallback');
+        console.log('⚠️ Using localStorage fallback for role');
         localStorage.setItem('user_role_override', 'tenant');
       }
-
-      console.log('✅ Invitation accepted successfully');
       
-      // Check if tenant profile is complete
       const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
-      console.log('🔵 Profile check:', { 
-        hasFullName: !!user.full_name, 
-        hasBirthDate: !!user.birth_date, 
-        hasPhoneNumber: !!user.phone_number,
-        needsProfile 
-      });
+      console.log('✅ [STATE: DONE] Acceptance complete:', { needsProfile });
       
       return { needsProfile, alreadyAccepted: false };
     },
     onSuccess: (data) => {
+      setState('DONE');
       queryClient.invalidateQueries({ queryKey: ['invitation'] });
       queryClient.invalidateQueries({ queryKey: ['rentalUnits'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
-      // Redirect based on profile completeness
-      if (data.needsProfile) {
-        navigate(createPageUrl('CompleteProfile'), { replace: true });
-      }
+      // Clear token from URL
+      window.history.replaceState({}, '', createPageUrl('Invite'));
+      
+      // Redirect
+      setTimeout(() => {
+        if (data.needsProfile) {
+          navigate(createPageUrl('CompleteProfile'), { replace: true });
+        } else {
+          navigate(createPageUrl('TenantDashboard'), { replace: true });
+        }
+      }, 1500);
+    },
+    onError: (error) => {
+      setState('ERROR');
+      console.error('❌ [STATE: ERROR]', error);
     }
   });
 
+  // State machine with guard
   useEffect(() => {
     if (!token) return;
-    if (userLoading || inviteLoading) return;
-    if (!user || !invitation) return;
-    if (processing) return;
+    
+    // VALIDATING
+    if (userLoading || inviteLoading) {
+      if (state !== 'VALIDATING') {
+        setState('VALIDATING');
+        console.log('🔵 [STATE: VALIDATING] Loading data...');
+      }
+      return;
+    }
 
-    // Auto-accept if status is pending and not expired and email matches
+    // ERROR states (no user/invitation)
+    if (!user || !invitation) {
+      setState('ERROR');
+      return;
+    }
+
+    // Check conditions
     const isExpired = new Date(invitation.expires_at) < new Date();
     const emailMatches = user.email.toLowerCase() === invitation.tenant_email.toLowerCase();
+    const isPending = invitation.status === 'pending';
+    const isAccepted = invitation.status === 'accepted';
     
-    console.log('🔵 Auto-accept check:', {
-      status: invitation.status,
+    console.log('🔵 [STATE: ' + state + '] Validation:', {
+      isPending,
+      isAccepted,
       isExpired,
       emailMatches,
-      userEmail: user.email,
-      tenantEmail: invitation.tenant_email
+      acceptCalled,
+      mutationPending: acceptMutation.isPending
     });
 
-    if (invitation.status === 'pending' && !isExpired && emailMatches) {
-      console.log('✅ Auto-accepting invitation...');
-      setProcessing(true);
+    // Already accepted → DONE
+    if (isAccepted && state !== 'DONE') {
+      console.log('✅ [STATE: DONE] Already accepted');
+      setState('DONE');
+      setTimeout(() => {
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }, 1500);
+      return;
+    }
+
+    // READY state (all checks pass, can accept)
+    if (isPending && !isExpired && emailMatches && state === 'VALIDATING') {
+      setState('READY');
+      console.log('✅ [STATE: READY] Ready to accept');
+    }
+
+    // Auto-accept (only once, with guard)
+    if (state === 'READY' && !acceptCalled && !acceptMutation.isPending) {
+      console.log('🔵 [STATE: ACCEPTING] Triggering accept...');
+      setState('ACCEPTING');
+      setAcceptCalled(true);
       acceptMutation.mutate();
     }
-  }, [user, invitation, token, userLoading, inviteLoading, processing]);
+  }, [user, invitation, token, userLoading, inviteLoading, state, acceptCalled, acceptMutation.isPending]);
 
   if (!token) {
     return (
@@ -156,14 +202,17 @@ export default function Invite() {
     );
   }
 
-  if (userLoading || inviteLoading || processing) {
+  if (state === 'VALIDATING' || state === 'ACCEPTING') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
             <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-            <p className="text-slate-600">
-              {userLoading ? 'Henter brukerdata...' : 'Behandler invitasjon...'}
+            <p className="text-slate-600 font-medium">
+              {state === 'VALIDATING' ? 'Validerer invitasjon...' : 'Knytter deg til bolig...'}
+            </p>
+            <p className="text-xs text-slate-400 mt-2">
+              {state === 'ACCEPTING' && 'Dette tar bare noen sekunder'}
             </p>
           </CardContent>
         </Card>
@@ -315,8 +364,8 @@ export default function Invite() {
     );
   }
 
-  // Success state (should auto-accept above, but show success anyway)
-  if (acceptMutation.isSuccess) {
+  // Success state
+  if (state === 'DONE' || acceptMutation.isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
         <Card className="max-w-md w-full">
@@ -326,12 +375,7 @@ export default function Invite() {
             <p className="text-slate-600 mb-4">
               Du er nå tilknyttet {property?.name || 'boligen'}.
             </p>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate(createPageUrl('TenantDashboard'))}
-            >
-              Gå til min bolig
-            </Button>
+            <p className="text-xs text-slate-400">Videresender...</p>
           </CardContent>
         </Card>
       </div>
@@ -339,7 +383,7 @@ export default function Invite() {
   }
 
   // Error state
-  if (acceptMutation.isError) {
+  if (state === 'ERROR' && acceptMutation.isError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
         <Card className="max-w-md w-full">
@@ -349,7 +393,10 @@ export default function Invite() {
             <p className="text-slate-600 mb-4">
               {acceptMutation.error?.message || 'Kunne ikke akseptere invitasjonen'}
             </p>
-            <Button onClick={() => acceptMutation.mutate()}>
+            <Button onClick={() => {
+              setState('READY');
+              setAcceptCalled(false);
+            }}>
               Prøv igjen
             </Button>
           </CardContent>
