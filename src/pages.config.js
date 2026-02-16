@@ -47,38 +47,38 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import RoleSelection from './pages/RoleSelection';
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
 import AddProperty from './pages/AddProperty';
-import PropertyDetail from './pages/PropertyDetail';
-import CreateAgreement from './pages/CreateAgreement';
-import Finances from './pages/Finances';
 import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
-import TenantDashboard from './pages/TenantDashboard';
-import SignAgreement from './pages/SignAgreement';
-import TenantPhotos from './pages/TenantPhotos';
-import Settings from './pages/Settings';
+import CreateAgreement from './pages/CreateAgreement';
+import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
+import Finances from './pages/Finances';
+import Properties from './pages/Properties';
+import PropertyDetail from './pages/PropertyDetail';
+import RoleSelection from './pages/RoleSelection';
+import Settings from './pages/Settings';
+import SignAgreement from './pages/SignAgreement';
+import TenantDashboard from './pages/TenantDashboard';
+import TenantPhotos from './pages/TenantPhotos';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "RoleSelection": RoleSelection,
-    "Dashboard": Dashboard,
-    "Properties": Properties,
     "AddProperty": AddProperty,
-    "PropertyDetail": PropertyDetail,
-    "CreateAgreement": CreateAgreement,
-    "Finances": Finances,
     "CalendarPage": CalendarPage,
     "Chat": Chat,
-    "TenantDashboard": TenantDashboard,
-    "SignAgreement": SignAgreement,
-    "TenantPhotos": TenantPhotos,
-    "Settings": Settings,
+    "CreateAgreement": CreateAgreement,
+    "Dashboard": Dashboard,
     "EditProperty": EditProperty,
+    "Finances": Finances,
+    "Properties": Properties,
+    "PropertyDetail": PropertyDetail,
+    "RoleSelection": RoleSelection,
+    "Settings": Settings,
+    "SignAgreement": SignAgreement,
+    "TenantDashboard": TenantDashboard,
+    "TenantPhotos": TenantPhotos,
 }
 
 export const pagesConfig = {

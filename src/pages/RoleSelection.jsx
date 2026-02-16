@@ -15,13 +15,19 @@ export default function RoleSelection() {
     if (!selectedRole) return;
     
     setIsLoading(true);
-    await base44.auth.updateMe({ user_role: selectedRole, language: 'no' });
+    try {
+      await base44.auth.updateMe({ user_role: selectedRole, language: 'no' });
+    } catch (error) {
+      // Ignore error if user can't update (e.g., app owner)
+      console.log('Could not update user role, continuing anyway');
+    }
     
     if (selectedRole === 'landlord') {
       navigate(createPageUrl('Dashboard'));
     } else {
       navigate(createPageUrl('TenantDashboard'));
     }
+    setIsLoading(false);
   };
 
   return (
