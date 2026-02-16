@@ -15,33 +15,38 @@ export default function RoleSelection() {
     if (!selectedRole) return;
     
     setIsLoading(true);
-    console.log('🔵 Role selected:', selectedRole);
+    console.log('🔵 [ROLE SELECTION] Role selected:', selectedRole);
     
     try {
-      console.log('🔵 Updating active_role via API...');
+      console.log('🔵 [ROLE SELECTION] Updating active_role via API...');
       await base44.auth.updateMe({ active_role: selectedRole, language: 'no' });
-      console.log('✅ Active role updated successfully');
+      console.log('✅ [ROLE SELECTION] Active role updated successfully');
     } catch (error) {
-      console.log('⚠️ Could not update active role via API:', error.message);
-      // Store role in localStorage as fallback
-      try {
-        localStorage.setItem('user_role_override', selectedRole);
-        console.log('✅ Stored role in localStorage as fallback');
-      } catch (storageError) {
-        console.error('❌ Failed to store role in localStorage:', storageError);
-      }
+      console.log('⚠️ [ROLE SELECTION] Could not update active role via API:', error.message);
+      localStorage.setItem('user_role_override', selectedRole);
+      console.log('✅ [ROLE SELECTION] Stored role in localStorage as fallback');
     }
     
-    console.log('🔵 Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');
+    // CRITICAL: Process pending tenant invitations after role selection
+    console.log('🔵 [ROLE SELECTION] Checking for pending property invitations...');
+    try {
+      const { data: result } = await base44.functions.invoke('processPendingInvites', {});
+      console.log('✅ [ROLE SELECTION] Pending invites processed:', result);
+      
+      if (result.processed > 0) {
+        alert(`✅ Du har ${result.processed} ventende boliginvitasjon(er)!\n\nSjekk e-posten din for å akseptere.`);
+      }
+    } catch (pendingError) {
+      console.log('⚠️ [ROLE SELECTION] Could not process pending invites:', pendingError);
+    }
     
-    // Use replace to avoid back button loop
+    console.log('🔵 [ROLE SELECTION] Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');
+    
     if (selectedRole === 'landlord') {
       navigate(createPageUrl('Dashboard'), { replace: true });
     } else {
       navigate(createPageUrl('TenantDashboard'), { replace: true });
     }
-    
-    // Don't set isLoading to false - we're navigating away
   };
 
   return (
