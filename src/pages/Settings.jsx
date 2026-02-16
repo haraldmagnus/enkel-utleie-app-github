@@ -164,9 +164,14 @@ export default function Settings() {
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <span className="text-slate-600">Rolle</span>
-              <span className="font-medium capitalize">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(createPageUrl('RoleSelection'))}
+              >
                 {user?.user_role === 'landlord' ? t('landlord') : t('tenant')}
-              </span>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           </CardContent>
         </Card>
