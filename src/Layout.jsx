@@ -32,10 +32,15 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      console.log('🔵 Layout: User loaded:', { 
+      console.log('🔵 [LAYOUT GUARD] ===== USER LOADED =====');
+      console.log('🔵 [LAYOUT GUARD]', { 
+        userId: user.id,
         email: user.email,
         active_role: user.active_role, 
         user_role: user.user_role,
+        full_name: user.full_name || 'MISSING',
+        birth_date: user.birth_date || 'MISSING',
+        phone_number: user.phone_number || 'MISSING',
         currentPage: currentPageName,
         timestamp: new Date().toISOString()
       });
@@ -48,36 +53,39 @@ function LayoutContent({ children, currentPageName }) {
       const roleOverride = localStorage.getItem('user_role_override');
       const effectiveUserRole = user.active_role || user.user_role || roleOverride;
       
-      console.log('🔵 Layout: Role determination:', { 
+      console.log('🔵 [LAYOUT GUARD] Role:', { 
         priority1_active_role: user.active_role,
         priority2_user_role: user.user_role,
         priority3_localStorage: roleOverride,
-        EFFECTIVE_ROLE: effectiveUserRole,
-        currentPage: currentPageName
+        EFFECTIVE_ROLE: effectiveUserRole
       });
-      
-      // Profile completion check for tenants (but not on CompleteProfile page itself)
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
-      if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
-        const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
-        console.log('🔵 Layout: Profile check for tenant:', {
-          currentPage: currentPageName,
-          full_name: user.full_name,
-          birth_date: user.birth_date,
-          phone_number: user.phone_number,
-          needsProfile
-        });
-        if (needsProfile) {
-          console.log('⚠️ Layout: Tenant profile incomplete → CompleteProfile');
-          navigate(createPageUrl('CompleteProfile'), { replace: true });
-          return;
-        }
-      }
       
       // If no role is determined, redirect to role selection
       if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
-        console.log('⚠️ Layout: No role determined → RoleSelection');
+        console.log('⚠️ [LAYOUT GUARD] No role → RoleSelection');
         navigate(createPageUrl('RoleSelection'), { replace: true });
+        return;
+      }
+      
+      // CRITICAL: Profile completion gate for tenants
+      // ONLY block navigation if profile is truly incomplete
+      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
+      const isProfileComplete = !!(user.full_name && user.birth_date && user.phone_number);
+      
+      console.log('🔵 [LAYOUT GUARD] Profile gate check:', {
+        currentPage: currentPageName,
+        effectiveRole: effectiveUserRole,
+        isProfileComplete,
+        full_name: user.full_name ? '✓' : '✗',
+        birth_date: user.birth_date ? '✓' : '✗',
+        phone_number: user.phone_number ? '✓' : '✗',
+        isAllowedPage: allowedPages.includes(currentPageName),
+        shouldBlock: effectiveUserRole === 'tenant' && !isProfileComplete && !allowedPages.includes(currentPageName)
+      });
+      
+      if (effectiveUserRole === 'tenant' && !isProfileComplete && !allowedPages.includes(currentPageName)) {
+        console.log('🚨 [LAYOUT GUARD] BLOCKING: Profile incomplete → CompleteProfile');
+        navigate(createPageUrl('CompleteProfile'), { replace: true });
         return;
       }
       
@@ -86,16 +94,18 @@ function LayoutContent({ children, currentPageName }) {
       const isOnTenantDash = currentPageName === 'TenantDashboard';
       
       if (effectiveUserRole === 'landlord' && isOnTenantDash) {
-        console.log('🚨 FAILSAFE: Landlord stuck on TenantDashboard → Dashboard');
+        console.log('🚨 [LAYOUT GUARD] FAILSAFE: Landlord on TenantDashboard → Dashboard');
         navigate(createPageUrl('Dashboard'), { replace: true });
         return;
       }
       
       if (effectiveUserRole === 'tenant' && isOnLandlordDash) {
-        console.log('🚨 FAILSAFE: Tenant stuck on Dashboard → TenantDashboard');
+        console.log('🚨 [LAYOUT GUARD] FAILSAFE: Tenant on Dashboard → TenantDashboard');
         navigate(createPageUrl('TenantDashboard'), { replace: true });
         return;
       }
+      
+      console.log('✅ [LAYOUT GUARD] All checks passed - rendering page');
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 

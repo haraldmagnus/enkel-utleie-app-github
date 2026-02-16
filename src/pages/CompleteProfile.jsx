@@ -66,62 +66,95 @@ export default function CompleteProfile() {
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       console.log('🔵 [COMPLETE PROFILE] ===== SAVING PROFILE =====');
-      console.log('🔵 [COMPLETE PROFILE] Data to save:', {
-        full_name: data.full_name,
-        birth_date: data.birth_date,
-        phone_number: data.phone_number,
-        userId: user?.id
+      console.log('🔵 [COMPLETE PROFILE] Request:', {
+        endpoint: 'base44.auth.updateMe',
+        payload: {
+          full_name: data.full_name,
+          birth_date: data.birth_date,
+          phone_number: data.phone_number
+        },
+        userId: user?.id,
+        userEmail: user?.email,
+        timestamp: new Date().toISOString()
       });
 
       let saveSuccess = false;
       let apiResponse = null;
+      let apiError = null;
 
       // Try API update
       try {
+        console.log('🔵 [COMPLETE PROFILE] Calling API...');
         apiResponse = await base44.auth.updateMe(data);
         saveSuccess = true;
-        console.log('✅ [COMPLETE PROFILE] API save successful:', apiResponse);
+        console.log('✅ [COMPLETE PROFILE] API save successful!');
+        console.log('✅ [COMPLETE PROFILE] Response:', apiResponse);
       } catch (e) {
-        console.error('❌ [COMPLETE PROFILE] API save failed:', {
-          error: e,
+        apiError = e;
+        console.error('❌ [COMPLETE PROFILE] ===== API SAVE FAILED =====');
+        console.error('❌ [COMPLETE PROFILE] Error:', {
+          name: e.name,
           message: e.message,
+          code: e.code,
+          status: e.status,
+          response: e.response,
           stack: e.stack
         });
-        // Fallback to localStorage (not ideal but prevents blocking)
-        localStorage.setItem('tenant_profile_complete', 'true');
-        localStorage.setItem('user_profile', JSON.stringify(data));
+        
+        // Re-throw to show user the error
+        throw new Error(`Lagring feilet: ${e.message || 'Ukjent feil'}`);
       }
 
       return { data, saveSuccess, apiResponse };
     },
     onSuccess: async (result) => {
-      console.log('✅ [COMPLETE PROFILE] ===== PROFILE SAVED =====');
+      console.log('✅ [COMPLETE PROFILE] ===== SAVE MUTATION SUCCESS =====');
+      console.log('✅ [COMPLETE PROFILE] Saved data:', result.data);
       
-      // CRITICAL: Wait for user data to be refetched and cache updated
+      // CRITICAL: Force refetch user data to update cache
+      console.log('🔵 [COMPLETE PROFILE] Invalidating and refetching user cache...');
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
       
-      // Verify the data was actually saved
-      const updatedUser = queryClient.getQueryData(['currentUser']);
-      console.log('🔵 [COMPLETE PROFILE] Verification after save:', {
-        updatedUser: {
-          full_name: updatedUser?.full_name,
-          birth_date: updatedUser?.birth_date,
-          phone_number: updatedUser?.phone_number
-        },
-        isNowComplete: !!(updatedUser?.full_name && updatedUser?.birth_date && updatedUser?.phone_number)
+      // Wait for refetch to complete
+      const updatedUser = await queryClient.refetchQueries({ 
+        queryKey: ['currentUser'],
+        type: 'active'
       });
+      
+      console.log('🔵 [COMPLETE PROFILE] User refetch result:', updatedUser);
+      
+      // Get the updated user from cache
+      const cachedUser = queryClient.getQueryData(['currentUser']);
+      const isNowComplete = !!(cachedUser?.full_name && cachedUser?.birth_date && cachedUser?.phone_number);
+      
+      console.log('🔵 [COMPLETE PROFILE] ===== VERIFICATION =====');
+      console.log('🔵 [COMPLETE PROFILE] Cached user after save:', {
+        userId: cachedUser?.id,
+        email: cachedUser?.email,
+        full_name: cachedUser?.full_name || 'STILL MISSING ❌',
+        birth_date: cachedUser?.birth_date || 'STILL MISSING ❌',
+        phone_number: cachedUser?.phone_number || 'STILL MISSING ❌',
+        isNowComplete
+      });
+
+      if (!isNowComplete) {
+        console.error('❌ [COMPLETE PROFILE] CRITICAL: Profile still incomplete after save!');
+        alert('⚠️ Lagring ser ut til å ha feilet. Vennligst prøv igjen eller kontakt support.');
+        return;
+      }
+
+      console.log('✅ [COMPLETE PROFILE] Profile verified complete, navigating...');
 
       // Navigate based on returnTo or role
       if (returnTo) {
         console.log('🔵 [COMPLETE PROFILE] Returning to:', returnTo);
-        navigate(returnTo, { replace: true });
+        setTimeout(() => navigate(returnTo, { replace: true }), 500);
       } else {
         const roleOverride = localStorage.getItem('user_role_override');
-        const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+        const effectiveRole = cachedUser?.active_role || cachedUser?.user_role || roleOverride;
         const destination = effectiveRole === 'landlord' ? 'Dashboard' : 'TenantDashboard';
         console.log('🔵 [COMPLETE PROFILE] Navigating to:', destination);
-        navigate(createPageUrl(destination), { replace: true });
+        setTimeout(() => navigate(createPageUrl(destination), { replace: true }), 500);
       }
     },
     onError: (error) => {

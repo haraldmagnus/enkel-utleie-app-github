@@ -78,13 +78,21 @@ export default function BottomNav({ userRole }) {
             <Link
               key={to}
               to={createPageUrl(to)}
-              onClick={() => {
-                console.log('🔵 BottomNav CLICK:', { 
-                  navigatingTo: to, 
+              onClick={(e) => {
+                console.log('🔵 [BOTTOMNAV CLICK] ===== TAB NAVIGATION =====');
+                console.log('🔵 [BOTTOMNAV CLICK]', { 
+                  targetTab: to,
+                  targetUrl: createPageUrl(to),
                   userRole, 
-                  fromPath: location.pathname,
-                  toUrl: createPageUrl(to)
+                  currentPath: location.pathname,
+                  userProfile: user ? {
+                    full_name: user.full_name ? '✓' : '✗',
+                    birth_date: user.birth_date ? '✓' : '✗',
+                    phone_number: user.phone_number ? '✓' : '✗',
+                    isComplete: !!(user.full_name && user.birth_date && user.phone_number)
+                  } : 'not loaded'
                 });
+                // Don't prevent default - let React Router handle it
               }}
               className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors relative ${
                 isActive 
