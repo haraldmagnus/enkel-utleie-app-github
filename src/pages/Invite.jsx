@@ -236,6 +236,7 @@ export default function Invite() {
   }
 
   if (!user) {
+    console.log('🔵 [INVITE PAGE] Not authenticated - showing login prompt');
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
         <Card className="max-w-md w-full">
@@ -250,16 +251,31 @@ export default function Invite() {
                   <div>
                     <p className="font-medium text-blue-900">{property.name}</p>
                     <p className="text-sm text-blue-700">{property.address}</p>
+                    {property.monthly_rent && (
+                      <p className="text-sm text-blue-600 mt-1">
+                        {property.monthly_rent.toLocaleString()} kr/mnd
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
-            <p className="text-center text-slate-600">
-              Du må logge inn for å akseptere invitasjonen
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-slate-600">
+                {invitation?.tenant_email && (
+                  <>Denne invitasjonen er sendt til <strong>{invitation.tenant_email}</strong>.</>
+                )}
+              </p>
+              <p className="text-sm text-slate-500">
+                Logg inn eller opprett konto for å akseptere invitasjonen.
+              </p>
+            </div>
             <Button 
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              onClick={() => {
+                console.log('🔵 [INVITE PAGE] Redirecting to login with return URL:', window.location.href);
+                base44.auth.redirectToLogin(window.location.href);
+              }}
             >
               Logg inn / Registrer deg
             </Button>
