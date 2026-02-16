@@ -63,6 +63,7 @@ import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
 import Notifications from './pages/Notifications';
 import YearlyReport from './pages/YearlyReport';
+import PaymentReminders from './pages/PaymentReminders';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +84,7 @@ export const PAGES = {
     "TenantPhotos": TenantPhotos,
     "Notifications": Notifications,
     "YearlyReport": YearlyReport,
+    "PaymentReminders": PaymentReminders,
 }
 
 export const pagesConfig = {
