@@ -42,7 +42,7 @@ export default function Properties() {
   }
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       <div className="bg-white border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-900">{t('properties')}</h1>

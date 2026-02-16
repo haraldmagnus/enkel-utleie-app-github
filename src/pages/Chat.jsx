@@ -74,7 +74,7 @@ export default function Chat() {
   // Property list view
   if (!selectedProperty) {
     return (
-      <div className="pb-20">
+      <div className="pb-24">
         <div className="bg-white border-b px-4 py-4">
           <h1 className="text-xl font-bold text-slate-900">{t('chat')}</h1>
         </div>
@@ -131,7 +131,7 @@ export default function Chat() {
 
   // Chat view
   return (
-    <div className="h-screen flex flex-col pb-16">
+    <div className="h-screen flex flex-col pb-20">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
         <Button 
