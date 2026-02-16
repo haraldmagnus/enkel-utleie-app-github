@@ -122,7 +122,20 @@ export default function Invite() {
         localStorage.setItem('user_role_override', 'tenant');
       }
       
-      const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+      // Check if profile is complete AFTER refetching user
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      const latestUser = await queryClient.fetchQuery({
+        queryKey: ['currentUser'],
+        queryFn: () => base44.auth.me()
+      });
+      
+      const needsProfile = !latestUser.full_name || !latestUser.birth_date || !latestUser.phone_number;
+      console.log('🔵 [INVITE ACCEPT] Profile check:', {
+        full_name: latestUser.full_name,
+        birth_date: latestUser.birth_date,
+        phone_number: latestUser.phone_number,
+        needsProfile
+      });
       
       // Mark related notification as read
       try {
@@ -162,8 +175,12 @@ export default function Invite() {
       // Redirect
       setTimeout(() => {
         if (data.needsProfile) {
-          navigate(createPageUrl('CompleteProfile'), { replace: true });
+          // Pass returnTo parameter so CompleteProfile knows where to go after
+          const returnUrl = createPageUrl('TenantDashboard');
+          console.log('🔵 [INVITE] Redirecting to CompleteProfile with returnTo:', returnUrl);
+          navigate(createPageUrl(`CompleteProfile?returnTo=${encodeURIComponent(returnUrl)}`), { replace: true });
         } else {
+          console.log('🔵 [INVITE] Profile complete, going directly to TenantDashboard');
           navigate(createPageUrl('TenantDashboard'), { replace: true });
         }
       }, 1500);

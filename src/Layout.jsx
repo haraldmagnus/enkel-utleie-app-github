@@ -60,6 +60,13 @@ function LayoutContent({ children, currentPageName }) {
       const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
       if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
         const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+        console.log('🔵 Layout: Profile check for tenant:', {
+          currentPage: currentPageName,
+          full_name: user.full_name,
+          birth_date: user.birth_date,
+          phone_number: user.phone_number,
+          needsProfile
+        });
         if (needsProfile) {
           console.log('⚠️ Layout: Tenant profile incomplete → CompleteProfile');
           navigate(createPageUrl('CompleteProfile'), { replace: true });
