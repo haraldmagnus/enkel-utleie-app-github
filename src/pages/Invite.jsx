@@ -42,28 +42,45 @@ export default function Invite() {
 
   const acceptMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔵 [STATE: ACCEPTING] Starting acceptance:', { 
+      console.log('🔵 [INVITE ACCEPT] ===== STARTING ACCEPTANCE =====');
+      console.log('🔵 [INVITE ACCEPT] Details:', { 
         invitationId: invitation.id,
+        propertyId: invitation.rental_unit_id,
         userEmail: user.email,
+        userId: user.id,
         tenantEmail: invitation.tenant_email,
-        currentStatus: invitation.status
+        currentStatus: invitation.status,
+        expiresAt: invitation.expires_at,
+        timestamp: new Date().toISOString()
       });
 
       // Idempotency check
       if (invitation.status === 'accepted') {
-        console.log('ℹ️ Already accepted - idempotent return');
-        return { needsProfile: false, alreadyAccepted: true };
+        console.log('✅ [INVITE ACCEPT] Already accepted - idempotent return');
+        return { needsProfile: false, alreadyAccepted: true, propertyId: invitation.rental_unit_id };
       }
 
       // Validate email match
       if (user.email.toLowerCase() !== invitation.tenant_email.toLowerCase()) {
+        console.error('❌ [INVITE ACCEPT] Email mismatch:', {
+          userEmail: user.email.toLowerCase(),
+          inviteEmail: invitation.tenant_email.toLowerCase()
+        });
         throw new Error('EMAIL_MISMATCH');
       }
 
       // Check expiration
-      if (new Date(invitation.expires_at) < new Date()) {
+      const now = new Date();
+      const expiresAt = new Date(invitation.expires_at);
+      if (expiresAt < now) {
+        console.error('❌ [INVITE ACCEPT] Invitation expired:', {
+          expiresAt: expiresAt.toISOString(),
+          now: now.toISOString()
+        });
         throw new Error('EXPIRED');
       }
+
+      console.log('✅ [INVITE ACCEPT] Validation passed');
 
       // Update invitation (with optimistic idempotency)
       try {
@@ -72,18 +89,26 @@ export default function Invite() {
           accepted_by_user_id: user.id,
           accepted_at: new Date().toISOString()
         });
-        console.log('✅ Invitation status updated');
+        console.log('✅ [INVITE ACCEPT] Invitation status updated to accepted');
       } catch (updateError) {
-        console.log('⚠️ Invitation update failed (may already be accepted):', updateError);
+        console.log('⚠️ [INVITE ACCEPT] Invitation update failed (may already be accepted):', updateError);
       }
 
       // Link tenant to property
-      await base44.entities.RentalUnit.update(invitation.rental_unit_id, {
-        tenant_id: user.id,
-        tenant_email: user.email.toLowerCase(),
-        status: 'occupied'
-      });
-      console.log('✅ Property linked to tenant');
+      try {
+        await base44.entities.RentalUnit.update(invitation.rental_unit_id, {
+          tenant_id: user.id,
+          tenant_email: user.email.toLowerCase(),
+          status: 'occupied'
+        });
+        console.log('✅ [INVITE ACCEPT] Property linked to tenant:', {
+          propertyId: invitation.rental_unit_id,
+          tenantId: user.id
+        });
+      } catch (linkError) {
+        console.error('❌ [INVITE ACCEPT] Failed to link property:', linkError);
+        throw linkError;
+      }
 
       // Set active_role to tenant
       try {
@@ -91,13 +116,14 @@ export default function Invite() {
           active_role: 'tenant',
           user_role: user.user_role || 'tenant'
         });
-        console.log('✅ Active role → tenant');
+        console.log('✅ [INVITE ACCEPT] Active role set to tenant');
       } catch (e) {
-        console.log('⚠️ Using localStorage fallback for role');
+        console.log('⚠️ [INVITE ACCEPT] Using localStorage fallback for role');
         localStorage.setItem('user_role_override', 'tenant');
       }
       
       const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+      
       // Mark related notification as read
       try {
         const notifications = await base44.entities.Notification.filter({
@@ -108,14 +134,21 @@ export default function Invite() {
         for (const notif of notifications) {
           await base44.entities.Notification.update(notif.id, { read: true });
         }
-        console.log('✅ Notification(s) marked as read');
+        console.log('✅ [INVITE ACCEPT] Notification(s) marked as read:', notifications.length);
       } catch (e) {
-        console.log('⚠️ Could not update notifications:', e);
+        console.log('⚠️ [INVITE ACCEPT] Could not update notifications:', e);
       }
       
-      console.log('✅ [STATE: DONE] Acceptance complete:', { needsProfile });
+      console.log('✅ [INVITE ACCEPT] ===== ACCEPTANCE COMPLETE =====');
+      console.log('✅ [INVITE ACCEPT] Summary:', {
+        invitationAccepted: true,
+        propertyLinked: true,
+        roleSet: 'tenant',
+        needsProfile,
+        propertyId: invitation.rental_unit_id
+      });
       
-      return { needsProfile, alreadyAccepted: false };
+      return { needsProfile, alreadyAccepted: false, propertyId: invitation.rental_unit_id };
     },
     onSuccess: (data) => {
       setState('DONE');
