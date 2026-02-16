@@ -61,11 +61,11 @@ import PropertyDetail from './pages/PropertyDetail';
 import SignAgreement from './pages/SignAgreement';
 import TenantPhotos from './pages/TenantPhotos';
 import YearlyReport from './pages/YearlyReport';
-import RoleSelection from './pages/RoleSelection';
 import CompleteProfile from './pages/CompleteProfile';
 import Dashboard from './pages/Dashboard';
 import TenantDashboard from './pages/TenantDashboard';
 import Settings from './pages/Settings';
+import RoleSelection from './pages/RoleSelection';
 import __Layout from './Layout.jsx';
 
 
@@ -84,11 +84,11 @@ export const PAGES = {
     "SignAgreement": SignAgreement,
     "TenantPhotos": TenantPhotos,
     "YearlyReport": YearlyReport,
-    "RoleSelection": RoleSelection,
     "CompleteProfile": CompleteProfile,
     "Dashboard": Dashboard,
     "TenantDashboard": TenantDashboard,
     "Settings": Settings,
+    "RoleSelection": RoleSelection,
 }
 
 export const pagesConfig = {

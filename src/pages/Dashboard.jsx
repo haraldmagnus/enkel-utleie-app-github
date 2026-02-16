@@ -94,9 +94,8 @@ export default function Dashboard() {
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex-1" />
-          <h1 className="text-xl font-semibold text-center">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
-          <div className="flex-1 flex justify-end gap-1">
+          <h1 className="text-xl font-semibold flex-1">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
+          <div className="flex gap-1">
             <NotificationBell />
             <Link to={createPageUrl('Settings')}>
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
@@ -105,7 +104,7 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
-        <p className="text-blue-100 text-sm text-center">Her er oversikten din</p>
+        <p className="text-blue-100 text-sm">Her er oversikten din</p>
       </div>
 
       <div className="p-4 -mt-6 space-y-4">
