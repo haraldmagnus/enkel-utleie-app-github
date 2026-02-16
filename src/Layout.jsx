@@ -32,19 +32,34 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     if (!isLoading && user) {
+      console.log('🔵 Layout: User loaded:', { 
+        email: user.email, 
+        user_role: user.user_role,
+        currentPage: currentPageName 
+      });
+      
       if (user.language) {
         setLanguage(user.language);
       }
       
-      if (!user.user_role && currentPageName !== 'RoleSelection') {
-        navigate(createPageUrl('RoleSelection'));
+      // Check localStorage fallback for app owner
+      const roleOverride = localStorage.getItem('user_role_override');
+      
+      if (!user.user_role && !roleOverride && currentPageName !== 'RoleSelection') {
+        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
+        navigate(createPageUrl('RoleSelection'), { replace: true });
+      } else if (roleOverride && !user.user_role) {
+        console.log('🔵 Layout: Using role from localStorage:', roleOverride);
+        // Allow navigation to continue with override
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
   // Show nav on all pages except RoleSelection
   const noNavPages = ['RoleSelection'];
-  const showNav = user?.user_role && !noNavPages.includes(currentPageName);
+  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
+  const effectiveRole = user?.user_role || roleOverride;
+  const showNav = effectiveRole && !noNavPages.includes(currentPageName);
 
   if (isLoading) {
     return (
@@ -110,7 +125,7 @@ function LayoutContent({ children, currentPageName }) {
         .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
       `}</style>
       {children}
-      {showNav && <BottomNav userRole={user?.user_role} />}
+      {showNav && <BottomNav userRole={effectiveRole} />}
     </div>
   );
 }
