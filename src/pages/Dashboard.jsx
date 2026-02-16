@@ -2,13 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Plus, Users, Wallet, Calendar, ArrowRight } from 'lucide-react';
+import { Building2, Plus, Users, Wallet, Calendar, ArrowRight, Settings, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -71,8 +72,19 @@ export default function Dashboard() {
     <div className="pb-20">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
-        <h1 className="text-xl font-semibold mb-1">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
-        <p className="text-blue-100 text-sm">Her er oversikten din</p>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex-1" />
+          <h1 className="text-xl font-semibold text-center">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
+          <div className="flex-1 flex justify-end gap-1">
+            <NotificationBell />
+            <Link to={createPageUrl('Settings')}>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+        <p className="text-blue-100 text-sm text-center">Her er oversikten din</p>
       </div>
 
       <div className="p-4 -mt-6 space-y-4">
@@ -231,6 +243,29 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Quick Actions */}
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Hurtighandlinger</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 gap-2">
+              <Link to={createPageUrl('YearlyReport')}>
+                <Button variant="outline" className="w-full h-auto py-3 flex-col">
+                  <FileText className="w-5 h-5 mb-1 text-blue-600" />
+                  <span className="text-xs">Årsrapport</span>
+                </Button>
+              </Link>
+              <Link to={createPageUrl('Settings')}>
+                <Button variant="outline" className="w-full h-auto py-3 flex-col">
+                  <Settings className="w-5 h-5 mb-1 text-slate-600" />
+                  <span className="text-xs">Innstillinger</span>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
