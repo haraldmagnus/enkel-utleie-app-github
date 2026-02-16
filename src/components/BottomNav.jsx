@@ -8,6 +8,8 @@ export default function BottomNav({ userRole }) {
   const location = useLocation();
   const { t } = useLanguage();
   
+  console.log('🔵 BottomNav: userRole =', userRole);
+  
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
     { to: 'Properties', icon: Building2, label: t('properties') },
@@ -45,6 +47,9 @@ export default function BottomNav({ userRole }) {
             <Link
               key={to}
               to={createPageUrl(to)}
+              onClick={() => {
+                console.log('🔵 BottomNav: Navigating to', to, '| Role:', userRole);
+              }}
               className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors ${
                 isActive 
                   ? 'text-blue-600' 

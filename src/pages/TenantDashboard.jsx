@@ -19,6 +19,25 @@ export default function TenantDashboard() {
     queryFn: () => base44.auth.me()
   });
 
+  // Redirect landlord users to Dashboard
+  React.useEffect(() => {
+    if (user) {
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveRole = user.user_role || roleOverride;
+      
+      console.log('🔵 TenantDashboard: User role check:', { 
+        user_role: user.user_role, 
+        roleOverride, 
+        effectiveRole 
+      });
+      
+      if (effectiveRole === 'landlord') {
+        console.log('⚠️ TenantDashboard: Landlord detected, redirecting to Dashboard');
+        window.location.href = createPageUrl('Dashboard');
+      }
+    }
+  }, [user]);
+
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ['tenantProperties'],
     queryFn: () => base44.entities.RentalUnit.filter({ tenant_id: user?.id }),
