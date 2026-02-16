@@ -15,19 +15,33 @@ export default function RoleSelection() {
     if (!selectedRole) return;
     
     setIsLoading(true);
+    console.log('🔵 Role selected:', selectedRole);
+    
     try {
+      console.log('🔵 Updating user role via API...');
       await base44.auth.updateMe({ user_role: selectedRole, language: 'no' });
+      console.log('✅ User role updated successfully');
     } catch (error) {
-      // Ignore error if user can't update (e.g., app owner)
-      console.log('Could not update user role, continuing anyway');
+      console.log('⚠️ Could not update user role via API:', error.message);
+      // Store role in localStorage as fallback for app owner
+      try {
+        localStorage.setItem('user_role_override', selectedRole);
+        console.log('✅ Stored role in localStorage as fallback');
+      } catch (storageError) {
+        console.error('❌ Failed to store role in localStorage:', storageError);
+      }
     }
     
+    console.log('🔵 Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');
+    
+    // Use replace to avoid back button loop
     if (selectedRole === 'landlord') {
-      navigate(createPageUrl('Dashboard'));
+      navigate(createPageUrl('Dashboard'), { replace: true });
     } else {
-      navigate(createPageUrl('TenantDashboard'));
+      navigate(createPageUrl('TenantDashboard'), { replace: true });
     }
-    setIsLoading(false);
+    
+    // Don't set isLoading to false - we're navigating away
   };
 
   return (

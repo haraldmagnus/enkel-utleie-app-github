@@ -54,6 +54,8 @@ import CreateAgreement from './pages/CreateAgreement';
 import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
 import Finances from './pages/Finances';
+import Notifications from './pages/Notifications';
+import PaymentReminders from './pages/PaymentReminders';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
 import RoleSelection from './pages/RoleSelection';
@@ -61,9 +63,7 @@ import Settings from './pages/Settings';
 import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
-import Notifications from './pages/Notifications';
 import YearlyReport from './pages/YearlyReport';
-import PaymentReminders from './pages/PaymentReminders';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +75,8 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "EditProperty": EditProperty,
     "Finances": Finances,
+    "Notifications": Notifications,
+    "PaymentReminders": PaymentReminders,
     "Properties": Properties,
     "PropertyDetail": PropertyDetail,
     "RoleSelection": RoleSelection,
@@ -82,9 +84,7 @@ export const PAGES = {
     "SignAgreement": SignAgreement,
     "TenantDashboard": TenantDashboard,
     "TenantPhotos": TenantPhotos,
-    "Notifications": Notifications,
     "YearlyReport": YearlyReport,
-    "PaymentReminders": PaymentReminders,
 }
 
 export const pagesConfig = {
