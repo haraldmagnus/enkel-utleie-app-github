@@ -132,14 +132,20 @@ export default function PropertyDetail() {
         console.error('❌ [INVITE DEBUG] User existence check failed:', e);
       }
       
-      // UNIFIED PROPERTY INVITATION EMAIL (single source of truth)
+      // EMAIL STRATEGY: Core.SendEmail only works for existing users
       console.log('🔵 [INVITE DEBUG] ===== SENDING EMAIL =====');
-      const emailSubject = isSelfInvite 
-        ? `Bekreft tilknytning til ${property.name}` 
-        : `Invitasjon til ${property.name}`;
+      console.log('🔵 [INVITE DEBUG] Email strategy:', {
+        recipientExists: userExists,
+        strategy: userExists ? 'Core.SendEmail (custom property invite)' : 'inviteUser (platform invite only)'
+      });
       
-      const emailBody = userExists 
-        ? `Hei!
+      if (userExists) {
+        // EXISTING USERS: Send custom property invitation email
+        const emailSubject = isSelfInvite 
+          ? `Bekreft tilknytning til ${property.name}` 
+          : `Invitasjon til ${property.name}`;
+        
+        const emailBody = `Hei!
 
 ${isSelfInvite ? 'Du har knyttet deg som leietaker til følgende bolig:' : 'Du er invitert til å bli leietaker i følgende bolig:'}
 
@@ -155,57 +161,52 @@ ${user.full_name ? `Utleier: ${user.full_name}` : ''}
 ⏰ Invitasjonen er gyldig i 7 dager.
 
 ---
-Utleieoversikt - Din komplette utleieløsning`
-        : `Hei!
-
-Du er invitert til å bli leietaker i følgende bolig:
-
-📍 ${property.name}
-${property.address}
-${property.monthly_rent ? `💰 Månedlig leie: ${property.monthly_rent.toLocaleString()} kr` : ''}
-
-Klikk på lenken under for å opprette konto og akseptere invitasjonen:
-${inviteUrl}
-
-${user.full_name ? `Utleier: ${user.full_name}` : ''}
-
-💡 Har du ikke konto? Ingen problem! Du kan registrere deg gratis når du klikker på lenken.
-
-⏰ Invitasjonen er gyldig i 7 dager.
-
----
 Utleieoversikt - Din komplette utleieløsning`;
 
-      console.log('🔵 [INVITE DEBUG] Email details:', {
-        emailType: 'PROPERTY_INVITATION',
-        to: cleanEmail,
-        subject: emailSubject,
-        from_name: user.full_name || 'Utleieoversikt',
-        recipientExists: userExists,
-        bodyLength: emailBody.length
-      });
-
-      try {
-        const emailResult = await base44.integrations.Core.SendEmail({
+        console.log('🔵 [INVITE DEBUG] Sending custom property email:', {
+          emailType: 'CUSTOM_PROPERTY_INVITATION',
           to: cleanEmail,
-          from_name: user.full_name || 'Utleieoversikt',
           subject: emailSubject,
-          body: emailBody.trim()
+          from_name: user.full_name || 'Utleieoversikt'
         });
-        console.log('✅ [INVITE DEBUG] Property invitation email sent successfully:', emailResult);
-      } catch (emailError) {
-        console.error('❌ [INVITE DEBUG] SendEmail failed:', {
-          error: emailError,
-          message: emailError.message,
-          stack: emailError.stack,
-          response: emailError.response
+
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: cleanEmail,
+            from_name: user.full_name || 'Utleieoversikt',
+            subject: emailSubject,
+            body: emailBody.trim()
+          });
+          console.log('✅ [INVITE DEBUG] Custom property invitation email sent (existing user)');
+        } catch (emailError) {
+          console.error('❌ [INVITE DEBUG] Core.SendEmail failed:', {
+            error: emailError,
+            message: emailError.message,
+            stack: emailError.stack
+          });
+          throw new Error(`E-posttjeneste feilet: ${emailError.message}`);
+        }
+      } else {
+        // NEW USERS: Use platform invite (only way to reach external emails)
+        console.log('🔵 [INVITE DEBUG] Sending platform invite (NEW USER):', {
+          emailType: 'PLATFORM_INVITATION',
+          to: cleanEmail,
+          role: 'user',
+          note: 'Platform will send generic signup email. Property details shown after login via pending invitation check.'
         });
-        throw new Error(`E-posttjeneste feilet: ${emailError.message}`);
+
+        try {
+          await base44.users.inviteUser(cleanEmail, 'user');
+          console.log('✅ [INVITE DEBUG] Platform invitation sent (new user will see property details after signup)');
+        } catch (platformError) {
+          console.error('❌ [INVITE DEBUG] Platform invite failed:', {
+            error: platformError,
+            message: platformError.message,
+            stack: platformError.stack
+          });
+          throw new Error(`Kunne ikke sende invitasjon: ${platformError.message}`);
+        }
       }
-      
-      // CRITICAL: DO NOT send platform invitation email (prevents double email)
-      console.log('🔵 [INVITE DEBUG] Platform invite: SKIPPED (prevents double email)');
-      console.log('ℹ️ [INVITE DEBUG] User will register via invite link if needed');
       
       // Create in-app notification if user exists
       if (userExists && existingUserId) {
@@ -234,10 +235,10 @@ Utleieoversikt - Din komplette utleieløsning`;
       console.log('✅ [INVITE DEBUG] ===== INVITATION COMPLETE =====');
       console.log('📧 [INVITE DEBUG] Email summary:', {
         recipient: cleanEmail,
-        emailsSent: 1,
-        emailType: 'property_invitation_only',
-        platformInviteSent: false,
-        inviteUrl
+        recipientExists: userExists,
+        emailType: userExists ? 'custom_property_invitation' : 'platform_generic_invitation',
+        inviteUrl,
+        note: !userExists ? 'New user will see property details via pending invitation after signup' : 'Existing user got custom property email'
       });
       
       setShowInviteDialog(false);
@@ -245,8 +246,10 @@ Utleieoversikt - Din komplette utleieløsning`;
       
       if (isSelfInvite) {
         alert('✅ Invitasjon opprettet!\n\nSjekk e-posten din for å bekrefte.');
+      } else if (userExists) {
+        alert('✅ Invitasjon sendt!\n\nLeietaker vil motta e-post med boligdetaljer og lenke for å akseptere.');
       } else {
-        alert('✅ Invitasjon sendt!\n\nLeietaker vil motta én e-post med lenke for å akseptere.');
+        alert('✅ Invitasjon opprettet!\n\nLeietaker vil motta en e-post for å registrere seg.\n\nBoliginvitasjonen vises automatisk etter registrering.');
       }
     } catch (error) {
       console.error('❌ [INVITE DEBUG] INVITATION FAILED:', {
