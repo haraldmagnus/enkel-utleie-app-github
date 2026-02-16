@@ -55,6 +55,33 @@ export default function Chat() {
     enabled: !!user?.id
   });
 
+  // Calculate unread count per property
+  const { data: unreadByProperty = {} } = useQuery({
+    queryKey: ['unreadByProperty'],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      
+      const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
+      const unreadMessages = allMessages.filter(msg => 
+        msg.sender_id !== user.id && !msg.read
+      );
+      
+      // Group by property
+      const unreadCounts = {};
+      unreadMessages.forEach(msg => {
+        if (!unreadCounts[msg.rental_unit_id]) {
+          unreadCounts[msg.rental_unit_id] = 0;
+        }
+        unreadCounts[msg.rental_unit_id]++;
+      });
+      
+      console.log('🔵 [CHAT] Unread per property:', unreadCounts);
+      return unreadCounts;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 10000
+  });
+
   const { data: messages = [] } = useQuery({
     queryKey: ['chatMessages', selectedProperty?.id],
     queryFn: async () => {
@@ -147,14 +174,27 @@ export default function Chat() {
     if (selectedProperty?.id && messages.length > 0) {
       const unreadMessages = messages.filter(m => !m.read && m.sender_id !== user?.id);
       if (unreadMessages.length > 0) {
-        console.log('🔵 [CHAT] Marking messages as read:', unreadMessages.length);
-        unreadMessages.forEach(msg => {
-          base44.entities.ChatMessage.update(msg.id, { read: true }).catch(console.error);
+        console.log('🔵 [CHAT] Marking messages as read:', {
+          propertyId: selectedProperty.id,
+          count: unreadMessages.length,
+          messageIds: unreadMessages.map(m => m.id)
         });
-        queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
+        
+        // Mark all as read
+        Promise.all(
+          unreadMessages.map(msg => 
+            base44.entities.ChatMessage.update(msg.id, { read: true })
+          )
+        ).then(() => {
+          console.log('✅ [CHAT] All messages marked as read');
+          queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
+          queryClient.invalidateQueries({ queryKey: ['unreadByProperty'] });
+        }).catch(error => {
+          console.error('❌ [CHAT] Failed to mark messages as read:', error);
+        });
       }
     }
-  }, [selectedProperty?.id, messages, user?.id]);
+  }, [selectedProperty?.id, messages, user?.id, queryClient]);
 
   // Property list view
   if (!selectedProperty) {
@@ -183,20 +223,33 @@ export default function Chat() {
           ) : (
             properties.map(property => {
               const hasOccupant = property.status === 'occupied' || property.tenant_email;
+              const unreadCount = unreadByProperty[property.id] || 0;
               
               return (
                 <Card 
                   key={property.id}
-                  className={`cursor-pointer transition-shadow ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
+                  className={`cursor-pointer transition-shadow relative ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
                   onClick={() => hasOccupant && setSelectedProperty(property)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center relative">
                         <Building2 className="w-6 h-6 text-blue-600" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-900">{property.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-slate-900">{property.name}</h3>
+                          {unreadCount > 0 && (
+                            <span className="text-xs font-semibold text-red-600">
+                              {unreadCount} ny{unreadCount > 1 ? 'e' : ''}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-slate-500 truncate">{property.address}</p>
                       </div>
                       {hasOccupant ? (

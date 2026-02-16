@@ -65,22 +65,38 @@ export default function Settings() {
   };
 
   const handleLogout = async () => {
+    console.log('🔵 [LOGOUT] ===== STARTING LOGOUT =====');
+    
     try {
       // Clear user role before logout
-      await base44.auth.updateMe({ user_role: null });
+      console.log('🔵 [LOGOUT] Clearing user role...');
+      await base44.auth.updateMe({ user_role: null, active_role: null });
     } catch (e) {
-      console.log('Could not clear role:', e);
+      console.log('⚠️ [LOGOUT] Could not clear role:', e);
     }
+    
     try {
+      console.log('🔵 [LOGOUT] Clearing caches and storage...');
+      
+      // Clear React Query cache
+      queryClient.clear();
+      
+      // Clear browser storage
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Clear service worker caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
+      
+      console.log('✅ [LOGOUT] All caches cleared');
     } catch (e) {
-      console.log('Clear error:', e);
+      console.error('❌ [LOGOUT] Clear error:', e);
     }
+    
+    console.log('🔵 [LOGOUT] Redirecting to auth logout...');
     base44.auth.logout();
   };
 
@@ -99,9 +115,87 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async () => {
-    // In a real app, this would delete user data
-    // For now, just log out
-    handleLogout();
+    console.log('🔵 [DELETE ACCOUNT] ===== STARTING ACCOUNT DELETION =====');
+    
+    try {
+      const userId = user?.id;
+      console.log('🔵 [DELETE ACCOUNT] Deleting data for user:', userId);
+      
+      // Delete all user-related data
+      // 1. Delete rental units (landlord)
+      const ownedProperties = await base44.entities.RentalUnit.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Found properties to delete:', ownedProperties.length);
+      for (const prop of ownedProperties) {
+        await base44.entities.RentalUnit.delete(prop.id);
+      }
+      
+      // 2. Unlink from tenant properties
+      const tenantProperties = await base44.entities.RentalUnit.filter({ tenant_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Found tenant properties to unlink:', tenantProperties.length);
+      for (const prop of tenantProperties) {
+        await base44.entities.RentalUnit.update(prop.id, { 
+          tenant_id: null, 
+          status: 'vacant' 
+        });
+      }
+      
+      // 3. Delete agreements
+      const agreements = await base44.entities.RentalAgreement.filter({ tenant_id: userId });
+      const landlordAgreements = await base44.entities.RentalAgreement.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Deleting agreements:', agreements.length + landlordAgreements.length);
+      for (const agr of [...agreements, ...landlordAgreements]) {
+        await base44.entities.RentalAgreement.delete(agr.id);
+      }
+      
+      // 4. Delete messages
+      const messages = await base44.entities.ChatMessage.filter({ sender_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Deleting messages:', messages.length);
+      for (const msg of messages) {
+        await base44.entities.ChatMessage.delete(msg.id);
+      }
+      
+      // 5. Delete notifications
+      const notifications = await base44.entities.Notification.filter({ user_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Deleting notifications:', notifications.length);
+      for (const notif of notifications) {
+        await base44.entities.Notification.delete(notif.id);
+      }
+      
+      // 6. Delete invitations
+      const invitations = await base44.entities.TenantInvitation.filter({ tenant_email: user?.email });
+      const sentInvitations = await base44.entities.TenantInvitation.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Deleting invitations:', invitations.length + sentInvitations.length);
+      for (const inv of [...invitations, ...sentInvitations]) {
+        await base44.entities.TenantInvitation.delete(inv.id);
+      }
+      
+      // 7. Delete calendar events
+      const events = await base44.entities.CalendarEvent.list('-created_date', 1000);
+      const userEvents = events.filter(e => e.created_by === user?.email);
+      console.log('🔵 [DELETE ACCOUNT] Deleting calendar events:', userEvents.length);
+      for (const event of userEvents) {
+        await base44.entities.CalendarEvent.delete(event.id);
+      }
+      
+      // 8. Delete financial entries
+      const finances = await base44.entities.FinancialEntry.filter({ landlord_id: userId });
+      console.log('🔵 [DELETE ACCOUNT] Deleting financial entries:', finances.length);
+      for (const fin of finances) {
+        await base44.entities.FinancialEntry.delete(fin.id);
+      }
+      
+      console.log('✅ [DELETE ACCOUNT] All data deleted successfully');
+      
+      // Close dialog before logout
+      setShowDeleteDialog(false);
+      
+      // Now logout with full cleanup
+      await handleLogout();
+      
+    } catch (error) {
+      console.error('❌ [DELETE ACCOUNT] Deletion failed:', error);
+      alert('Kunne ikke slette all data: ' + error.message);
+    }
   };
 
   const handleGDPRConsent = () => {
@@ -366,18 +460,41 @@ export default function Settings() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Slett konto?</DialogTitle>
-            <DialogDescription>
-              Dette vil slette all din data permanent, inkludert eiendommer, avtaler og meldinger. 
-              Denne handlingen kan ikke angres.
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Er du helt sikker?
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <p className="font-semibold text-slate-900">
+                Dette vil permanent slette:
+              </p>
+              <ul className="text-sm space-y-1 text-slate-600">
+                <li>• Alle dine eiendommer og leieavtaler</li>
+                <li>• Alle meldinger og varsler</li>
+                <li>• Alle kalenderhendelser</li>
+                <li>• All økonomisk data</li>
+                <li>• Din brukerkonto</li>
+              </ul>
+              <p className="font-bold text-red-600 mt-4">
+                ⚠️ Denne handlingen kan IKKE angres!
+              </p>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+          <DialogFooter className="flex-col gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)}
+              className="w-full"
+            >
               Avbryt
             </Button>
-            <Button variant="destructive" onClick={handleDeleteAccount}>
-              Slett konto
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAccount}
+              className="w-full bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Ja, slett alt permanent
             </Button>
           </DialogFooter>
         </DialogContent>

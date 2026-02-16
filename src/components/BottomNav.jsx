@@ -20,18 +20,33 @@ export default function BottomNav({ userRole }) {
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unreadMessages'],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!user?.id) {
+        console.log('🔵 [BOTTOMNAV] No user ID, returning 0 unread');
+        return 0;
+      }
       
+      console.log('🔵 [BOTTOMNAV] Fetching unread messages...');
       const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
       const unread = allMessages.filter(msg => 
         msg.sender_id !== user.id && !msg.read
       );
       
-      console.log('🔵 [BottomNav] Unread messages:', unread.length);
+      console.log('🔵 [BOTTOMNAV] Unread count:', {
+        totalMessages: allMessages.length,
+        unreadCount: unread.length,
+        userId: user.id,
+        unreadMessages: unread.map(m => ({
+          id: m.id,
+          from: m.sender_name,
+          preview: m.message.substring(0, 30)
+        }))
+      });
+      
       return unread.length;
     },
     enabled: !!user?.id,
-    refetchInterval: 10000
+    refetchInterval: 10000,
+    staleTime: 5000
   });
   
   console.log('🔵 BottomNav mounted:', { 
