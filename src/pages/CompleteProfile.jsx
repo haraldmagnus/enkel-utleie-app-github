@@ -24,6 +24,17 @@ export default function CompleteProfile() {
     queryFn: () => base44.auth.me()
   });
 
+  // Pre-populate form with existing user data
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        full_name: user.full_name || '',
+        birth_date: user.birth_date || '',
+        phone_number: user.phone_number || ''
+      });
+    }
+  }, [user]);
+
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       console.log('🔵 Updating tenant profile:', data);
@@ -36,11 +47,18 @@ export default function CompleteProfile() {
       }
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    onSuccess: async () => {
       console.log('✅ Profile completed');
-      // Navigate to tenant dashboard
-      navigate(createPageUrl('TenantDashboard'), { replace: true });
+      // Wait for query invalidation to complete
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      // Determine where to navigate based on role
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+      if (effectiveRole === 'landlord') {
+        navigate(createPageUrl('Dashboard'), { replace: true });
+      } else {
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }
     }
   });
 
