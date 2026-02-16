@@ -30,7 +30,8 @@ export default function CalendarPage() {
     date: '',
     time: '',
     event_type: 'other',
-    rental_unit_id: ''
+    rental_unit_id: '',
+    reminder_minutes: 60
   });
 
   const { data: user } = useQuery({
@@ -85,7 +86,8 @@ export default function CalendarPage() {
       date: selectedDate || '',
       time: '',
       event_type: 'other',
-      rental_unit_id: properties[0]?.id || ''
+      rental_unit_id: properties[0]?.id || '',
+      reminder_minutes: 60
     });
   };
 
@@ -130,7 +132,7 @@ export default function CalendarPage() {
   const selectedDateEvents = selectedDate ? events.filter(e => e.date === selectedDate) : [];
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       <div className="bg-white border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-900">{t('calendar')}</h1>
@@ -364,6 +366,25 @@ export default function CalendarPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Valgfri beskrivelse"
               />
+            </div>
+
+            <div>
+              <Label>Påminnelse</Label>
+              <Select 
+                value={formData.reminder_minutes?.toString() || '60'} 
+                onValueChange={(v) => setFormData({ ...formData, reminder_minutes: parseInt(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 minutter før</SelectItem>
+                  <SelectItem value="15">15 minutter før</SelectItem>
+                  <SelectItem value="60">1 time før</SelectItem>
+                  <SelectItem value="1440">1 dag før</SelectItem>
+                  <SelectItem value="0">Ingen påminnelse</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <DialogFooter>
