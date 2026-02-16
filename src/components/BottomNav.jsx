@@ -11,6 +11,7 @@ export default function BottomNav({ userRole }) {
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
     { to: 'Properties', icon: Building2, label: t('properties') },
+    { to: 'Finances', icon: Wallet, label: t('finances') },
     { to: 'CalendarPage', icon: Calendar, label: t('calendar') },
     { to: 'Chat', icon: MessageSquare, label: t('chat') }
   ];
