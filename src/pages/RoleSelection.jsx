@@ -18,18 +18,18 @@ export default function RoleSelection() {
     console.log('🔵 Role selected:', selectedRole);
     
     try {
-      console.log('🔵 Updating active_role via API...');
-      await base44.auth.updateMe({ 
-        active_role: selectedRole,
-        user_role: selectedRole,
-        language: 'no' 
-      });
-      localStorage.setItem('user_role_override', selectedRole);
-      console.log('✅ Role updated successfully to:', selectedRole);
+      console.log('🔵 Updating user role via API...');
+      await base44.auth.updateMe({ user_role: selectedRole, language: 'no' });
+      console.log('✅ User role updated successfully');
     } catch (error) {
-      console.log('⚠️ Could not update role via API:', error.message);
-      localStorage.setItem('user_role_override', selectedRole);
-      console.log('✅ Stored role in localStorage as fallback');
+      console.log('⚠️ Could not update user role via API:', error.message);
+      // Store role in localStorage as fallback for app owner
+      try {
+        localStorage.setItem('user_role_override', selectedRole);
+        console.log('✅ Stored role in localStorage as fallback');
+      } catch (storageError) {
+        console.error('❌ Failed to store role in localStorage:', storageError);
+      }
     }
     
     console.log('🔵 Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');

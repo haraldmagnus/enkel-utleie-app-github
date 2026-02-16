@@ -51,20 +51,15 @@ function LayoutContent({ children, currentPageName }) {
         user_role: user.user_role,
         roleOverride,
         effectiveUserRole,
-        currentPage: currentPageName,
-        profile: {
-          full_name: !!user.full_name,
-          birth_date: !!user.birth_date,
-          phone_number: !!user.phone_number
-        }
+        currentPage: currentPageName
       });
       
-      // Profile completion check (for ALL users, regardless of role)
+      // Profile completion check for tenants (but not on CompleteProfile page itself)
       const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
-      if (!allowedPages.includes(currentPageName)) {
+      if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
         const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
         if (needsProfile) {
-          console.log('🔵 Layout: Profile incomplete, redirecting to CompleteProfile');
+          console.log('🔵 Layout: Tenant profile incomplete, redirecting to CompleteProfile');
           navigate(createPageUrl('CompleteProfile'), { replace: true });
           return;
         }
