@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Wallet, Plus, TrendingUp, TrendingDown, Download, 
-  Filter, Building2, Trash2 
+  Filter, Building2, Trash2, Bell, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import {
   DialogFooter 
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/components/LanguageContext';
+import { createPageUrl } from '@/utils';
 
 export default function Finances() {
   const queryClient = useQueryClient();
@@ -136,7 +138,7 @@ export default function Finances() {
   };
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       <div className="bg-white border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-900">{t('finances')}</h1>
@@ -189,6 +191,20 @@ export default function Finances() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex gap-2">
+          <Link to={createPageUrl('PaymentReminders')} className="flex-1">
+            <Button variant="outline" className="w-full">
+              <Bell className="w-4 h-4 mr-2" /> Påminnelser
+            </Button>
+          </Link>
+          <Link to={createPageUrl('YearlyReport')} className="flex-1">
+            <Button variant="outline" className="w-full">
+              <FileText className="w-4 h-4 mr-2" /> Årsrapport
+            </Button>
+          </Link>
         </div>
 
         {/* Filter */}
