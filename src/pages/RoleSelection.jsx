@@ -129,20 +129,15 @@ export default function RoleSelection() {
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
 
-        {user && (
-          <div className="mt-4 flex items-center justify-between bg-white/60 border border-slate-200 rounded-xl px-4 py-3">
-            <div className="text-sm text-slate-500">
-              Innlogget som <span className="font-medium text-slate-700">{user.email}</span>
-            </div>
-            <button
-              onClick={() => base44.auth.logout()}
-              className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors ml-3"
-            >
-              <LogOut className="w-4 h-4" />
-              Logg ut
-            </button>
-          </div>
-        )}
+        <div className="mt-2 flex justify-center">
+          <button
+            onClick={() => base44.auth.logout()}
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+          >
+            <LogOut className="w-3 h-3" />
+            Logg ut
+          </button>
+        </div>
       </div>
     </div>
   );
