@@ -177,60 +177,50 @@ export default function CreateAgreement() {
     }
   });
 
+  const buildPayload = (extra = {}) => ({
+    rental_unit_id: propertyId,
+    landlord_id: user.id,
+    tenant_id: property?.tenant_id || null,
+    landlord_name: formData.landlord_name || user.full_name,
+    tenant_name: tenant?.full_name || property?.tenant_email || '',
+    tenant_address: '',
+    landlord_address: formData.landlord_address,
+    start_date: formData.start_date,
+    end_date: formData.end_date || null,
+    monthly_rent: Number(formData.monthly_rent),
+    deposit: formData.deposit ? Number(formData.deposit) : null,
+    deposit_account: formData.deposit_account,
+    rent_due_day: Number(formData.rent_due_day),
+    rent_account: formData.rent_account,
+    utilities_included: formData.utilities_included,
+    utilities_description: formData.utilities_description,
+    notice_period_months: Number(formData.notice_period_months),
+    pets_allowed: formData.pets_allowed,
+    smoking_allowed: formData.smoking_allowed,
+    terms: formData.terms,
+    ...extra
+  });
+
   const handleSign = (signRef) => {
-    createMutation.mutate({
-      rental_unit_id: propertyId,
-      landlord_id: user.id,
-      tenant_id: property?.tenant_id || null,
-      landlord_name: formData.landlord_name || user.full_name,
-      tenant_name: tenant?.full_name || property?.tenant_email || '',
-      tenant_address: '',
-      landlord_address: formData.landlord_address,
-      start_date: formData.start_date,
-      end_date: formData.end_date || null,
-      monthly_rent: Number(formData.monthly_rent),
-      deposit: formData.deposit ? Number(formData.deposit) : null,
-      deposit_account: formData.deposit_account,
-      rent_due_day: Number(formData.rent_due_day),
-      rent_account: formData.rent_account,
-      utilities_included: formData.utilities_included,
-      utilities_description: formData.utilities_description,
-      notice_period_months: Number(formData.notice_period_months),
-      pets_allowed: formData.pets_allowed,
-      smoking_allowed: formData.smoking_allowed,
-      terms: formData.terms,
+    saveMutation.mutate(buildPayload({
       landlord_signed: true,
       landlord_signed_date: new Date().toISOString(),
       landlord_bankid_ref: signRef,
       status: 'pending_tenant'
-    });
+    }));
   };
 
   const handleSaveDraft = () => {
-    createMutation.mutate({
-      rental_unit_id: propertyId,
-      landlord_id: user.id,
-      tenant_id: property?.tenant_id || null,
-      landlord_name: formData.landlord_name || user.full_name,
-      tenant_name: tenant?.full_name || property?.tenant_email || '',
-      tenant_address: '',
-      landlord_address: formData.landlord_address,
-      start_date: formData.start_date,
-      end_date: formData.end_date || null,
-      monthly_rent: Number(formData.monthly_rent),
-      deposit: formData.deposit ? Number(formData.deposit) : null,
-      deposit_account: formData.deposit_account,
-      rent_due_day: Number(formData.rent_due_day),
-      rent_account: formData.rent_account,
-      utilities_included: formData.utilities_included,
-      utilities_description: formData.utilities_description,
-      notice_period_months: Number(formData.notice_period_months),
-      pets_allowed: formData.pets_allowed,
-      smoking_allowed: formData.smoking_allowed,
-      terms: formData.terms,
+    saveMutation.mutate(buildPayload({
       landlord_signed: false,
       status: 'draft'
-    });
+    }));
+  };
+
+  const handleDelete = () => {
+    if (agreementId && window.confirm('Er du sikker på at du vil forkaste dette utkastet? Dette kan ikke angres.')) {
+      deleteMutation.mutate();
+    }
   };
 
   const isFormValid = formData.start_date && formData.monthly_rent;
