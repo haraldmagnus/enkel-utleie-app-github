@@ -96,6 +96,17 @@ export default function CreateAgreement() {
   });
 
   useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        landlord_name: prev.landlord_name || user.first_name
+          ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.full_name || ''
+          : user.full_name || ''
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (property?.monthly_rent) {
       setFormData(prev => ({
         ...prev,
