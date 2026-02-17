@@ -132,6 +132,14 @@ export default function PropertyDetail() {
         console.error('❌ [INVITE DEBUG] User existence check failed:', e);
       }
       
+      // Generate links
+      const signupUrl = `${window.location.origin}${createPageUrl('RoleSelection')}`;
+      console.log('🔵 [INVITE DEBUG] Generated links:', { 
+        inviteUrl, 
+        signupUrl,
+        willIncludeSignupLink: !userExists 
+      });
+      
       // UNIFIED PROPERTY INVITATION EMAIL (single source of truth)
       console.log('🔵 [INVITE DEBUG] ===== SENDING EMAIL =====');
       const emailSubject = isSelfInvite 
@@ -170,9 +178,7 @@ export default function PropertyDetail() {
               <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">
                 ${isSelfInvite 
                   ? 'Du har knyttet deg som leietaker til følgende bolig:' 
-                  : userExists 
-                    ? 'Du er invitert til å bli leietaker i følgende bolig:'
-                    : 'Du er invitert til å bli leietaker i følgende bolig:'}
+                  : 'Du er invitert til å bli leietaker i følgende bolig:'}
               </p>
 
               <!-- Property Card -->
@@ -201,12 +207,48 @@ export default function PropertyDetail() {
               ` : ''}
 
               ${!userExists ? `
-              <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563; background-color: #fef3c7; padding: 12px; border-radius: 6px; border-left: 3px solid #f59e0b;">
-                💡 Har du ikke konto? Ingen problem! Du kan registrere deg gratis når du klikker på knappen under.
-              </p>
-              ` : ''}
+              <!-- New user: Show both buttons -->
+              <div style="margin: 32px 0; padding: 16px; background-color: #fef3c7; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                <p style="margin: 0 0 12px 0; font-size: 15px; color: #78350f; font-weight: 600;">
+                  📝 Steg 1: Registrer deg i appen
+                </p>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #78350f;">
+                  Du har ikke konto ennå. Klikk her for å registrere deg først:
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center">
+                      <a href="${signupUrl}" style="display: inline-block; background-color: #f59e0b; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; box-shadow: 0 2px 4px rgba(245,158,11,0.3);">
+                        Registrer deg gratis
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
 
-              <!-- CTA Button -->
+              <div style="margin: 32px 0; padding: 16px; background-color: #dbeafe; border-radius: 8px; border-left: 3px solid #2563eb;">
+                <p style="margin: 0 0 12px 0; font-size: 15px; color: #1e40af; font-weight: 600;">
+                  🏠 Steg 2: Aksepter boliginvitasjonen
+                </p>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #1e40af;">
+                  Etter registrering, aksepter invitasjonen:
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center">
+                      <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                        Aksepter invitasjon
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style="margin: 24px 0 0 0; font-size: 13px; color: #6b7280; text-align: center; font-style: italic;">
+                💡 Invitasjonen vil også vente på deg i appen etter registrering
+              </p>
+              ` : `
+              <!-- Existing user: Show only accept button -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
                 <tr>
                   <td align="center">
@@ -216,6 +258,7 @@ export default function PropertyDetail() {
                   </td>
                 </tr>
               </table>
+              `}
 
               <p style="margin: 24px 0 0 0; font-size: 14px; color: #9ca3af; text-align: center;">
                 ⏰ Invitasjonen er gyldig i 7 dager
@@ -245,7 +288,9 @@ export default function PropertyDetail() {
         subject: emailSubject,
         from_name: user.full_name || 'Utleieoversikt',
         recipientExists: userExists,
-        bodyLength: emailBody.length
+        bodyLength: emailBody.length,
+        includesSignupLink: !userExists,
+        includesInviteLink: true
       });
 
       try {
@@ -270,7 +315,7 @@ export default function PropertyDetail() {
       console.log('🔵 [INVITE DEBUG] Platform invite: SKIPPED (prevents double email)');
       console.log('ℹ️ [INVITE DEBUG] User will register via invite link if needed');
       
-      // Create in-app notification if user exists
+      // Create in-app notification ONLY if user exists (otherwise it will be created at signup/login)
       if (userExists && existingUserId) {
         try {
           await base44.entities.Notification.create({
@@ -282,24 +327,26 @@ export default function PropertyDetail() {
             related_id: invitation.id,
             read: false
           });
-          console.log('✅ [INVITE DEBUG] In-app notification created');
+          console.log('✅ [INVITE DEBUG] In-app notification created for existing user');
         } catch (notifError) {
           console.log('⚠️ [INVITE DEBUG] Could not create notification:', notifError);
         }
-      }
-      
-      // Create chat message for inbox
-      try {
-        await base44.entities.ChatMessage.create({
-          rental_unit_id: propertyId,
-          sender_id: user.id,
-          sender_name: user.full_name || 'Utleier',
-          message: `Hei! Du er invitert til å bli leietaker i ${property.name}. Aksepter invitasjonen her: ${inviteUrl}`,
-          read: false
-        });
-        console.log('✅ [INVITE DEBUG] Chat message created for inbox');
-      } catch (chatError) {
-        console.log('⚠️ [INVITE DEBUG] Could not create chat message:', chatError);
+        
+        // Create chat message for inbox (only for existing users)
+        try {
+          await base44.entities.ChatMessage.create({
+            rental_unit_id: propertyId,
+            sender_id: user.id,
+            sender_name: user.full_name || 'Utleier',
+            message: `Hei! Du er invitert til å bli leietaker i ${property.name}. Aksepter invitasjonen for å få tilgang.`,
+            read: false
+          });
+          console.log('✅ [INVITE DEBUG] Chat message created for existing user inbox');
+        } catch (chatError) {
+          console.log('⚠️ [INVITE DEBUG] Could not create chat message:', chatError);
+        }
+      } else {
+        console.log('ℹ️ [INVITE DEBUG] Skipping in-app notification/chat for new user (will be created at login)');
       }
       
       // Update property status
@@ -311,9 +358,11 @@ export default function PropertyDetail() {
       console.log('✅ [INVITE DEBUG] ===== INVITATION COMPLETE =====');
       console.log('📧 [INVITE DEBUG] Email summary:', {
         recipient: cleanEmail,
+        recipientExists: userExists,
         emailsSent: 1,
-        emailType: 'property_invitation_only',
-        platformInviteSent: false,
+        emailType: userExists ? 'existing_user_invite_only' : 'new_user_signup_and_invite',
+        linksInEmail: userExists ? 1 : 2,
+        signupLink: userExists ? null : signupUrl,
         inviteUrl
       });
       
