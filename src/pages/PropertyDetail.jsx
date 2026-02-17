@@ -138,43 +138,106 @@ export default function PropertyDetail() {
         ? `Bekreft tilknytning til ${property.name}` 
         : `Invitasjon til ${property.name}`;
       
-      const emailBody = userExists 
-        ? `Hei!
+      const emailBody = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 100%;">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px 24px; text-align: center;">
+              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 600;">
+                ${isSelfInvite ? '🏠 Bekreft boligtilknytning' : '🏠 Ny boliginvitasjon'}
+              </h1>
+            </td>
+          </tr>
 
-${isSelfInvite ? 'Du har knyttet deg som leietaker til følgende bolig:' : 'Du er invitert til å bli leietaker i følgende bolig:'}
+          <!-- Content -->
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">
+                Hei!
+              </p>
+              
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">
+                ${isSelfInvite 
+                  ? 'Du har knyttet deg som leietaker til følgende bolig:' 
+                  : userExists 
+                    ? 'Du er invitert til å bli leietaker i følgende bolig:'
+                    : 'Du er invitert til å bli leietaker i følgende bolig:'}
+              </p>
 
-📍 ${property.name}
-${property.address}
-${property.monthly_rent ? `💰 Månedlig leie: ${property.monthly_rent.toLocaleString()} kr` : ''}
+              <!-- Property Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb; margin: 24px 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e40af;">
+                      ${property.name}
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 15px; color: #4b5563;">
+                      📍 ${property.address}
+                    </p>
+                    ${property.monthly_rent ? `
+                    <p style="margin: 0; font-size: 16px; color: #059669; font-weight: 600;">
+                      💰 ${property.monthly_rent.toLocaleString()} kr/måned
+                    </p>
+                    ` : ''}
+                  </td>
+                </tr>
+              </table>
 
-Klikk på lenken under for å ${isSelfInvite ? 'bekrefte' : 'akseptere invitasjonen'}:
-${inviteUrl}
+              ${user.full_name ? `
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280;">
+                <strong>Utleier:</strong> ${user.full_name}
+              </p>
+              ` : ''}
 
-${user.full_name ? `Utleier: ${user.full_name}` : ''}
+              ${!userExists ? `
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563; background-color: #fef3c7; padding: 12px; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                💡 Har du ikke konto? Ingen problem! Du kan registrere deg gratis når du klikker på knappen under.
+              </p>
+              ` : ''}
 
-⏰ Invitasjonen er gyldig i 7 dager.
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                      ${isSelfInvite ? 'Bekreft tilknytning' : 'Aksepter invitasjon'}
+                    </a>
+                  </td>
+                </tr>
+              </table>
 
----
-Utleieoversikt - Din komplette utleieløsning`
-        : `Hei!
+              <p style="margin: 24px 0 0 0; font-size: 14px; color: #9ca3af; text-align: center;">
+                ⏰ Invitasjonen er gyldig i 7 dager
+              </p>
+            </td>
+          </tr>
 
-Du er invitert til å bli leietaker i følgende bolig:
-
-📍 ${property.name}
-${property.address}
-${property.monthly_rent ? `💰 Månedlig leie: ${property.monthly_rent.toLocaleString()} kr` : ''}
-
-Klikk på lenken under for å opprette konto og akseptere invitasjonen:
-${inviteUrl}
-
-${user.full_name ? `Utleier: ${user.full_name}` : ''}
-
-💡 Har du ikke konto? Ingen problem! Du kan registrere deg gratis når du klikker på lenken.
-
-⏰ Invitasjonen er gyldig i 7 dager.
-
----
-Utleieoversikt - Din komplette utleieløsning`;
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 20px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 14px; color: #6b7280;">
+                Utleieoversikt - Din komplette utleieløsning
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
       console.log('🔵 [INVITE DEBUG] Email details:', {
         emailType: 'PROPERTY_INVITATION',
@@ -223,6 +286,20 @@ Utleieoversikt - Din komplette utleieløsning`;
         } catch (notifError) {
           console.log('⚠️ [INVITE DEBUG] Could not create notification:', notifError);
         }
+      }
+      
+      // Create chat message for inbox
+      try {
+        await base44.entities.ChatMessage.create({
+          rental_unit_id: propertyId,
+          sender_id: user.id,
+          sender_name: user.full_name || 'Utleier',
+          message: `Hei! Du er invitert til å bli leietaker i ${property.name}. Aksepter invitasjonen her: ${inviteUrl}`,
+          read: false
+        });
+        console.log('✅ [INVITE DEBUG] Chat message created for inbox');
+      } catch (chatError) {
+        console.log('⚠️ [INVITE DEBUG] Could not create chat message:', chatError);
       }
       
       // Update property status
