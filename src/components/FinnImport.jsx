@@ -65,8 +65,14 @@ export default function FinnImport({ onImport }) {
       }
     });
 
-    // Use address as the property name
-    const dataWithName = { ...response, name: response.address || response.name, finn_code: code };
+    // Extract street name only (without postal code and city) for the property name
+    const extractStreetName = (address) => {
+      if (!address) return address;
+      // Norwegian addresses: "Gatenavn 12, 0123 Oslo" → "Gatenavn 12"
+      // Remove postal code pattern (4 digits + city) and any trailing comma/space
+      return address.replace(/,?\s*\d{4}\s+\S.*$/, '').trim();
+    };
+    const dataWithName = { ...response, name: extractStreetName(response.address) || response.name, finn_code: code };
     setImportedData(dataWithName);
     setIsLoading(false);
   };
