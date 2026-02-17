@@ -62,6 +62,7 @@ export default function CreateAgreement() {
   
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('propertyId');
+  const agreementId = urlParams.get('agreementId'); // for editing existing draft
 
   const [formData, setFormData] = useState({
     start_date: '',
