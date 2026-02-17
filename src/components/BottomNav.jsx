@@ -17,20 +17,35 @@ export default function BottomNav({ userRole }) {
     queryFn: () => base44.auth.me()
   });
 
+  const effectiveRole = user?.active_role || user?.user_role || (typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null);
+
   const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['unreadMessages'],
+    queryKey: ['unreadMessages', effectiveRole],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!user?.id || !effectiveRole) return 0;
+      
+      // Get properties relevant to this role
+      let propertyIds = [];
+      if (effectiveRole === 'landlord') {
+        const props = await base44.entities.RentalUnit.filter({ landlord_id: user.id });
+        propertyIds = props.map(p => p.id);
+      } else {
+        const props = await base44.entities.RentalUnit.filter({ tenant_id: user.id });
+        propertyIds = props.map(p => p.id);
+      }
+      
+      if (propertyIds.length === 0) return 0;
       
       const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
       const unread = allMessages.filter(msg => 
-        msg.sender_id !== user.id && !msg.read
+        propertyIds.includes(msg.rental_unit_id) &&
+        msg.sender_id !== user.id && 
+        !msg.read
       );
       
-      console.log('🔵 [BottomNav] Unread messages:', unread.length);
       return unread.length;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!effectiveRole,
     refetchInterval: 10000
   });
   
