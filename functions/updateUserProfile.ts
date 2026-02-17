@@ -20,18 +20,13 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        if (!full_name || !birth_date || !phone_number || !user_role) {
-            console.warn('❌ updateUserProfile: Missing required fields in payload.', { full_name: !!full_name, birth_date: !!birth_date, phone_number: !!phone_number, user_role: !!user_role });
-            return Response.json({ error: 'Missing required profile fields.' }, { status: 400 });
-        }
-
-        const updateData = {
-            full_name: full_name,
-            birth_date: birth_date,
-            phone_number: phone_number,
-            user_role: user_role,
-            role_locked: role_locked
-        };
+        const updateData = {};
+        
+        if (full_name !== undefined) updateData.full_name = full_name;
+        if (birth_date !== undefined) updateData.birth_date = birth_date;
+        if (phone_number !== undefined) updateData.phone_number = phone_number;
+        if (user_role !== undefined) updateData.user_role = user_role;
+        if (role_locked !== undefined) updateData.role_locked = role_locked;
 
         console.log('🔵 updateUserProfile: Updating User entity with:', { userId, updateData });
         const updatedUser = await base44.asServiceRole.entities.User.update(userId, updateData);

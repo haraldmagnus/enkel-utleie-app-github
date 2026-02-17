@@ -60,18 +60,27 @@ function LayoutContent({ children, currentPageName }) {
       });
       
       // Registration completion check
-      const allowedPages = ['CompleteProfile'];
+      const allowedPages = ['CompleteProfile', 'RoleSelection'];
       if (!allowedPages.includes(currentPageName)) {
-        const needsRegistration = !user.full_name || !user.birth_date || !user.phone_number || !user.user_role;
+        // First check if basic profile is complete
+        const needsProfileCompletion = !user.full_name || !user.birth_date || !user.phone_number;
         
-        if (needsRegistration) {
-          console.log('🔵 Layout: Registration incomplete, redirecting to CompleteProfile', {
+        if (needsProfileCompletion) {
+          console.log('🔵 Layout: Profile incomplete, redirecting to CompleteProfile', {
             has_name: !!user.full_name,
             has_birth_date: !!user.birth_date,
-            has_phone: !!user.phone_number,
-            has_role: !!user.user_role
+            has_phone: !!user.phone_number
           });
           navigate(createPageUrl('CompleteProfile'), { replace: true });
+          return;
+        }
+        
+        // Then check if role is selected
+        const needsRoleSelection = !user.user_role;
+        
+        if (needsRoleSelection) {
+          console.log('🔵 Layout: Role not selected, redirecting to RoleSelection');
+          navigate(createPageUrl('RoleSelection'), { replace: true });
           return;
         }
       }

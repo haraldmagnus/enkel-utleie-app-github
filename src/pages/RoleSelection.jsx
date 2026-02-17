@@ -15,33 +15,27 @@ export default function RoleSelection() {
     if (!selectedRole) return;
     
     setIsLoading(true);
-    console.log('🔵 Role selected:', selectedRole);
+    console.log('🔵 RoleSelection: Role selected:', selectedRole);
     
     try {
-      console.log('🔵 Updating active_role via API...');
-      await base44.auth.updateMe({ 
-        active_role: selectedRole,
+      const user = await base44.auth.me();
+      
+      const response = await base44.functions.invoke('updateUserProfile', {
+        userId: user.id,
         user_role: selectedRole,
-        language: 'no' 
+        role_locked: true
       });
-      localStorage.setItem('user_role_override', selectedRole);
-      console.log('✅ Role updated successfully to:', selectedRole);
+      
+      console.log('✅ RoleSelection: Role saved via backend function:', response.data);
+      
+      const targetPage = selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard';
+      console.log('🔵 RoleSelection: Navigating to:', targetPage);
+      navigate(createPageUrl(targetPage), { replace: true });
     } catch (error) {
-      console.log('⚠️ Could not update role via API:', error.message);
-      localStorage.setItem('user_role_override', selectedRole);
-      console.log('✅ Stored role in localStorage as fallback');
+      console.error('❌ RoleSelection: Failed to save role:', error);
+      alert('Kunne ikke lagre rolle: ' + (error.response?.data?.error || error.message));
+      setIsLoading(false);
     }
-    
-    console.log('🔵 Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');
-    
-    // Use replace to avoid back button loop
-    if (selectedRole === 'landlord') {
-      navigate(createPageUrl('Dashboard'), { replace: true });
-    } else {
-      navigate(createPageUrl('TenantDashboard'), { replace: true });
-    }
-    
-    // Don't set isLoading to false - we're navigating away
   };
 
   return (
