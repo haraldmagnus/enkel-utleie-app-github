@@ -403,7 +403,11 @@ export default function CreateAgreement() {
               <div className="space-y-4">
                 <div>
                   <Label>Navn</Label>
-                  <Input value={user?.full_name || ''} disabled className="bg-slate-50" />
+                  <Input
+                    value={formData.landlord_name}
+                    onChange={(e) => setFormData({ ...formData, landlord_name: e.target.value })}
+                    placeholder="Ditt fulle navn"
+                  />
                 </div>
                 <div>
                   <Label>Adresse</Label>
