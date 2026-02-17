@@ -723,12 +723,20 @@ export default function PropertyDetail() {
                       {agreement.landlord_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2">
+                  <div className="flex justify-between py-2 border-b">
                     <span className="text-slate-500">Leietaker signert</span>
                     <span className={agreement.tenant_signed ? 'text-green-600' : 'text-amber-600'}>
                       {agreement.tenant_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                     </span>
                   </div>
+                  {agreement.status === 'draft' && (
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
+                      onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}&agreementId=${agreement.id}`))}
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" /> Åpne og ferdigstill utkast
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
