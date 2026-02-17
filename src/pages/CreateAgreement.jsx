@@ -68,7 +68,8 @@ export default function CreateAgreement() {
     pets_allowed: false,
     smoking_allowed: false,
     terms: STANDARD_TERMS,
-    landlord_address: ''
+    landlord_address: '',
+    landlord_name: ''
   });
 
   const [isSigning, setIsSigning] = useState(false);
@@ -112,12 +113,12 @@ export default function CreateAgreement() {
     }
   });
 
-  const handleBankIDSign = (bankIdRef) => {
+  const handleSign = (signRef) => {
     createMutation.mutate({
       rental_unit_id: propertyId,
       landlord_id: user.id,
       tenant_id: property?.tenant_id || null,
-      landlord_name: user.full_name,
+      landlord_name: formData.landlord_name || user.full_name,
       tenant_name: tenant?.full_name || property?.tenant_email || '',
       tenant_address: '',
       landlord_address: formData.landlord_address,
