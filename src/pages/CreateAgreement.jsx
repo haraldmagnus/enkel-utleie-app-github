@@ -515,10 +515,21 @@ export default function CreateAgreement() {
             variant="outline"
             className="w-full"
             onClick={handleSaveDraft}
-            disabled={!isFormValid || createMutation.isPending}
+            disabled={!isFormValid || saveMutation.isPending}
           >
             Lagre som utkast (uten signering)
           </Button>
+
+          {agreementId && (
+            <Button 
+              variant="outline"
+              className="w-full border-red-300 text-red-600 hover:bg-red-50"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Forkast utkast
+            </Button>
+          )}
         </div>
       </div>
     </div>
