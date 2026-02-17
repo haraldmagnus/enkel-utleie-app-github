@@ -78,14 +78,10 @@ export default function Settings() {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
       localStorage.clear();
       sessionStorage.clear();
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-      }
     } catch (e) {
       console.log('Clear error:', e);
     }
