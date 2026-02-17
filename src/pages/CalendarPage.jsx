@@ -48,7 +48,10 @@ export default function CalendarPage() {
       if (isLandlord) {
         return base44.entities.RentalUnit.filter({ landlord_id: user?.id });
       } else {
-        return base44.entities.RentalUnit.filter({ tenant_id: user?.id });
+        const byTenantId = await base44.entities.RentalUnit.filter({ tenant_id: user?.id });
+        if (byTenantId.length > 0) return byTenantId;
+        // Fallback: match by email for tenants not yet linked by ID
+        return base44.entities.RentalUnit.filter({ tenant_email: user?.email });
       }
     },
     enabled: !!user?.id
