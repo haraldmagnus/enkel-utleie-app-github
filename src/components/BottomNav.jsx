@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building2, Wallet, Calendar, MessageSquare } from 'lucide-react';
+import { Home, Building2, Wallet, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { createPageUrl } from '@/utils';
 
@@ -21,7 +21,8 @@ export default function BottomNav({ userRole }) {
   const tenantLinks = [
     { to: 'TenantDashboard', icon: Home, label: t('home') },
     { to: 'CalendarPage', icon: Calendar, label: t('calendar') },
-    { to: 'Chat', icon: MessageSquare, label: t('chat') }
+    { to: 'Chat', icon: MessageSquare, label: t('chat') },
+    { to: 'Settings', icon: Settings, label: t('settings') }
   ];
   
   const links = userRole === 'landlord' ? landlordLinks : tenantLinks;
