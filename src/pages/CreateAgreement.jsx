@@ -96,6 +96,15 @@ export default function CreateAgreement() {
     enabled: !!propertyId
   });
 
+  const { data: existingAgreement } = useQuery({
+    queryKey: ['agreement-edit', agreementId],
+    queryFn: async () => {
+      const results = await base44.entities.RentalAgreement.filter({ id: agreementId });
+      return results[0];
+    },
+    enabled: !!agreementId
+  });
+
   const { data: tenant } = useQuery({
     queryKey: ['tenant', property?.tenant_id],
     queryFn: async () => {
