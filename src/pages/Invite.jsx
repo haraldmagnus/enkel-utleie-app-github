@@ -465,12 +465,22 @@ export default function Invite() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Velkommen!</h2>
-            <p className="text-slate-600 mb-4">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-12 h-12 text-green-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Alt er klart! 🎉</h2>
+            <p className="text-slate-600 mb-2">
               Du er nå tilknyttet {property?.name || 'boligen'}.
             </p>
-            <p className="text-xs text-slate-400">Videresender...</p>
+            {property?.address && (
+              <p className="text-sm text-slate-500 mb-4">{property.address}</p>
+            )}
+            <div className="bg-blue-50 rounded-lg p-3 mb-4">
+              <p className="text-sm text-blue-700">
+                Du sendes videre til din boligside om et øyeblikk...
+              </p>
+            </div>
+            <Loader2 className="w-5 h-5 text-blue-500 animate-spin mx-auto" />
           </CardContent>
         </Card>
       </div>
