@@ -114,12 +114,6 @@ export default function Settings() {
 
   const handleLogout = async () => {
     try {
-      // Clear user role before logout
-      await base44.auth.updateMe({ user_role: null });
-    } catch (e) {
-      console.log('Could not clear role:', e);
-    }
-    try {
       localStorage.clear();
       sessionStorage.clear();
       if ('caches' in window) {
