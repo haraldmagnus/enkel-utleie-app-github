@@ -8,7 +8,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/components/LanguageContext';
-import PendingInvitations from '@/components/PendingInvitations';
 
 export default function Chat() {
   const queryClient = useQueryClient();
@@ -169,9 +168,6 @@ export default function Chat() {
         </div>
 
         <div className="p-4 space-y-3">
-          {/* Pending Invitations */}
-          <PendingInvitations userId={user?.id} userEmail={user?.email} />
-          
           {properties.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
