@@ -86,7 +86,6 @@ export default function FinnImport({ onImport }) {
           
           <div className="bg-white rounded-lg p-4 mb-4 space-y-2">
             <h3 className="font-semibold text-slate-900">{importedData.name}</h3>
-            <p className="text-sm text-slate-600">{importedData.address}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               <Badge variant="outline">{importedData.property_type}</Badge>
               <Badge variant="outline">{importedData.size_sqm} m²</Badge>
