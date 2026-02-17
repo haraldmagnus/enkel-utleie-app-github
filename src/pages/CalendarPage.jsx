@@ -39,7 +39,8 @@ export default function CalendarPage() {
     queryFn: () => base44.auth.me()
   });
 
-  const isLandlord = (user?.active_role || user?.user_role) === 'landlord';
+  const effectiveRole = user?.active_role || user?.user_role;
+  const isLandlord = effectiveRole === 'landlord';
 
   const { data: properties = [] } = useQuery({
     queryKey: ['rentalUnits'],
