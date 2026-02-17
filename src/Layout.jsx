@@ -56,16 +56,7 @@ function LayoutContent({ children, currentPageName }) {
         currentPage: currentPageName
       });
       
-      // Profile completion check for tenants (but not on CompleteProfile page itself)
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'Invite'];
-      if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
-        const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
-        if (needsProfile) {
-          console.log('⚠️ Layout: Tenant profile incomplete → CompleteProfile');
-          navigate(createPageUrl('CompleteProfile'), { replace: true });
-          return;
-        }
-      }
+      // (Profile completion redirect removed - profile is now managed in Settings)
       
       // If no role is determined, redirect to role selection
       if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
