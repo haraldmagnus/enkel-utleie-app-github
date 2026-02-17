@@ -59,37 +59,27 @@ function LayoutContent({ children, currentPageName }) {
         }
       });
       
-      // Profile completion check (for ALL users, regardless of role)
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
+      // Registration completion check
+      const allowedPages = ['CompleteProfile'];
       if (!allowedPages.includes(currentPageName)) {
-        const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
-        if (needsProfile) {
-          console.log('🔵 Layout: Profile incomplete, redirecting to CompleteProfile');
+        const needsRegistration = !user.full_name || !user.birth_date || !user.phone_number || !user.role;
+        if (needsRegistration) {
+          console.log('🔵 Layout: Registration incomplete, redirecting to CompleteProfile');
           navigate(createPageUrl('CompleteProfile'), { replace: true });
           return;
         }
       }
-      
-      // If no role is determined, redirect to role selection
-      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
-        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
-        navigate(createPageUrl('RoleSelection'), { replace: true });
-      }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
-  // Show nav on all pages except RoleSelection
-  const noNavPages = ['RoleSelection'];
-  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
+  // Show nav on all pages except CompleteProfile
+  const noNavPages = ['CompleteProfile'];
   
-  // Determine effective role: active_role > user_role > roleOverride
-  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+  // Effective role is simply user.role (set during registration)
+  const effectiveRole = user?.role;
   
-  console.log('🔵 Layout: Effective role calculation:', {
-    activeRole: user?.active_role,
-    userRole: user?.user_role,
-    roleOverride,
-    effectiveRole,
+  console.log('🔵 Layout: Effective role:', {
+    role: user?.role,
     currentPage: currentPageName
   });
   
