@@ -39,12 +39,12 @@ export default function SignAgreement() {
   });
 
   const signMutation = useMutation({
-    mutationFn: (bankIdRef) => base44.entities.RentalAgreement.update(agreementId, {
+    mutationFn: (signRef) => base44.entities.RentalAgreement.update(agreementId, {
       tenant_id: user.id,
       tenant_name: user.full_name,
       tenant_signed: true,
       tenant_signed_date: new Date().toISOString(),
-      tenant_bankid_ref: bankIdRef,
+      tenant_bankid_ref: signRef,
       status: agreement.landlord_signed ? 'active' : 'pending_tenant'
     }),
     onSuccess: async () => {
