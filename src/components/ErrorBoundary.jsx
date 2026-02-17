@@ -21,18 +21,9 @@ class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
-  handleLogout = async () => {
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-      }
-    } catch (e) {
-      console.log('Clear cache error:', e);
-    }
-    base44.auth.logout();
+  handleBack = () => {
+    this.setState({ hasError: false, error: null });
+    window.history.back();
   };
 
   render() {
@@ -51,8 +42,8 @@ class ErrorBoundary extends React.Component {
               <Button onClick={this.handleRetry} className="w-full bg-blue-600 hover:bg-blue-700">
                 <RefreshCw className="w-4 h-4 mr-2" /> Prøv igjen
               </Button>
-              <Button variant="outline" onClick={this.handleLogout} className="w-full">
-                <LogOut className="w-4 h-4 mr-2" /> Logg ut
+              <Button variant="outline" onClick={this.handleBack} className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Gå tilbake
               </Button>
             </div>
           </div>
