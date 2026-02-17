@@ -158,8 +158,19 @@ export default function CreateAgreement() {
     }
   }, [property, existingAgreement]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.RentalAgreement.create(data),
+  const saveMutation = useMutation({
+    mutationFn: (data) => agreementId
+      ? base44.entities.RentalAgreement.update(agreementId, data)
+      : base44.entities.RentalAgreement.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agreement', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['agreement-edit', agreementId] });
+      navigate(createPageUrl(`PropertyDetail?id=${propertyId}`));
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => base44.entities.RentalAgreement.delete(agreementId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agreement', propertyId] });
       navigate(createPageUrl(`PropertyDetail?id=${propertyId}`));
