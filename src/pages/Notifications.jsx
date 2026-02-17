@@ -32,10 +32,15 @@ export default function Notifications() {
     queryFn: () => base44.auth.me()
   });
 
+  const effectiveRole = user?.active_role || user?.user_role || localStorage.getItem('user_role_override');
+
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: () => base44.entities.Notification.filter({ user_id: user?.id }, '-created_date', 50),
-    enabled: !!user?.id
+    queryKey: ['notifications', user?.id, effectiveRole],
+    queryFn: async () => {
+      const all = await base44.entities.Notification.filter({ user_id: user?.id }, '-created_date', 50);
+      return all.filter(n => !n.role || n.role === effectiveRole);
+    },
+    enabled: !!user?.id && !!effectiveRole
   });
 
   const markReadMutation = useMutation({
