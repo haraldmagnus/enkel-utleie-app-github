@@ -452,14 +452,13 @@ export default function CreateAgreement() {
             </Card>
           )}
 
-          {/* BankID Signering */}
-          {isFormValid && (
-            <BankIDSignature 
-              onSign={handleBankIDSign}
+          {/* Signering */}
+          {isFormValid && !(tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number)) && (
+            <DrawSignature
+              onSign={handleSign}
               isLoading={createMutation.isPending}
-              userName={user?.full_name}
+              userName={formData.landlord_name || user?.full_name}
               documentType="leieavtale"
-              disabled={tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number)}
             />
           )}
 
