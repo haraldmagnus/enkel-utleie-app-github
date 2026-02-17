@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCircle, Loader2 } from 'lucide-react';
+import { UserCircle, Loader2, Building2, Home, Check } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 export default function CompleteProfile() {
@@ -18,6 +18,7 @@ export default function CompleteProfile() {
     queryFn: () => base44.auth.me()
   });
 
+  const [selectedRole, setSelectedRole] = useState('');
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     birth_date: user?.birth_date || '',
@@ -27,23 +28,18 @@ export default function CompleteProfile() {
   // Prefill form with existing user data when loaded
   React.useEffect(() => {
     if (user) {
-      console.log('🔵 CompleteProfile: User loaded, prefilling:', {
-        full_name: user.full_name,
-        birth_date: user.birth_date,
-        phone_number: user.phone_number
-      });
-      
       setFormData({
         full_name: user.full_name || '',
         birth_date: user.birth_date || '',
         phone_number: user.phone_number || ''
       });
+      setSelectedRole(user.role || '');
     }
   }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 CompleteProfile: Saving profile data:', data);
+      console.log('🔵 CompleteProfile: Saving registration data:', data);
       await base44.auth.updateMe(data);
       return data;
     },
@@ -54,15 +50,10 @@ export default function CompleteProfile() {
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       await queryClient.refetchQueries({ queryKey: ['currentUser'] });
       
-      console.log('✅ CompleteProfile: User refetched, navigating...');
+      const updatedUser = queryClient.getQueryData(['currentUser']);
+      const targetPage = updatedUser?.role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
       
-      // Determine where to navigate based on active role
-      const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveRole = user?.active_role || user?.user_role || roleOverride;
-      
-      const targetPage = effectiveRole === 'landlord' ? 'Dashboard' : 'TenantDashboard';
-      console.log('🔵 CompleteProfile: Navigating to', targetPage, 'for role', effectiveRole);
-      
+      console.log('✅ CompleteProfile: Navigating to', targetPage);
       navigate(createPageUrl(targetPage), { replace: true });
     }
   });
@@ -70,16 +61,22 @@ export default function CompleteProfile() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    console.log('🔵 CompleteProfile: Form submitted');
+    if (!selectedRole) {
+      alert('Vennligst velg en rolle');
+      return;
+    }
     
     // Validate phone number (Norwegian format)
-    const phoneRegex = /^(\+47)?[4|9]\d{7}$/;
+    const phoneRegex = /^(\+47)?[4-9]\d{7}$/;
     if (!phoneRegex.test(formData.phone_number.replace(/\s/g, ''))) {
       alert('Vennligst oppgi et gyldig norsk telefonnummer (8 siffer)');
       return;
     }
 
-    updateMutation.mutate(formData);
+    updateMutation.mutate({
+      ...formData,
+      role: selectedRole
+    });
   };
 
   if (userLoading) {
@@ -97,9 +94,9 @@ export default function CompleteProfile() {
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserCircle className="w-10 h-10 text-blue-600" />
           </div>
-          <CardTitle className="text-center">Fullfør din profil</CardTitle>
+          <CardTitle className="text-center">Fullfør registrering</CardTitle>
           <CardDescription className="text-center">
-            Vi trenger litt mer informasjon for å fullføre tilknytningen til boligen
+            Fyll ut informasjonen for å komme i gang
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,16 +127,60 @@ export default function CompleteProfile() {
                 type="tel"
                 value={formData.phone_number}
                 onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder="12345678"
+                placeholder="90012345"
                 required
               />
               <p className="text-xs text-slate-500 mt-1">8 siffer (norsk nummer)</p>
             </div>
 
+            <div className="space-y-3 pt-2">
+              <Label>Velg din rolle *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('landlord')}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    selectedRole === 'landlord' 
+                      ? 'border-blue-600 bg-blue-50' 
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Building2 className="w-8 h-8 text-blue-600" />
+                    <span className="font-medium text-sm">Utleier</span>
+                    {selectedRole === 'landlord' && (
+                      <Check className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('tenant')}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    selectedRole === 'tenant' 
+                      ? 'border-blue-600 bg-blue-50' 
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Home className="w-8 h-8 text-blue-600" />
+                    <span className="font-medium text-sm">Leietaker</span>
+                    {selectedRole === 'tenant' && (
+                      <Check className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                </button>
+              </div>
+              <p className="text-xs text-slate-500">
+                Rollen kan ikke endres senere. Hvis du trenger en annen rolle, må du bruke en annen e-postadresse.
+              </p>
+            </div>
+
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={updateMutation.isPending || !formData.full_name || !formData.birth_date || !formData.phone_number}
+              className="w-full bg-blue-600 hover:bg-blue-700 mt-6"
+              disabled={updateMutation.isPending || !formData.full_name || !formData.birth_date || !formData.phone_number || !selectedRole}
             >
               {updateMutation.isPending ? (
                 <>
@@ -147,13 +188,9 @@ export default function CompleteProfile() {
                   Lagrer...
                 </>
               ) : (
-                'Fullfør og fortsett'
+                'Fullfør registrering'
               )}
             </Button>
-
-            <p className="text-xs text-center text-slate-500">
-              Denne informasjonen brukes i leieavtaler og for kommunikasjon med utleier
-            </p>
           </form>
         </CardContent>
       </Card>

@@ -22,17 +22,11 @@ export default function TenantDashboard() {
   // Redirect landlord users to Dashboard
   React.useEffect(() => {
     if (user) {
-      const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveRole = user.active_role || user.user_role || roleOverride;
-      
       console.log('🔵 TenantDashboard: User role check:', { 
-        active_role: user.active_role,
-        user_role: user.user_role, 
-        roleOverride, 
-        effectiveRole 
+        role: user.role
       });
       
-      if (effectiveRole === 'landlord') {
+      if (user.role === 'landlord') {
         console.log('⚠️ TenantDashboard: Landlord detected, redirecting to Dashboard');
         window.location.href = createPageUrl('Dashboard');
       }
