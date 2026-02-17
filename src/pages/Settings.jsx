@@ -93,9 +93,30 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async () => {
-    // In a real app, this would delete user data
-    // For now, just log out
-    handleLogout();
+    try {
+      console.log('🔵 Starting complete account deletion...');
+      
+      // Call backend function to delete everything including auth
+      const response = await base44.functions.invoke('deleteUserCompletely', {});
+      
+      console.log('✅ Deletion response:', response);
+      
+      if (response.data.success) {
+        alert('Din konto er fullstendig slettet. Du kan nå registrere deg på nytt med samme e-post.');
+        
+        // Clear all local data
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Redirect to login
+        window.location.href = '/';
+      } else {
+        throw new Error(response.data.error || 'Sletting feilet');
+      }
+    } catch (error) {
+      console.error('❌ Delete account failed:', error);
+      alert('Kunne ikke slette konto: ' + error.message);
+    }
   };
 
   const handleGDPRConsent = () => {
@@ -333,14 +354,23 @@ export default function Settings() {
 
         {/* Delete Account */}
         <Card className="border-red-200">
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-red-600 flex items-center gap-2">
+              <Trash2 className="w-4 h-4" /> Slett konto permanent
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-slate-600">
+              Dette vil slette all din data OG fjerne kontoen fra innloggingssystemet. 
+              E-posten din kan deretter registreres på nytt med en annen rolle.
+            </p>
             <Button 
               variant="outline" 
               className="w-full text-red-600 border-red-200 hover:bg-red-50"
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Slett konto og data
+              Slett konto og data permanent
             </Button>
           </CardContent>
         </Card>
@@ -360,10 +390,17 @@ export default function Settings() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Slett konto?</DialogTitle>
-            <DialogDescription>
-              Dette vil slette all din data permanent, inkludert eiendommer, avtaler og meldinger. 
-              Denne handlingen kan ikke angres.
+            <DialogTitle>Slett konto permanent?</DialogTitle>
+            <DialogDescription className="space-y-2">
+              <p>
+                Dette vil slette all din data permanent, inkludert eiendommer, avtaler og meldinger.
+              </p>
+              <p className="font-medium text-red-600">
+                Kontoen din vil bli fullstendig fjernet fra innloggingssystemet, og du kan registrere deg på nytt med samme e-post.
+              </p>
+              <p className="text-sm">
+                Denne handlingen kan ikke angres.
+              </p>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -371,7 +408,7 @@ export default function Settings() {
               Avbryt
             </Button>
             <Button variant="destructive" onClick={handleDeleteAccount}>
-              Slett konto
+              Ja, slett permanent
             </Button>
           </DialogFooter>
         </DialogContent>
