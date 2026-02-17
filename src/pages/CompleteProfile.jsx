@@ -40,8 +40,14 @@ export default function CompleteProfile() {
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       console.log('🔵 CompleteProfile: Saving registration data:', data);
-      await base44.auth.updateMe(data);
-      return data;
+      try {
+        const response = await base44.auth.updateMe(data);
+        console.log('✅ CompleteProfile: Save response:', response);
+        return response;
+      } catch (error) {
+        console.error('❌ CompleteProfile: Save failed:', error);
+        throw error;
+      }
     },
     onSuccess: async () => {
       console.log('✅ CompleteProfile: Save successful, refetching user...');
@@ -51,30 +57,56 @@ export default function CompleteProfile() {
       await queryClient.refetchQueries({ queryKey: ['currentUser'] });
       
       const updatedUser = queryClient.getQueryData(['currentUser']);
+      console.log('🔵 CompleteProfile: Refetched user:', updatedUser);
+      
       const targetPage = updatedUser?.role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
       
-      console.log('✅ CompleteProfile: Navigating to', targetPage);
+      console.log('✅ CompleteProfile: Navigating to', targetPage, 'for role', updatedUser?.role);
       navigate(createPageUrl(targetPage), { replace: true });
+    },
+    onError: (error) => {
+      console.error('❌ CompleteProfile: Mutation error:', error);
+      alert('Kunne ikke lagre profil: ' + error.message);
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    console.log('🔵 CompleteProfile: Submit clicked', { 
+      formData, 
+      selectedRole,
+      isPending: updateMutation.isPending 
+    });
+    
     if (!selectedRole) {
+      console.log('❌ No role selected');
       alert('Vennligst velg en rolle');
       return;
     }
     
-    // Validate phone number (Norwegian format)
-    const phoneRegex = /^(\+47)?[4-9]\d{7}$/;
-    if (!phoneRegex.test(formData.phone_number.replace(/\s/g, ''))) {
-      alert('Vennligst oppgi et gyldig norsk telefonnummer (8 siffer)');
+    // Validate phone number (Norwegian format - 8 digits starting with 4-9)
+    const cleanPhone = formData.phone_number.replace(/\s/g, '');
+    const phoneRegex = /^[4-9]\d{7}$/;
+    
+    console.log('🔵 Phone validation:', { 
+      original: formData.phone_number, 
+      cleaned: cleanPhone, 
+      matches: phoneRegex.test(cleanPhone) 
+    });
+    
+    if (!phoneRegex.test(cleanPhone)) {
+      console.log('❌ Phone validation failed');
+      alert('Vennligst oppgi et gyldig norsk telefonnummer (8 siffer, starter med 4-9)');
       return;
     }
 
+    console.log('✅ Validation passed, calling mutation...');
+    
     updateMutation.mutate({
-      ...formData,
+      full_name: formData.full_name,
+      birth_date: formData.birth_date,
+      phone_number: cleanPhone,
       role: selectedRole
     });
   };
