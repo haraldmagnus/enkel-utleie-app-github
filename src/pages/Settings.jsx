@@ -257,33 +257,41 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Active Role Switcher - Always visible */}
+        {/* Current Role Display */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <User className="w-4 h-4" /> Aktiv rolle
+              <User className="w-4 h-4" /> Din rolle
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-500 mb-3">
-              Bytt mellom utleier- og leietaker-visning
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={(user?.active_role === 'landlord' || (!user?.active_role && user?.user_role === 'landlord')) ? 'default' : 'outline'}
-                onClick={() => handleRoleChange('landlord')}
-                className="w-full"
-              >
-                {t('landlord')}
-              </Button>
-              <Button
-                variant={(user?.active_role === 'tenant' || (!user?.active_role && user?.user_role === 'tenant')) ? 'default' : 'outline'}
-                onClick={() => handleRoleChange('tenant')}
-                className="w-full"
-              >
-                {t('tenant')}
-              </Button>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              {user?.user_role === 'landlord' ? (
+                <>
+                  <div className="w-6 h-6 text-blue-600">🏢</div>
+                  <div>
+                    <div className="font-medium">Utleier</div>
+                    <div className="text-xs text-slate-500">
+                      Du administrerer utleieeiendommer
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-6 h-6 text-blue-600">🏠</div>
+                  <div>
+                    <div className="font-medium">Leietaker</div>
+                    <div className="text-xs text-slate-500">
+                      Du leier en eiendom
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
+            <p className="text-xs text-slate-500">
+              Rollen ble satt ved registrering og kan ikke endres. 
+              Hvis du trenger en annen rolle, må du opprette en ny konto med en annen e-postadresse.
+            </p>
           </CardContent>
         </Card>
 
