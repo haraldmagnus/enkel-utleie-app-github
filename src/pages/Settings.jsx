@@ -66,12 +66,6 @@ export default function Settings() {
 
   const handleLogout = async () => {
     try {
-      // Clear user role before logout
-      await base44.auth.updateMe({ user_role: null });
-    } catch (e) {
-      console.log('Could not clear role:', e);
-    }
-    try {
       localStorage.clear();
       sessionStorage.clear();
       if ('caches' in window) {
@@ -162,11 +156,16 @@ export default function Settings() {
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-between py-2 border-t">
-              <span className="text-slate-600">Rolle</span>
-              <span className="font-medium capitalize">
-                {user?.user_role === 'landlord' ? t('landlord') : t('tenant')}
-              </span>
+            <div className="flex flex-col gap-2 py-2 border-t">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600">Rolle</span>
+                <span className="font-medium capitalize">
+                  {user?.role === 'landlord' ? t('landlord') : t('tenant')}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Rollen er knyttet til din e-post og kan ikke endres. For å bruke en annen rolle, logg inn med en annen e-postadresse.
+              </p>
             </div>
           </CardContent>
         </Card>
