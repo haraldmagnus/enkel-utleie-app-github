@@ -60,8 +60,8 @@ export default function SignAgreement() {
     }
   });
 
-  const handleBankIDSign = (bankIdRef) => {
-    signMutation.mutate(bankIdRef);
+  const handleSign = (signRef) => {
+    signMutation.mutate(signRef);
   };
 
   if (isLoading || !agreement) {
