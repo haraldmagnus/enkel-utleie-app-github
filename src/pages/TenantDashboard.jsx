@@ -1,42 +1,38 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, FileText, Camera, Calendar, MessageSquare, ArrowRight, Check, X, Mail } from 'lucide-react';
+import { Building2, FileText, Camera, Calendar, MessageSquare, ArrowRight, Check, X, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
-import PageHeader from '@/components/PageHeader';
-import PendingInvitations from '@/components/PendingInvitations';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function TenantDashboard() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
-  // Redirect if user is on wrong dashboard for their role
+  // Redirect landlord users to Dashboard
   React.useEffect(() => {
     if (user) {
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveRole = user.active_role || user.user_role || roleOverride;
+      const effectiveRole = user.user_role || roleOverride;
       
-      console.log('🔵 TenantDashboard (Tenant): Role check:', { 
-        active_role: user.active_role,
+      console.log('🔵 TenantDashboard: User role check:', { 
         user_role: user.user_role, 
         roleOverride, 
-        effectiveRole,
-        currentPage: 'TenantDashboard'
+        effectiveRole 
       });
       
       if (effectiveRole === 'landlord') {
-        console.log('⚠️ TenantDashboard: Landlord on tenant page - REDIRECTING to Dashboard');
+        console.log('⚠️ TenantDashboard: Landlord detected, redirecting to Dashboard');
         window.location.href = createPageUrl('Dashboard');
       }
     }
@@ -61,22 +57,6 @@ export default function TenantDashboard() {
     queryKey: ['tenantEvents'],
     queryFn: () => base44.entities.CalendarEvent.filter({ rental_unit_id: property?.id }, '-date', 5),
     enabled: !!property?.id
-  });
-
-  const { data: pendingInvitations = [] } = useQuery({
-    queryKey: ['pendingInvitations', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      console.log('🔵 [TENANT DASH] Checking pending invitations for:', user.email.toLowerCase());
-      const invites = await base44.entities.TenantInvitation.filter({
-        tenant_email: user.email.toLowerCase(),
-        status: 'pending'
-      });
-      console.log('🔵 [TENANT DASH] Found pending invitations:', invites.length);
-      return invites;
-    },
-    enabled: !!user?.email,
-    refetchInterval: 5000
   });
 
   if (isLoading) {
@@ -107,15 +87,24 @@ export default function TenantDashboard() {
 
   return (
     <div className="pb-24">
-      <PageHeader 
-        title={`Hei, ${user?.full_name?.split(' ')[0] || 'Leietaker'}!`}
-        subtitle="Her er din leieoversikt"
-      />
+      {/* Header */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex-1" />
+          <h1 className="text-xl font-semibold text-center">Hei, {user?.full_name?.split(' ')[0] || 'Leietaker'}!</h1>
+          <div className="flex-1 flex justify-end gap-1">
+            <NotificationBell />
+            <Link to={createPageUrl('Settings')}>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+        <p className="text-blue-100 text-sm text-center">Her er din leieoversikt</p>
+      </div>
 
       <div className="p-4 -mt-6 space-y-4">
-        {/* Pending Invitations - IN-APP DISPLAY */}
-        <PendingInvitations userEmail={user?.email} />
-
         {/* Property Card */}
         <Card className="bg-white shadow-md">
           <CardContent className="p-4">

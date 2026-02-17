@@ -32,74 +32,38 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      console.log('🔵 [LAYOUT GUARD] ===== USER LOADED =====');
-      console.log('🔵 [LAYOUT GUARD]', { 
-        userId: user.id,
-        email: user.email,
-        active_role: user.active_role, 
+      console.log('🔵 Layout: User loaded:', { 
+        email: user.email, 
         user_role: user.user_role,
-        full_name: user.full_name || 'MISSING',
-        birth_date: user.birth_date || 'MISSING',
-        phone_number: user.phone_number || 'MISSING',
-        currentPage: currentPageName,
-        timestamp: new Date().toISOString()
+        currentPage: currentPageName 
       });
       
       if (user.language) {
         setLanguage(user.language);
       }
       
-      // Determine effective role (single source of truth)
+      // Check localStorage fallback for app owner
       const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveUserRole = user.active_role || user.user_role || roleOverride;
+      const effectiveUserRole = user.user_role || roleOverride;
       
-      console.log('🔵 [LAYOUT GUARD] Role:', { 
-        priority1_active_role: user.active_role,
-        priority2_user_role: user.user_role,
-        priority3_localStorage: roleOverride,
-        EFFECTIVE_ROLE: effectiveUserRole
-      });
+      // Profile completion check for tenants (but not on CompleteProfile page itself)
+      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
+      if (effectiveUserRole === 'tenant' && !allowedPages.includes(currentPageName)) {
+        const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
+        if (needsProfile) {
+          console.log('🔵 Layout: Tenant profile incomplete, redirecting to CompleteProfile');
+          navigate(createPageUrl('CompleteProfile'), { replace: true });
+          return;
+        }
+      }
       
-      // If no role is determined, redirect to role selection
-      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
-        console.log('⚠️ [LAYOUT GUARD] No role → RoleSelection');
+      if (!user.user_role && !roleOverride && currentPageName !== 'RoleSelection') {
+        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
         navigate(createPageUrl('RoleSelection'), { replace: true });
-        return;
+      } else if (roleOverride && !user.user_role) {
+        console.log('🔵 Layout: Using role from localStorage:', roleOverride);
+        // Allow navigation to continue with override
       }
-      
-      // Profile completion - SOFT GATE (not blocking navigation)
-      // Show banner/reminder but allow app usage
-      const isProfileComplete = !!(user.full_name && user.birth_date && user.phone_number);
-      
-      console.log('🔵 [LAYOUT GUARD] Profile status:', {
-        currentPage: currentPageName,
-        effectiveRole: effectiveUserRole,
-        isProfileComplete,
-        full_name: user.full_name ? '✓' : '✗',
-        birth_date: user.birth_date ? '✓' : '✗',
-        phone_number: user.phone_number ? '✓' : '✗'
-      });
-      
-      // NOTE: Profile gate DISABLED - users can navigate freely
-      // Profile completion only required for specific actions (signing agreements)
-      
-      // FAILSAFE: Detect if on wrong dashboard
-      const isOnLandlordDash = currentPageName === 'Dashboard';
-      const isOnTenantDash = currentPageName === 'TenantDashboard';
-      
-      if (effectiveUserRole === 'landlord' && isOnTenantDash) {
-        console.log('🚨 [LAYOUT GUARD] FAILSAFE: Landlord on TenantDashboard → Dashboard');
-        navigate(createPageUrl('Dashboard'), { replace: true });
-        return;
-      }
-      
-      if (effectiveUserRole === 'tenant' && isOnLandlordDash) {
-        console.log('🚨 [LAYOUT GUARD] FAILSAFE: Tenant on Dashboard → TenantDashboard');
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-        return;
-      }
-      
-      console.log('✅ [LAYOUT GUARD] All checks passed - rendering page');
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
@@ -107,16 +71,14 @@ function LayoutContent({ children, currentPageName }) {
   const noNavPages = ['RoleSelection'];
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
   
-  // Determine effective role: active_role > user_role > roleOverride
-  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+  // For admin users, always use roleOverride if it exists
+  const effectiveRole = (user?.user_role === 'admin' && roleOverride) ? roleOverride : (user?.user_role || roleOverride);
   
-  console.log('🔵 Layout: Navigation render:', {
-    activeRole: user?.active_role,
+  console.log('🔵 Layout: Effective role calculation:', {
     userRole: user?.user_role,
     roleOverride,
     effectiveRole,
-    currentPage: currentPageName,
-    showingNav: effectiveRole && !noNavPages.includes(currentPageName)
+    currentPage: currentPageName
   });
   
   const showNav = effectiveRole && !noNavPages.includes(currentPageName);

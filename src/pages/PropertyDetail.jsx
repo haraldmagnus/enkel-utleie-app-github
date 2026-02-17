@@ -73,232 +73,69 @@ export default function PropertyDetail() {
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
     
-    // CRITICAL: Normalize email (lowercase + trim)
-    const cleanEmail = inviteEmail.toLowerCase().trim();
-    const isSelfInvite = cleanEmail === user?.email?.toLowerCase();
-    
-    console.log('🔵 [INVITE DEBUG] ===== STARTING INVITATION =====');
-    console.log('🔵 [INVITE DEBUG] Input:', { 
-      tenantEmailRaw: inviteEmail,
-      tenantEmailNormalized: cleanEmail,
-      propertyId,
-      propertyName: property.name,
-      landlordId: user.id,
-      landlordEmail: user?.email,
-      landlordName: user?.full_name,
-      isSelfInvite,
-      timestampUTC: new Date().toISOString(),
-      timestampLocal: new Date().toLocaleString('no-NO', { timeZone: 'Europe/Oslo' })
-    });
+    console.log('🔵 Inviting tenant:', { email: inviteEmail, role: 'user', propertyId });
     
     try {
       // Generate unique token
       const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      const now = new Date();
-      const expiresAt = new Date(now);
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from NOW
-      
-      console.log('🔵 [INVITE DEBUG] Token generated:', { 
-        token, 
-        createdAtUTC: now.toISOString(),
-        createdAtLocal: now.toLocaleString('no-NO', { timeZone: 'Europe/Oslo' }),
-        expiresAtUTC: expiresAt.toISOString(),
-        expiresAtLocal: expiresAt.toLocaleString('no-NO', { timeZone: 'Europe/Oslo' }),
-        validityDays: 7
-      });
       
       // Create invitation record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
+      
       const invitation = await base44.entities.TenantInvitation.create({
         rental_unit_id: propertyId,
         landlord_id: user.id,
-        tenant_email: cleanEmail,
+        tenant_email: inviteEmail.toLowerCase().trim(),
         token: token,
         status: 'pending',
         expires_at: expiresAt.toISOString()
       });
       
-      console.log('✅ [INVITE DEBUG] Invitation record created:', {
-        invitationId: invitation.id,
-        status: invitation.status
-      });
+      console.log('✅ Invitation created:', invitation);
       
-      // Generate invitation link with CORRECT baseUrl
-      const baseUrl = window.location.origin;
-      const invitePath = createPageUrl('Invite');
-      const inviteUrl = `${baseUrl}${invitePath}?token=${token}`;
-      console.log('🔵 [INVITE DEBUG] Invite link generated:', {
-        baseUrl,
-        invitePath,
-        fullUrl: inviteUrl,
-        token: `${token.substring(0, 8)}...${token.substring(token.length - 8)}`, // masked
-        expiresAt: expiresAt.toISOString()
-      });
+      // Generate invitation link
+      const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
       
-      // Check if user exists in system (with normalized email)
-      let userExists = false;
-      let existingUserId = null;
-      try {
-        // Try exact match first
-        let existingUsers = await base44.entities.User.filter({ email: cleanEmail });
-        
-        // If no match, try case-insensitive search
-        if (existingUsers.length === 0) {
-          const allUsers = await base44.entities.User.list();
-          existingUsers = allUsers.filter(u => u.email?.toLowerCase().trim() === cleanEmail);
-        }
-        
-        userExists = existingUsers.length > 0;
-        existingUserId = existingUsers[0]?.id;
-        console.log(`🔵 [INVITE DEBUG] Recipient lookup:`, {
-          emailNormalized: cleanEmail,
-          recipientExists: userExists,
-          recipientUserId: existingUserId,
-          recipientCount: existingUsers.length,
-          recipientEmail: existingUsers[0]?.email
-        });
-      } catch (e) {
-        console.error('❌ [INVITE DEBUG] User existence check failed:', e);
-      }
+      // Send platform invitation (gets user into the app)
+      await base44.users.inviteUser(inviteEmail, 'user');
       
-      // EMAIL STRATEGY: Core.SendEmail only works for existing users
-      console.log('🔵 [INVITE DEBUG] ===== SENDING EMAIL =====');
-      console.log('🔵 [INVITE DEBUG] Email strategy:', {
-        recipientExists: userExists,
-        strategy: userExists ? 'Core.SendEmail (custom property invite)' : 'inviteUser (platform invite only)'
-      });
-      
-      if (userExists) {
-        // EXISTING USERS: Send custom property invitation email
-        const emailSubject = isSelfInvite 
-          ? `Bekreft tilknytning til ${property.name}` 
-          : `Invitasjon til ${property.name}`;
-        
-        const emailBody = `Hei!
+      // Send custom email with property-specific link
+      await base44.integrations.Core.SendEmail({
+        to: inviteEmail,
+        subject: `Invitasjon til å bli leietaker i ${property.name}`,
+        body: `
+Hei!
 
-${isSelfInvite ? 'Du har knyttet deg som leietaker til følgende bolig:' : 'Du er invitert til å bli leietaker i følgende bolig:'}
+Du er invitert til å bli leietaker i følgende bolig:
 
-📍 ${property.name}
+${property.name}
 ${property.address}
-${property.monthly_rent ? `💰 Månedlig leie: ${property.monthly_rent.toLocaleString()} kr` : ''}
+Månedlig leie: ${property.monthly_rent.toLocaleString()} kr
 
-Klikk på lenken under for å ${isSelfInvite ? 'bekrefte' : 'akseptere invitasjonen'}:
+Klikk på lenken under for å akseptere invitasjonen:
 ${inviteUrl}
 
-${user.full_name ? `Utleier: ${user.full_name}` : ''}
+Invitasjonen er gyldig i 7 dager.
 
-⏰ Invitasjonen er gyldig i 7 dager.
-
----
-Utleieoversikt - Din komplette utleieløsning`;
-
-        console.log('🔵 [INVITE DEBUG] Sending custom property email:', {
-          emailType: 'CUSTOM_PROPERTY_INVITATION',
-          to: cleanEmail,
-          subject: emailSubject,
-          from_name: user.full_name || 'Utleieoversikt'
-        });
-
-        try {
-          await base44.integrations.Core.SendEmail({
-            to: cleanEmail,
-            from_name: user.full_name || 'Utleieoversikt',
-            subject: emailSubject,
-            body: emailBody.trim()
-          });
-          console.log('✅ [INVITE DEBUG] Custom property invitation email sent (existing user)');
-        } catch (emailError) {
-          console.error('❌ [INVITE DEBUG] Core.SendEmail failed:', {
-            error: emailError,
-            message: emailError.message,
-            stack: emailError.stack
-          });
-          throw new Error(`E-posttjeneste feilet: ${emailError.message}`);
-        }
-      } else {
-        // NEW USERS: Create pending request + send platform invite
-        console.log('🔵 [INVITE DEBUG] Creating pending request for new user:', {
-          emailType: 'PENDING_REQUEST',
-          to: cleanEmail,
-          propertyId,
-          landlordId: user.id
-        });
-
-        try {
-          // Create pending request that will be processed after signup
-          await base44.entities.PendingTenantRequest.create({
-            rental_unit_id: propertyId,
-            landlord_id: user.id,
-            tenant_email: cleanEmail,
-            status: 'pending_signup',
-            invitation_sent_date: new Date().toISOString()
-          });
-          console.log('✅ [INVITE DEBUG] Pending request created');
-
-          // Send platform signup invite
-          await base44.users.inviteUser(cleanEmail, 'user');
-          console.log('✅ [INVITE DEBUG] Platform invitation sent - user will receive property invite after signup');
-        } catch (error) {
-          console.error('❌ [INVITE DEBUG] Failed to create pending request:', error);
-          throw new Error(`Kunne ikke sende invitasjon: ${error.message}`);
-        }
-      }
-      
-      // Create in-app notification if user exists (LINKED to invitation)
-      if (userExists && existingUserId) {
-        try {
-          const notification = await base44.entities.Notification.create({
-            user_id: existingUserId,
-            type: 'agreement',
-            title: 'Ny boliginvitasjon',
-            message: `${user.full_name || 'En utleier'} inviterer deg til ${property.name}`,
-            rental_unit_id: propertyId,
-            related_id: invitation.id, // CRITICAL: linked to invitation
-            read: false
-          });
-          console.log('✅ [INVITE DEBUG] In-app notification created:', {
-            notificationId: notification.id,
-            userId: existingUserId,
-            type: 'agreement',
-            linkedInvitationId: invitation.id,
-            read: false
-          });
-        } catch (notifError) {
-          console.error('❌ [INVITE DEBUG] Could not create notification:', notifError);
-        }
-      }
-      
-      // Update property status
-      updateMutation.mutate({
-        tenant_email: cleanEmail,
-        status: 'pending_invitation'
+Hilsen
+${user.full_name || user.email}
+        `.trim()
       });
       
-      console.log('✅ [INVITE DEBUG] ===== INVITATION COMPLETE =====');
-      console.log('📧 [INVITE DEBUG] Email summary:', {
-        recipient: cleanEmail,
-        recipientExists: userExists,
-        emailType: userExists ? 'custom_property_invitation' : 'platform_generic_invitation',
-        inviteUrl,
-        note: !userExists ? 'New user will see property details via pending invitation after signup' : 'Existing user got custom property email'
+      console.log('✅ Invitation email sent to:', inviteEmail);
+      
+      updateMutation.mutate({
+        tenant_email: inviteEmail,
+        status: 'pending_invitation'
       });
       
       setShowInviteDialog(false);
       setInviteEmail('');
-      
-      if (isSelfInvite) {
-        alert('✅ Invitasjon opprettet!\n\nSjekk e-posten din for å bekrefte.');
-      } else if (userExists) {
-        alert('✅ Invitasjon sendt!\n\nLeietaker vil motta e-post med boligdetaljer og lenke for å akseptere.');
-      } else {
-        alert('✅ Invitasjon opprettet!\n\nLeietaker vil motta en e-post for å registrere seg.\n\nBoliginvitasjonen vises automatisk etter registrering.');
-      }
+      alert('Invitasjon sendt! Leietaker vil motta en e-post med lenke for å akseptere.');
     } catch (error) {
-      console.error('❌ [INVITE DEBUG] INVITATION FAILED:', {
-        error,
-        message: error.message,
-        stack: error.stack
-      });
-      alert(error.message || 'Kunne ikke sende invitasjon');
+      console.error('❌ Failed to invite tenant:', error);
+      alert('Kunne ikke sende invitasjon: ' + error.message);
     }
   };
 

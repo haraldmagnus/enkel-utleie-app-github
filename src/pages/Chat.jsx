@@ -22,26 +22,7 @@ export default function Chat() {
     queryFn: () => base44.auth.me()
   });
 
-  // CRITICAL: Use activeRole as single source of truth
-  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
-  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
-  const isLandlord = effectiveRole === 'landlord';
-
-  // Debug logging
-  useEffect(() => {
-    if (user) {
-      console.log('🔵 [CHAT MOUNT] Role detection:', {
-        userId: user.id,
-        email: user.email,
-        active_role: user.active_role,
-        user_role: user.user_role,
-        roleOverride,
-        EFFECTIVE_ROLE: effectiveRole,
-        isLandlord,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, [user, effectiveRole]);
+  const isLandlord = user?.user_role === 'landlord';
 
   const { data: properties = [] } = useQuery({
     queryKey: ['rentalUnits'],
@@ -55,92 +36,22 @@ export default function Chat() {
     enabled: !!user?.id
   });
 
-  // Calculate unread count per property
-  const { data: unreadByProperty = {} } = useQuery({
-    queryKey: ['unreadByProperty'],
-    queryFn: async () => {
-      if (!user?.id) return {};
-      
-      const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
-      const unreadMessages = allMessages.filter(msg => 
-        msg.sender_id !== user.id && !msg.read
-      );
-      
-      // Group by property
-      const unreadCounts = {};
-      unreadMessages.forEach(msg => {
-        if (!unreadCounts[msg.rental_unit_id]) {
-          unreadCounts[msg.rental_unit_id] = 0;
-        }
-        unreadCounts[msg.rental_unit_id]++;
-      });
-      
-      console.log('🔵 [CHAT] Unread per property:', unreadCounts);
-      return unreadCounts;
-    },
-    enabled: !!user?.id,
-    refetchInterval: 10000
-  });
-
   const { data: messages = [] } = useQuery({
     queryKey: ['chatMessages', selectedProperty?.id],
-    queryFn: async () => {
-      const msgs = await base44.entities.ChatMessage.filter(
-        { rental_unit_id: selectedProperty?.id },
-        'created_date',
-        100
-      );
-      console.log('🔵 [CHAT] Fetched messages:', {
-        propertyId: selectedProperty?.id,
-        count: msgs.length,
-        messages: msgs.map(m => ({
-          id: m.id,
-          sender_id: m.sender_id,
-          sender_name: m.sender_name,
-          preview: m.message.substring(0, 30)
-        }))
-      });
-      return msgs;
-    },
-    enabled: !!selectedProperty?.id
+    queryFn: () => base44.entities.ChatMessage.filter(
+      { rental_unit_id: selectedProperty?.id },
+      'created_date',
+      100
+    ),
+    enabled: !!selectedProperty?.id,
+    refetchInterval: 5000
   });
 
-  // Real-time subscription
-  useEffect(() => {
-    if (!selectedProperty?.id) return;
-
-    console.log('🔵 [CHAT] Subscribing to messages for property:', selectedProperty.id);
-
-    const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
-      console.log('🔵 [CHAT] Message event:', event);
-      
-      if (event.data.rental_unit_id === selectedProperty.id) {
-        queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty.id] });
-        
-        // Create notification for received messages (not own)
-        if (event.type === 'create' && event.data.sender_id !== user?.id) {
-          queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
-        }
-      }
-    });
-
-    return unsubscribe;
-  }, [selectedProperty?.id, user?.id]);
-
   const sendMutation = useMutation({
-    mutationFn: async (data) => {
-      console.log('🔵 [CHAT] Sending message:', data);
-      const result = await base44.entities.ChatMessage.create(data);
-      console.log('✅ [CHAT] Message sent:', result);
-      return result;
-    },
+    mutationFn: (data) => base44.entities.ChatMessage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty?.id] });
       setNewMessage('');
-    },
-    onError: (error) => {
-      console.error('❌ [CHAT] Send failed:', error);
-      alert('Kunne ikke sende melding: ' + error.message);
     }
   });
 
@@ -150,51 +61,15 @@ export default function Chat() {
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedProperty || !user) return;
+    if (!newMessage.trim() || !selectedProperty) return;
 
-    const messageData = {
+    sendMutation.mutate({
       rental_unit_id: selectedProperty.id,
       sender_id: user.id,
-      sender_name: user.full_name || user.email,
-      message: newMessage.trim(),
-      read: false
-    };
-
-    console.log('🔵 [CHAT] Preparing to send:', {
-      ...messageData,
-      currentRole: effectiveRole,
-      isLandlord
+      sender_name: user.full_name,
+      message: newMessage.trim()
     });
-
-    sendMutation.mutate(messageData);
   };
-
-  // Mark messages as read when chat is opened
-  useEffect(() => {
-    if (selectedProperty?.id && messages.length > 0) {
-      const unreadMessages = messages.filter(m => !m.read && m.sender_id !== user?.id);
-      if (unreadMessages.length > 0) {
-        console.log('🔵 [CHAT] Marking messages as read:', {
-          propertyId: selectedProperty.id,
-          count: unreadMessages.length,
-          messageIds: unreadMessages.map(m => m.id)
-        });
-        
-        // Mark all as read
-        Promise.all(
-          unreadMessages.map(msg => 
-            base44.entities.ChatMessage.update(msg.id, { read: true })
-          )
-        ).then(() => {
-          console.log('✅ [CHAT] All messages marked as read');
-          queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
-          queryClient.invalidateQueries({ queryKey: ['unreadByProperty'] });
-        }).catch(error => {
-          console.error('❌ [CHAT] Failed to mark messages as read:', error);
-        });
-      }
-    }
-  }, [selectedProperty?.id, messages, user?.id, queryClient]);
 
   // Property list view
   if (!selectedProperty) {
@@ -202,9 +77,6 @@ export default function Chat() {
       <div className="pb-24">
         <div className="bg-white border-b px-4 py-4">
           <h1 className="text-xl font-bold text-slate-900">{t('chat')}</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Rolle: {isLandlord ? 'Utleier' : 'Leietaker'}
-          </p>
         </div>
 
         <div className="p-4 space-y-3">
@@ -223,33 +95,20 @@ export default function Chat() {
           ) : (
             properties.map(property => {
               const hasOccupant = property.status === 'occupied' || property.tenant_email;
-              const unreadCount = unreadByProperty[property.id] || 0;
               
               return (
                 <Card 
                   key={property.id}
-                  className={`cursor-pointer transition-shadow relative ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
+                  className={`cursor-pointer transition-shadow ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
                   onClick={() => hasOccupant && setSelectedProperty(property)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center relative">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                         <Building2 className="w-6 h-6 text-blue-600" />
-                        {unreadCount > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                          </span>
-                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-900">{property.name}</h3>
-                          {unreadCount > 0 && (
-                            <span className="text-xs font-semibold text-red-600">
-                              {unreadCount} ny{unreadCount > 1 ? 'e' : ''}
-                            </span>
-                          )}
-                        </div>
+                        <h3 className="font-semibold text-slate-900">{property.name}</h3>
                         <p className="text-sm text-slate-500 truncate">{property.address}</p>
                       </div>
                       {hasOccupant ? (

@@ -1,59 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building2, Wallet, Calendar, MessageSquare, Settings } from 'lucide-react';
+import { Home, Building2, Wallet, Calendar, MessageSquare } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { createPageUrl } from '@/utils';
-import { getHomeRoute } from '@/components/roleUtils';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 
 export default function BottomNav({ userRole }) {
   const location = useLocation();
   const { t } = useLanguage();
-
-  // Fetch unread message count
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
-
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['unreadMessages'],
-    queryFn: async () => {
-      if (!user?.id) {
-        console.log('🔵 [BOTTOMNAV] No user ID, returning 0 unread');
-        return 0;
-      }
-      
-      console.log('🔵 [BOTTOMNAV] Fetching unread messages...');
-      const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
-      const unread = allMessages.filter(msg => 
-        msg.sender_id !== user.id && !msg.read
-      );
-      
-      console.log('🔵 [BOTTOMNAV] Unread count:', {
-        totalMessages: allMessages.length,
-        unreadCount: unread.length,
-        userId: user.id,
-        unreadMessages: unread.map(m => ({
-          id: m.id,
-          from: m.sender_name,
-          preview: m.message.substring(0, 30)
-        }))
-      });
-      
-      return unread.length;
-    },
-    enabled: !!user?.id,
-    refetchInterval: 10000,
-    staleTime: 5000
-  });
   
-  console.log('🔵 BottomNav mounted:', { 
-    userRole, 
-    currentPath: location.pathname,
-    homeRoute: getHomeRoute(userRole)
-  });
+  console.log('🔵 BottomNav: userRole =', userRole);
   
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
@@ -66,8 +21,7 @@ export default function BottomNav({ userRole }) {
   const tenantLinks = [
     { to: 'TenantDashboard', icon: Home, label: t('home') },
     { to: 'CalendarPage', icon: Calendar, label: t('calendar') },
-    { to: 'Chat', icon: MessageSquare, label: t('chat') },
-    { to: 'Settings', icon: Settings, label: t('settings') }
+    { to: 'Chat', icon: MessageSquare, label: t('chat') }
   ];
   
   const links = userRole === 'landlord' ? landlordLinks : tenantLinks;
@@ -93,23 +47,10 @@ export default function BottomNav({ userRole }) {
             <Link
               key={to}
               to={createPageUrl(to)}
-              onClick={(e) => {
-                console.log('🔵 [BOTTOMNAV CLICK] ===== TAB NAVIGATION =====');
-                console.log('🔵 [BOTTOMNAV CLICK]', { 
-                  targetTab: to,
-                  targetUrl: createPageUrl(to),
-                  userRole, 
-                  currentPath: location.pathname,
-                  userProfile: user ? {
-                    full_name: user.full_name ? '✓' : '✗',
-                    birth_date: user.birth_date ? '✓' : '✗',
-                    phone_number: user.phone_number ? '✓' : '✗',
-                    isComplete: !!(user.full_name && user.birth_date && user.phone_number)
-                  } : 'not loaded'
-                });
-                // Don't prevent default - let React Router handle it
+              onClick={() => {
+                console.log('🔵 BottomNav: Navigating to', to, '| Role:', userRole);
               }}
-              className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors relative ${
+              className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors ${
                 isActive 
                   ? 'text-blue-600' 
                   : 'text-slate-500 hover:text-slate-700'
@@ -117,11 +58,6 @@ export default function BottomNav({ userRole }) {
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
               <span className="text-xs mt-1">{label}</span>
-              {to === 'Chat' && unreadCount > 0 && (
-                <span className="absolute top-0 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
             </Link>
           );
         })}
