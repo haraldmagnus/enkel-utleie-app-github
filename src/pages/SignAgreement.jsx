@@ -191,9 +191,9 @@ export default function SignAgreement() {
           </Card>
         )}
 
-        {/* BankID Signature */}
-        <BankIDSignature 
-          onSign={handleBankIDSign}
+        {/* Signering */}
+        <DrawSignature
+          onSign={handleSign}
           isLoading={signMutation.isPending}
           userName={user?.full_name}
           documentType="leieavtale"
