@@ -139,6 +139,50 @@ export default function Invite() {
         console.log('⚠️ [INVITE ACCEPT] Could not update notifications:', e);
       }
       
+      // Create in-app notification and chat message for newly registered users
+      try {
+        // Check if notification already exists (was user just registered or already existed?)
+        const existingNotif = await base44.entities.Notification.filter({
+          user_id: user.id,
+          related_id: invitation.id
+        });
+        
+        if (existingNotif.length === 0) {
+          console.log('🔵 [INVITE ACCEPT] Creating in-app notification for newly registered user');
+          
+          // Get landlord details
+          const landlordUsers = await base44.entities.User.filter({ id: invitation.landlord_id });
+          const landlordName = landlordUsers[0]?.full_name || 'En utleier';
+          
+          // Get property details
+          const properties = await base44.entities.RentalUnit.filter({ id: invitation.rental_unit_id });
+          const propertyName = properties[0]?.name || 'boligen';
+          
+          await base44.entities.Notification.create({
+            user_id: user.id,
+            type: 'agreement',
+            title: 'Velkommen! Du har en boliginvitasjon',
+            message: `${landlordName} inviterer deg til ${propertyName}`,
+            rental_unit_id: invitation.rental_unit_id,
+            related_id: invitation.id,
+            read: true // Mark as read since they're accepting it now
+          });
+          
+          // Create chat message from landlord
+          await base44.entities.ChatMessage.create({
+            rental_unit_id: invitation.rental_unit_id,
+            sender_id: invitation.landlord_id,
+            sender_name: landlordName,
+            message: `Velkommen til ${propertyName}! Jeg har invitert deg som leietaker. Ta gjerne kontakt hvis du har spørsmål.`,
+            read: false
+          });
+          
+          console.log('✅ [INVITE ACCEPT] In-app content created for newly registered user');
+        }
+      } catch (e) {
+        console.log('⚠️ [INVITE ACCEPT] Could not create in-app content for new user:', e);
+      }
+      
       console.log('✅ [INVITE ACCEPT] ===== ACCEPTANCE COMPLETE =====');
       console.log('✅ [INVITE ACCEPT] Summary:', {
         invitationAccepted: true,
