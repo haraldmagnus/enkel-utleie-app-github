@@ -47,34 +47,31 @@ export default function CompleteProfile() {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 CompleteProfile: Saving registration data:', {
+      console.log('🔵 CompleteProfile: Saving registration data via backend function:', {
         userId: user?.id,
         email: user?.email,
         payload: data
       });
       
+      if (!user?.id) {
+        throw new Error('User ID not available for profile update.');
+      }
+
       try {
-        // Save basic profile fields + role in data object (not platform role field)
-        const updatePayload = {
+        const response = await base44.functions.invoke('updateUserProfile', {
+          userId: user.id,
           full_name: data.full_name,
           birth_date: data.birth_date,
           phone_number: data.phone_number,
-          user_role: data.user_role,  // This saves to user.data.user_role (app-managed)
-          role_locked: true  // Lock role after first save
-        };
-        
-        console.log('🔵 Calling base44.auth.updateMe with:', updatePayload);
-        const response = await base44.auth.updateMe(updatePayload);
-        
-        console.log('✅ CompleteProfile: Save successful, response:', response);
-        return response;
-      } catch (error) {
-        console.error('❌ CompleteProfile: Save failed:', {
-          error: error.message,
-          stack: error.stack,
-          fullError: error
+          user_role: data.user_role,
+          role_locked: true
         });
-        throw error;
+        
+        console.log('✅ CompleteProfile: Backend function response:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ CompleteProfile: Backend function call failed:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.error || 'Unknown error from backend function');
       }
     },
     onSuccess: async () => {
