@@ -185,7 +185,7 @@ export default function Invite() {
       
       return { alreadyAccepted: false, propertyId: invitation.rental_unit_id };
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setState('DONE');
       queryClient.invalidateQueries({ queryKey: ['invitation'] });
       queryClient.invalidateQueries({ queryKey: ['rentalUnits'] });
@@ -194,14 +194,10 @@ export default function Invite() {
       // Clear token from URL
       window.history.replaceState({}, '', createPageUrl('Invite'));
       
-      // Redirect
+      // Always go to TenantDashboard after accepting
       setTimeout(() => {
-        if (data.needsProfile) {
-          navigate(createPageUrl('CompleteProfile'), { replace: true });
-        } else {
-          navigate(createPageUrl('TenantDashboard'), { replace: true });
-        }
-      }, 1500);
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }, 2000);
     },
     onError: (error) => {
       setState('ERROR');
