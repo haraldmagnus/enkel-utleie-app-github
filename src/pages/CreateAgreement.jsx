@@ -499,7 +499,7 @@ export default function CreateAgreement() {
           {isFormValid && !(tenant && (!tenant.full_name || !tenant.birth_date || !tenant.phone_number)) && (
             <DrawSignature
               onSign={handleSign}
-              isLoading={createMutation.isPending}
+              isLoading={saveMutation.isPending}
               userName={formData.landlord_name || user?.full_name}
               documentType="leieavtale"
             />
