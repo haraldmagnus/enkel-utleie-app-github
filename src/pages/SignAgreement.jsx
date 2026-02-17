@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
-import BankIDSignature from '@/components/BankIDSignature';
+import DrawSignature from '@/components/DrawSignature';
 
 export default function SignAgreement() {
   const navigate = useNavigate();
