@@ -237,7 +237,7 @@ export default function CreateAgreement() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold">{t('createAgreement')}</h1>
+          <h1 className="text-xl font-bold">{agreementId ? 'Rediger utkast' : t('createAgreement')}</h1>
         </div>
       </div>
 
