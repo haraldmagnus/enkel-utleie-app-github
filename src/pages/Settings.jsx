@@ -48,8 +48,7 @@ export default function Settings() {
   });
 
   const handleProfileSave = () => {
-    const fullName = [firstName, lastName].filter(Boolean).join(' ');
-    updateMutation.mutate({ full_name: fullName, phone_number: phone });
+    updateMutation.mutate({ first_name: firstName, last_name: lastName, phone_number: phone });
   };
 
   const handleLanguageToggle = () => {
