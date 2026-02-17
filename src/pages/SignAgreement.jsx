@@ -165,9 +165,9 @@ export default function SignAgreement() {
             <div className="pt-2 border-t">
               <p className="text-sm text-slate-600">
                 Utleier: <strong>{agreement.landlord_name}</strong>
-                {agreement.landlord_signed && agreement.landlord_bankid_ref && (
+                {agreement.landlord_signed && (
                   <Badge className="ml-2 bg-green-100 text-green-700">
-                    BankID signert
+                    Signert
                   </Badge>
                 )}
               </p>
