@@ -126,14 +126,37 @@ export default function CreateAgreement() {
   }, [user]);
 
   useEffect(() => {
-    if (property?.monthly_rent) {
+    if (existingAgreement) {
+      setFormData(prev => ({
+        ...prev,
+        start_date: existingAgreement.start_date || '',
+        end_date: existingAgreement.end_date || '',
+        monthly_rent: existingAgreement.monthly_rent?.toString() || '',
+        deposit: existingAgreement.deposit?.toString() || '',
+        deposit_account: existingAgreement.deposit_account || '',
+        rent_due_day: existingAgreement.rent_due_day?.toString() || '1',
+        rent_account: existingAgreement.rent_account || '',
+        utilities_included: existingAgreement.utilities_included || false,
+        utilities_description: existingAgreement.utilities_description || '',
+        notice_period_months: existingAgreement.notice_period_months?.toString() || '3',
+        pets_allowed: existingAgreement.pets_allowed || false,
+        smoking_allowed: existingAgreement.smoking_allowed || false,
+        terms: existingAgreement.terms || STANDARD_TERMS,
+        landlord_address: existingAgreement.landlord_address || '',
+        landlord_name: existingAgreement.landlord_name || ''
+      }));
+    }
+  }, [existingAgreement]);
+
+  useEffect(() => {
+    if (property?.monthly_rent && !existingAgreement) {
       setFormData(prev => ({
         ...prev,
         monthly_rent: property.monthly_rent.toString(),
         deposit: (property.monthly_rent * 3).toString()
       }));
     }
-  }, [property]);
+  }, [property, existingAgreement]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.RentalAgreement.create(data),
