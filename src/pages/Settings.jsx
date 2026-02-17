@@ -32,10 +32,8 @@ export default function Settings() {
   // Pre-populate fields when user loads
   React.useEffect(() => {
     if (user) {
-      // Split full_name into first/last
-      const parts = (user.full_name || '').split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
+      setFirstName(user.first_name || '');
+      setLastName(user.last_name || '');
       setPhone(user.phone_number || user.phone || '');
     }
   }, [user]);
