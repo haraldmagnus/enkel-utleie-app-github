@@ -147,7 +147,7 @@ export default function CreateAgreement() {
       rental_unit_id: propertyId,
       landlord_id: user.id,
       tenant_id: property?.tenant_id || null,
-      landlord_name: user.full_name,
+      landlord_name: formData.landlord_name || user.full_name,
       tenant_name: tenant?.full_name || property?.tenant_email || '',
       tenant_address: '',
       landlord_address: formData.landlord_address,
