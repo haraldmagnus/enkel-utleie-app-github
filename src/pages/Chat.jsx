@@ -129,7 +129,7 @@ export default function Chat() {
     const messageData = {
       rental_unit_id: selectedProperty.id,
       sender_id: user.id,
-      sender_name: user.full_name || user.email,
+      sender_name: (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : (user.first_name || user.full_name || user.email),
       message: newMessage.trim(),
       read: false
     };

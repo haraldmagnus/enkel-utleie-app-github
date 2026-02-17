@@ -92,7 +92,7 @@ export default function Dashboard() {
   return (
     <div className="pb-20">
       <PageHeader 
-        title={`Hei, ${user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'deg'}!`}
+        title={`Hei, ${user?.first_name || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'deg'}!`}
         subtitle="Her er oversikten din"
       />
 
