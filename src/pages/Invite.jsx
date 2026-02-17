@@ -72,11 +72,12 @@ export default function Invite() {
       });
 
       // Update user role if needed
-      if (!user.role) {
+      if (!user.user_role) {
         try {
-          await base44.auth.updateMe({ role: 'tenant' });
+          await base44.auth.updateMe({ user_role: 'tenant' });
         } catch (e) {
-          console.log('Could not update role via API');
+          console.log('Could not update role via API, using localStorage fallback');
+          localStorage.setItem('user_role_override', 'tenant');
         }
       }
 
@@ -110,12 +111,6 @@ export default function Invite() {
     if (userLoading || inviteLoading) return;
     if (!user || !invitation) return;
     if (processing) return;
-
-    // Check role match first
-    if (user.role && user.role !== 'tenant') {
-      console.log('❌ Wrong role trying to accept tenant invitation:', user.role);
-      return; // Don't auto-accept, show error UI
-    }
 
     // Auto-accept if status is pending and not expired
     if (invitation.status === 'pending' && new Date(invitation.expires_at) > new Date()) {
@@ -268,43 +263,6 @@ export default function Invite() {
             <Button onClick={() => navigate(createPageUrl('Dashboard'))}>
               Gå til forsiden
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Check role mismatch (must be tenant)
-  if (user.role && user.role !== 'tenant') {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Feil rolle</h2>
-            <p className="text-slate-600 mb-4">
-              Denne invitasjonen kan kun aksepteres av en <strong>LEIETAKER</strong>-konto.
-              <br />
-              Du er logget inn som <strong>{user.role === 'landlord' ? 'UTLEIER' : 'ADMIN'}</strong>.
-            </p>
-            <p className="text-sm text-slate-500 mb-4">
-              Logg ut og logg inn med en leietaker-konto, eller opprett en ny konto som leietaker med riktig e-post.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                className="w-full"
-                onClick={() => base44.auth.logout()}
-              >
-                Logg ut
-              </Button>
-              <Button 
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate(createPageUrl('Dashboard'))}
-              >
-                Gå til forsiden
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -34,7 +34,7 @@ function LayoutContent({ children, currentPageName }) {
     if (!isLoading && user) {
       console.log('🔵 Layout: User loaded:', { 
         email: user.email, 
-        role: user.role,
+        user_role: user.user_role,
         currentPage: currentPageName 
       });
       
@@ -42,39 +42,58 @@ function LayoutContent({ children, currentPageName }) {
         setLanguage(user.language);
       }
       
-      const allowedPagesWithoutRole = ['RoleSelection'];
+      // Determine effective role
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveUserRole = user.active_role || user.user_role || roleOverride;
       
-      // If no role set, redirect to role selection (one-time setup)
-      if (!user.role && !allowedPagesWithoutRole.includes(currentPageName)) {
-        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
-        navigate(createPageUrl('RoleSelection'), { replace: true });
-        return;
-      }
+      console.log('🔵 Layout: Role check:', { 
+        active_role: user.active_role,
+        user_role: user.user_role,
+        roleOverride,
+        effectiveUserRole,
+        currentPage: currentPageName,
+        profile: {
+          full_name: !!user.full_name,
+          birth_date: !!user.birth_date,
+          phone_number: !!user.phone_number
+        }
+      });
       
-      // If role is set and on RoleSelection page, redirect to correct dashboard
-      if (user.role && currentPageName === 'RoleSelection') {
-        const targetPage = user.role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
-        console.log('🔵 Layout: Role already set, redirecting to', targetPage);
-        navigate(createPageUrl(targetPage), { replace: true });
-        return;
-      }
-      
-      // Profile completion check for tenants (but not blocking dashboard access)
-      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings', 'TenantDashboard', 'Dashboard'];
-      if (user.role === 'tenant' && !allowedPages.includes(currentPageName)) {
+      // Profile completion check (for ALL users, regardless of role)
+      const allowedPages = ['RoleSelection', 'CompleteProfile', 'Settings'];
+      if (!allowedPages.includes(currentPageName)) {
         const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
         if (needsProfile) {
-          console.log('🔵 Layout: Tenant profile incomplete, redirecting to CompleteProfile');
+          console.log('🔵 Layout: Profile incomplete, redirecting to CompleteProfile');
           navigate(createPageUrl('CompleteProfile'), { replace: true });
           return;
         }
+      }
+      
+      // If no role is determined, redirect to role selection
+      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
+        console.log('🔵 Layout: No role found, redirecting to RoleSelection');
+        navigate(createPageUrl('RoleSelection'), { replace: true });
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
   // Show nav on all pages except RoleSelection
   const noNavPages = ['RoleSelection'];
-  const showNav = user?.role && !noNavPages.includes(currentPageName);
+  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
+  
+  // Determine effective role: active_role > user_role > roleOverride
+  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+  
+  console.log('🔵 Layout: Effective role calculation:', {
+    activeRole: user?.active_role,
+    userRole: user?.user_role,
+    roleOverride,
+    effectiveRole,
+    currentPage: currentPageName
+  });
+  
+  const showNav = effectiveRole && !noNavPages.includes(currentPageName);
 
   if (isLoading) {
     return (
@@ -140,7 +159,7 @@ function LayoutContent({ children, currentPageName }) {
         .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
       `}</style>
       {children}
-      {showNav && <BottomNav userRole={user.role} />}
+      {showNav && <BottomNav userRole={effectiveRole} />}
     </div>
   );
 }

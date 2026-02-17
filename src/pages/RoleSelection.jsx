@@ -1,150 +1,128 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
+import { Building2, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Building, Home, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { createPageUrl } from '@/utils';
 
 export default function RoleSelection() {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
-
-  const setRoleMutation = useMutation({
-    mutationFn: async (role) => {
-      console.log('🔵 Setting role:', { email: user.email, role });
-      await base44.auth.updateMe({ role });
-      return role;
-    },
-    onSuccess: (role) => {
-      console.log('✅ Role set successfully:', role);
-      const targetPage = role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
-      navigate(createPageUrl(targetPage), { replace: true });
-    },
-    onError: (error) => {
-      console.error('❌ Failed to set role:', error);
-      alert('Kunne ikke sette rolle. Prøv igjen.');
-    }
-  });
-
-  useEffect(() => {
-    if (!isLoading && user?.role) {
-      console.log('🔵 User already has role:', user.role);
-      const targetPage = user.role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
-      navigate(createPageUrl(targetPage), { replace: true });
-    }
-  }, [user, isLoading, navigate]);
-
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedRole) return;
-    setRoleMutation.mutate(selectedRole);
+    
+    setIsLoading(true);
+    console.log('🔵 Role selected:', selectedRole);
+    
+    try {
+      console.log('🔵 Updating active_role via API...');
+      await base44.auth.updateMe({ 
+        active_role: selectedRole,
+        user_role: selectedRole,
+        language: 'no' 
+      });
+      localStorage.setItem('user_role_override', selectedRole);
+      console.log('✅ Role updated successfully to:', selectedRole);
+    } catch (error) {
+      console.log('⚠️ Could not update role via API:', error.message);
+      localStorage.setItem('user_role_override', selectedRole);
+      console.log('✅ Stored role in localStorage as fallback');
+    }
+    
+    console.log('🔵 Navigating to:', selectedRole === 'landlord' ? 'Dashboard' : 'TenantDashboard');
+    
+    // Use replace to avoid back button loop
+    if (selectedRole === 'landlord') {
+      navigate(createPageUrl('Dashboard'), { replace: true });
+    } else {
+      navigate(createPageUrl('TenantDashboard'), { replace: true });
+    }
+    
+    // Don't set isLoading to false - we're navigating away
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Velkommen til Utleieoversikt
-          </h1>
-          <p className="text-slate-600">
-            Velg din rolle for å komme i gang
-          </p>
-          <p className="text-sm text-slate-500 mt-2">
-            Rollen knyttes til din e-post og kan ikke endres senere
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center p-6">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Building2 className="w-8 h-8 text-white" />
         </div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Velkommen til Utleieoversikt</h1>
+        <p className="text-slate-600">Velg din rolle for å komme i gang</p>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <Card 
-            className={`cursor-pointer transition-all ${
-              selectedRole === 'landlord' 
-                ? 'ring-2 ring-blue-600 bg-blue-50' 
-                : 'hover:shadow-lg'
-            }`}
-            onClick={() => setSelectedRole('landlord')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Building className="w-8 h-8 text-blue-600" />
-                </div>
-                <h2 className="text-xl font-semibold mb-2">Utleier</h2>
-                <p className="text-sm text-slate-600">
-                  Administrer eiendommer, leietakere, leieavtaler og økonomi
-                </p>
-                <ul className="mt-4 text-sm text-slate-600 space-y-1 text-left w-full">
-                  <li>✓ Legg til eiendommer</li>
-                  <li>✓ Inviter leietakere</li>
-                  <li>✓ Opprett leieavtaler</li>
-                  <li>✓ Økonomioversikt</li>
-                  <li>✓ Vedlikeholdslogg</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className={`cursor-pointer transition-all ${
-              selectedRole === 'tenant' 
-                ? 'ring-2 ring-blue-600 bg-blue-50' 
-                : 'hover:shadow-lg'
-            }`}
-            onClick={() => setSelectedRole('tenant')}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Home className="w-8 h-8 text-green-600" />
-                </div>
-                <h2 className="text-xl font-semibold mb-2">Leietaker</h2>
-                <p className="text-sm text-slate-600">
-                  Se din bolig, leieavtale, dokumentasjon og kommuniser med utleier
-                </p>
-                <ul className="mt-4 text-sm text-slate-600 space-y-1 text-left w-full">
-                  <li>✓ Se boligdetaljer</li>
-                  <li>✓ Leieavtale og dokumenter</li>
-                  <li>✓ Chat med utleier</li>
-                  <li>✓ Kalender og påminnelser</li>
-                  <li>✓ Varsler om viktige datoer</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Button
-          className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-base"
-          onClick={handleContinue}
-          disabled={!selectedRole || setRoleMutation.isPending}
+      <div className="w-full max-w-md space-y-4">
+        <Card 
+          className={`cursor-pointer transition-all ${
+            selectedRole === 'landlord' 
+              ? 'ring-2 ring-blue-600 bg-blue-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => setSelectedRole('landlord')}
         >
-          {setRoleMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Setter opp konto...
-            </>
-          ) : (
-            'Fortsett'
-          )}
-        </Button>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              selectedRole === 'landlord' ? 'bg-blue-600' : 'bg-blue-100'
+            }`}>
+              <Building2 className={`w-6 h-6 ${
+                selectedRole === 'landlord' ? 'text-white' : 'text-blue-600'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-900">Utleier</h3>
+              <p className="text-sm text-slate-500">Administrer dine utleieenheter</p>
+            </div>
+            {selectedRole === 'landlord' && (
+              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <p className="text-xs text-center text-slate-500 mt-4">
-          Ønsker du bruke begge roller? Opprett to separate kontoer med ulike e-postadresser.
-        </p>
+        <Card 
+          className={`cursor-pointer transition-all ${
+            selectedRole === 'tenant' 
+              ? 'ring-2 ring-blue-600 bg-blue-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => setSelectedRole('tenant')}
+        >
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              selectedRole === 'tenant' ? 'bg-blue-600' : 'bg-blue-100'
+            }`}>
+              <User className={`w-6 h-6 ${
+                selectedRole === 'tenant' ? 'text-white' : 'text-blue-600'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-900">Leietaker</h3>
+              <p className="text-sm text-slate-500">Se din leiebolig og kommuniser med utleier</p>
+            </div>
+            {selectedRole === 'tenant' && (
+              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Button 
+          className="w-full mt-6 bg-blue-600 hover:bg-blue-700"
+          disabled={!selectedRole || isLoading}
+          onClick={handleContinue}
+        >
+          {isLoading ? 'Laster...' : 'Fortsett'}
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
     </div>
   );

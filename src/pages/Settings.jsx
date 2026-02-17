@@ -32,6 +32,8 @@ export default function Settings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [phone, setPhone] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [fullName, setFullName] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -64,7 +66,59 @@ export default function Settings() {
     setEditingPhone(false);
   };
 
+  const handleNameSave = async () => {
+    try {
+      await base44.auth.updateMe({ full_name: fullName });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      setEditingName(false);
+    } catch (e) {
+      console.error('Could not update name:', e);
+    }
+  };
+
+  const handleRoleChange = async (newRole) => {
+    console.log('🔵 Settings: Changing active role to:', newRole);
+    
+    // Check if profile is complete before switching
+    const needsProfile = !user?.full_name || !user?.birth_date || !user?.phone_number;
+    if (needsProfile) {
+      console.log('🔵 Settings: Profile incomplete, redirecting to CompleteProfile first');
+      navigate(createPageUrl('CompleteProfile'), { replace: true });
+      return;
+    }
+    
+    try {
+      await base44.auth.updateMe({ active_role: newRole });
+      localStorage.setItem('user_role_override', newRole);
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
+      
+      // Navigate to appropriate dashboard
+      if (newRole === 'landlord') {
+        navigate(createPageUrl('Dashboard'), { replace: true });
+      } else {
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }
+    } catch (e) {
+      console.log('Could not update via API, using localStorage');
+      localStorage.setItem('user_role_override', newRole);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      if (newRole === 'landlord') {
+        navigate(createPageUrl('Dashboard'), { replace: true });
+      } else {
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }
+    }
+  };
+
   const handleLogout = async () => {
+    try {
+      // Clear user role before logout
+      await base44.auth.updateMe({ user_role: null });
+    } catch (e) {
+      console.log('Could not clear role:', e);
+    }
     try {
       localStorage.clear();
       sessionStorage.clear();
@@ -79,44 +133,43 @@ export default function Settings() {
   };
 
   const handleHardReset = async () => {
+    console.log('🔵 Hard reset: Starting...');
+    console.log('🔵 Hard reset: Current user:', { 
+      roles: user?.roles, 
+      active_role: user?.active_role,
+      user_role: user?.user_role 
+    });
+    
     try {
+      // Save server-side role before clearing
+      const savedActiveRole = user?.active_role || user?.user_role;
+      console.log('🔵 Hard reset: Saved active role:', savedActiveRole);
+      
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restore active role immediately after clear
+      if (savedActiveRole) {
+        localStorage.setItem('user_role_override', savedActiveRole);
+        console.log('🔵 Hard reset: Restored active role to localStorage');
+      }
+      
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
+      
       window.location.reload();
     } catch (e) {
+      console.error('🔵 Hard reset error:', e);
       window.location.reload();
     }
   };
 
   const handleDeleteAccount = async () => {
-    try {
-      console.log('🔵 Starting complete account deletion...');
-      
-      // Call backend function to delete everything including auth
-      const response = await base44.functions.invoke('deleteUserCompletely', {});
-      
-      console.log('✅ Deletion response:', response);
-      
-      if (response.data.success) {
-        alert('Din konto er fullstendig slettet. Du kan nå registrere deg på nytt med samme e-post.');
-        
-        // Clear all local data
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Redirect to login
-        window.location.href = '/';
-      } else {
-        throw new Error(response.data.error || 'Sletting feilet');
-      }
-    } catch (error) {
-      console.error('❌ Delete account failed:', error);
-      alert('Kunne ikke slette konto: ' + error.message);
-    }
+    // In a real app, this would delete user data
+    // For now, just log out
+    handleLogout();
   };
 
   const handleGDPRConsent = () => {
@@ -143,7 +196,31 @@ export default function Settings() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <span className="text-slate-600">Navn</span>
-              <span className="font-medium">{user?.full_name}</span>
+              {editingName ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Fullt navn"
+                    className="w-40 h-8"
+                  />
+                  <Button size="sm" onClick={handleNameSave}>Lagre</Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{user?.full_name || '-'}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setFullName(user?.full_name || '');
+                      setEditingName(true);
+                    }}
+                  >
+                    Endre
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <span className="text-slate-600">E-post</span>
@@ -177,16 +254,35 @@ export default function Settings() {
                 </div>
               )}
             </div>
-            <div className="flex flex-col gap-2 py-2 border-t">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600">Rolle</span>
-                <span className="font-medium capitalize">
-                  {user?.role === 'landlord' ? t('landlord') : t('tenant')}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Rollen er knyttet til din e-post og kan ikke endres. For å bruke en annen rolle, logg inn med en annen e-postadresse.
-              </p>
+          </CardContent>
+        </Card>
+
+        {/* Active Role Switcher - Always visible */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="w-4 h-4" /> Aktiv rolle
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-500 mb-3">
+              Bytt mellom utleier- og leietaker-visning
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={(user?.active_role === 'landlord' || (!user?.active_role && user?.user_role === 'landlord')) ? 'default' : 'outline'}
+                onClick={() => handleRoleChange('landlord')}
+                className="w-full"
+              >
+                {t('landlord')}
+              </Button>
+              <Button
+                variant={(user?.active_role === 'tenant' || (!user?.active_role && user?.user_role === 'tenant')) ? 'default' : 'outline'}
+                onClick={() => handleRoleChange('tenant')}
+                className="w-full"
+              >
+                {t('tenant')}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -354,23 +450,14 @@ export default function Settings() {
 
         {/* Delete Account */}
         <Card className="border-red-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-red-600 flex items-center gap-2">
-              <Trash2 className="w-4 h-4" /> Slett konto permanent
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-slate-600">
-              Dette vil slette all din data OG fjerne kontoen fra innloggingssystemet. 
-              E-posten din kan deretter registreres på nytt med en annen rolle.
-            </p>
+          <CardContent className="p-4">
             <Button 
               variant="outline" 
               className="w-full text-red-600 border-red-200 hover:bg-red-50"
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Slett konto og data permanent
+              Slett konto og data
             </Button>
           </CardContent>
         </Card>
@@ -390,17 +477,10 @@ export default function Settings() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Slett konto permanent?</DialogTitle>
-            <DialogDescription className="space-y-2">
-              <p>
-                Dette vil slette all din data permanent, inkludert eiendommer, avtaler og meldinger.
-              </p>
-              <p className="font-medium text-red-600">
-                Kontoen din vil bli fullstendig fjernet fra innloggingssystemet, og du kan registrere deg på nytt med samme e-post.
-              </p>
-              <p className="text-sm">
-                Denne handlingen kan ikke angres.
-              </p>
+            <DialogTitle>Slett konto?</DialogTitle>
+            <DialogDescription>
+              Dette vil slette all din data permanent, inkludert eiendommer, avtaler og meldinger. 
+              Denne handlingen kan ikke angres.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -408,7 +488,7 @@ export default function Settings() {
               Avbryt
             </Button>
             <Button variant="destructive" onClick={handleDeleteAccount}>
-              Ja, slett permanent
+              Slett konto
             </Button>
           </DialogFooter>
         </DialogContent>

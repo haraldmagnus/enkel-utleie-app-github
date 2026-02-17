@@ -49,46 +49,46 @@
  */
 import AddProperty from './pages/AddProperty';
 import CalendarPage from './pages/CalendarPage';
+import Chat from './pages/Chat';
+import CompleteProfile from './pages/CompleteProfile';
 import CreateAgreement from './pages/CreateAgreement';
+import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
 import Finances from './pages/Finances';
+import Invite from './pages/Invite';
 import Notifications from './pages/Notifications';
 import PaymentReminders from './pages/PaymentReminders';
 import Properties from './pages/Properties';
-import SignAgreement from './pages/SignAgreement';
-import TenantPhotos from './pages/TenantPhotos';
-import YearlyReport from './pages/YearlyReport';
-import Chat from './pages/Chat';
-import Invite from './pages/Invite';
 import PropertyDetail from './pages/PropertyDetail';
 import RoleSelection from './pages/RoleSelection';
-import CompleteProfile from './pages/CompleteProfile';
-import Dashboard from './pages/Dashboard';
-import TenantDashboard from './pages/TenantDashboard';
 import Settings from './pages/Settings';
+import SignAgreement from './pages/SignAgreement';
+import TenantDashboard from './pages/TenantDashboard';
+import TenantPhotos from './pages/TenantPhotos';
+import YearlyReport from './pages/YearlyReport';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AddProperty": AddProperty,
     "CalendarPage": CalendarPage,
+    "Chat": Chat,
+    "CompleteProfile": CompleteProfile,
     "CreateAgreement": CreateAgreement,
+    "Dashboard": Dashboard,
     "EditProperty": EditProperty,
     "Finances": Finances,
+    "Invite": Invite,
     "Notifications": Notifications,
     "PaymentReminders": PaymentReminders,
     "Properties": Properties,
-    "SignAgreement": SignAgreement,
-    "TenantPhotos": TenantPhotos,
-    "YearlyReport": YearlyReport,
-    "Chat": Chat,
-    "Invite": Invite,
     "PropertyDetail": PropertyDetail,
     "RoleSelection": RoleSelection,
-    "CompleteProfile": CompleteProfile,
-    "Dashboard": Dashboard,
-    "TenantDashboard": TenantDashboard,
     "Settings": Settings,
+    "SignAgreement": SignAgreement,
+    "TenantDashboard": TenantDashboard,
+    "TenantPhotos": TenantPhotos,
+    "YearlyReport": YearlyReport,
 }
 
 export const pagesConfig = {

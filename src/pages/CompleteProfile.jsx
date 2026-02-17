@@ -13,39 +13,64 @@ export default function CompleteProfile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const [formData, setFormData] = useState({
-    full_name: '',
-    birth_date: '',
-    phone_number: ''
-  });
-
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
+  const [formData, setFormData] = useState({
+    full_name: user?.full_name || '',
+    birth_date: user?.birth_date || '',
+    phone_number: user?.phone_number || ''
+  });
+
+  // Prefill form with existing user data when loaded
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔵 CompleteProfile: User loaded, prefilling:', {
+        full_name: user.full_name,
+        birth_date: user.birth_date,
+        phone_number: user.phone_number
+      });
+      
+      setFormData({
+        full_name: user.full_name || '',
+        birth_date: user.birth_date || '',
+        phone_number: user.phone_number || ''
+      });
+    }
+  }, [user]);
+
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 Updating tenant profile:', data);
-      try {
-        await base44.auth.updateMe(data);
-      } catch (e) {
-        console.log('Could not update via API, using localStorage');
-        // Store locally as fallback
-        localStorage.setItem('tenant_profile_complete', 'true');
-      }
+      console.log('🔵 CompleteProfile: Saving profile data:', data);
+      await base44.auth.updateMe(data);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      console.log('✅ Profile completed');
-      // Navigate to tenant dashboard
-      navigate(createPageUrl('TenantDashboard'), { replace: true });
+    onSuccess: async () => {
+      console.log('✅ CompleteProfile: Save successful, refetching user...');
+      
+      // Wait for user to be refetched with new data
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
+      
+      console.log('✅ CompleteProfile: User refetched, navigating...');
+      
+      // Determine where to navigate based on active role
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+      
+      const targetPage = effectiveRole === 'landlord' ? 'Dashboard' : 'TenantDashboard';
+      console.log('🔵 CompleteProfile: Navigating to', targetPage, 'for role', effectiveRole);
+      
+      navigate(createPageUrl(targetPage), { replace: true });
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    console.log('🔵 CompleteProfile: Form submitted');
     
     // Validate phone number (Norwegian format)
     const phoneRegex = /^(\+47)?[4|9]\d{7}$/;
