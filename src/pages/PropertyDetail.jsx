@@ -290,17 +290,27 @@ export default function PropertyDetail() {
         recipientExists: userExists,
         bodyLength: emailBody.length,
         includesSignupLink: !userExists,
-        includesInviteLink: true
+        includesInviteLink: true,
+        provider: 'resend_via_backend_function'
       });
 
       try {
-        const emailResult = await base44.integrations.Core.SendEmail({
+        console.log('🔵 [INVITE DEBUG] Calling sendInvitationEmail function...');
+        const { data: emailResult } = await base44.functions.invoke('sendInvitationEmail', {
           to: cleanEmail,
           from_name: user.full_name || 'Utleieoversikt',
           subject: emailSubject,
           body: emailBody.trim()
         });
-        console.log('✅ [INVITE DEBUG] Property invitation email sent successfully:', emailResult);
+        
+        if (!emailResult.success) {
+          throw new Error(emailResult.error || 'Unknown email error');
+        }
+        
+        console.log('✅ [INVITE DEBUG] Property invitation email sent successfully:', {
+          messageId: emailResult.messageId,
+          provider: emailResult.provider
+        });
       } catch (emailError) {
         console.error('❌ [INVITE DEBUG] SendEmail failed:', {
           error: emailError,
@@ -308,6 +318,12 @@ export default function PropertyDetail() {
           stack: emailError.stack,
           response: emailError.response
         });
+        
+        // Provide helpful error message based on error code
+        if (emailError.message?.includes('RESEND_NOT_CONFIGURED')) {
+          throw new Error('E-posttjeneste er ikke konfigurert. Legg til RESEND_API_KEY i Dashboard → Code → Settings → Environment Variables.');
+        }
+        
         throw new Error(`E-posttjeneste feilet: ${emailError.message}`);
       }
       
