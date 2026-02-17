@@ -137,7 +137,7 @@ export default function CreateAgreement() {
       terms: formData.terms,
       landlord_signed: true,
       landlord_signed_date: new Date().toISOString(),
-      landlord_bankid_ref: bankIdRef,
+      landlord_bankid_ref: signRef,
       status: 'pending_tenant'
     });
   };
