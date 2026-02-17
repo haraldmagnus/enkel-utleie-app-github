@@ -28,24 +28,52 @@ export default function CompleteProfile() {
   // Prefill form with existing user data when loaded
   React.useEffect(() => {
     if (user) {
+      console.log('🔵 CompleteProfile: User loaded:', {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        user_role: user.user_role,
+        role_locked: user.role_locked
+      });
+      
       setFormData({
         full_name: user.full_name || '',
         birth_date: user.birth_date || '',
         phone_number: user.phone_number || ''
       });
-      setSelectedRole(user.role || '');
+      setSelectedRole(user.user_role || '');
     }
   }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 CompleteProfile: Saving registration data:', data);
+      console.log('🔵 CompleteProfile: Saving registration data:', {
+        userId: user?.id,
+        email: user?.email,
+        payload: data
+      });
+      
       try {
-        const response = await base44.auth.updateMe(data);
-        console.log('✅ CompleteProfile: Save response:', response);
+        // Save basic profile fields + role in data object (not platform role field)
+        const updatePayload = {
+          full_name: data.full_name,
+          birth_date: data.birth_date,
+          phone_number: data.phone_number,
+          user_role: data.user_role,  // This saves to user.data.user_role (app-managed)
+          role_locked: true  // Lock role after first save
+        };
+        
+        console.log('🔵 Calling base44.auth.updateMe with:', updatePayload);
+        const response = await base44.auth.updateMe(updatePayload);
+        
+        console.log('✅ CompleteProfile: Save successful, response:', response);
         return response;
       } catch (error) {
-        console.error('❌ CompleteProfile: Save failed:', error);
+        console.error('❌ CompleteProfile: Save failed:', {
+          error: error.message,
+          stack: error.stack,
+          fullError: error
+        });
         throw error;
       }
     },
@@ -57,16 +85,28 @@ export default function CompleteProfile() {
       await queryClient.refetchQueries({ queryKey: ['currentUser'] });
       
       const updatedUser = queryClient.getQueryData(['currentUser']);
-      console.log('🔵 CompleteProfile: Refetched user:', updatedUser);
       
-      const targetPage = updatedUser?.role === 'landlord' ? 'Dashboard' : 'TenantDashboard';
+      console.log('🔵 CompleteProfile: Refetched user:', {
+        id: updatedUser?.id,
+        email: updatedUser?.email,
+        full_name: updatedUser?.full_name,
+        user_role: updatedUser?.user_role,
+        role_locked: updatedUser?.role_locked
+      });
       
-      console.log('✅ CompleteProfile: Navigating to', targetPage, 'for role', updatedUser?.role);
+      // Read role from user.user_role (Base44 exposes data.user_role as user.user_role)
+      const appRole = updatedUser?.user_role;
+      const targetPage = appRole === 'landlord' ? 'Dashboard' : 'TenantDashboard';
+      
+      console.log('✅ CompleteProfile: Navigating to', targetPage, 'for user_role:', appRole);
       navigate(createPageUrl(targetPage), { replace: true });
     },
     onError: (error) => {
-      console.error('❌ CompleteProfile: Mutation error:', error);
-      alert('Kunne ikke lagre profil: ' + error.message);
+      console.error('❌ CompleteProfile: Mutation error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      alert('Kunne ikke lagre profil: ' + error.message + '\n\nSe konsoll for detaljer.');
     }
   });
 
@@ -107,7 +147,7 @@ export default function CompleteProfile() {
       full_name: formData.full_name,
       birth_date: formData.birth_date,
       phone_number: cleanPhone,
-      role: selectedRole
+      user_role: selectedRole  // Save as user_role (app-managed), not role (platform-managed)
     });
   };
 
@@ -205,14 +245,16 @@ export default function CompleteProfile() {
                 </button>
               </div>
               <p className="text-xs text-slate-500">
-                Rollen kan ikke endres senere. Hvis du trenger en annen rolle, må du bruke en annen e-postadresse.
+                {user?.role_locked 
+                  ? 'Rollen din er låst og kan ikke endres.' 
+                  : 'Rollen kan ikke endres etter at du har fullført registreringen.'}
               </p>
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700 mt-6"
-              disabled={updateMutation.isPending || !formData.full_name || !formData.birth_date || !formData.phone_number || !selectedRole}
+              disabled={updateMutation.isPending || !formData.full_name || !formData.birth_date || !formData.phone_number || !selectedRole || user?.role_locked}
             >
               {updateMutation.isPending ? (
                 <>

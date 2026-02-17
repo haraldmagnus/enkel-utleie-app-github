@@ -23,10 +23,10 @@ export default function Dashboard() {
   React.useEffect(() => {
     if (user) {
       console.log('🔵 Dashboard: User role check:', { 
-        role: user.role
+        user_role: user.user_role
       });
       
-      if (user.role === 'tenant') {
+      if (user.user_role === 'tenant') {
         console.log('⚠️ Dashboard: Tenant detected, redirecting to TenantDashboard');
         window.location.href = createPageUrl('TenantDashboard');
       }

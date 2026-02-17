@@ -62,9 +62,15 @@ function LayoutContent({ children, currentPageName }) {
       // Registration completion check
       const allowedPages = ['CompleteProfile'];
       if (!allowedPages.includes(currentPageName)) {
-        const needsRegistration = !user.full_name || !user.birth_date || !user.phone_number || !user.role;
+        const needsRegistration = !user.full_name || !user.birth_date || !user.phone_number || !user.user_role;
+        
         if (needsRegistration) {
-          console.log('🔵 Layout: Registration incomplete, redirecting to CompleteProfile');
+          console.log('🔵 Layout: Registration incomplete, redirecting to CompleteProfile', {
+            has_name: !!user.full_name,
+            has_birth_date: !!user.birth_date,
+            has_phone: !!user.phone_number,
+            has_role: !!user.user_role
+          });
           navigate(createPageUrl('CompleteProfile'), { replace: true });
           return;
         }
@@ -75,11 +81,11 @@ function LayoutContent({ children, currentPageName }) {
   // Show nav on all pages except CompleteProfile
   const noNavPages = ['CompleteProfile'];
   
-  // Effective role is simply user.role (set during registration)
-  const effectiveRole = user?.role;
+  // Read role from user.user_role (app-managed field)
+  const effectiveRole = user?.user_role;
   
   console.log('🔵 Layout: Effective role:', {
-    role: user?.role,
+    user_role: user?.user_role,
     currentPage: currentPageName
   });
   
