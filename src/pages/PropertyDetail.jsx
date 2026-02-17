@@ -73,28 +73,39 @@ export default function PropertyDetail() {
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
     
+    // CRITICAL: Normalize email (lowercase + trim)
     const cleanEmail = inviteEmail.toLowerCase().trim();
     const isSelfInvite = cleanEmail === user?.email?.toLowerCase();
     
     console.log('🔵 [INVITE DEBUG] ===== STARTING INVITATION =====');
     console.log('🔵 [INVITE DEBUG] Input:', { 
-      tenantEmail: cleanEmail,
+      tenantEmailRaw: inviteEmail,
+      tenantEmailNormalized: cleanEmail,
       propertyId,
       propertyName: property.name,
       landlordId: user.id,
       landlordEmail: user?.email,
       landlordName: user?.full_name,
       isSelfInvite,
-      timestamp: new Date().toISOString()
+      timestampUTC: new Date().toISOString(),
+      timestampLocal: new Date().toLocaleString('no-NO', { timeZone: 'Europe/Oslo' })
     });
     
     try {
       // Generate unique token
       const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      const now = new Date();
+      const expiresAt = new Date(now);
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from NOW
       
-      console.log('🔵 [INVITE DEBUG] Token generated:', { token, expiresAt: expiresAt.toISOString() });
+      console.log('🔵 [INVITE DEBUG] Token generated:', { 
+        token, 
+        createdAtUTC: now.toISOString(),
+        createdAtLocal: now.toLocaleString('no-NO', { timeZone: 'Europe/Oslo' }),
+        expiresAtUTC: expiresAt.toISOString(),
+        expiresAtLocal: expiresAt.toLocaleString('no-NO', { timeZone: 'Europe/Oslo' }),
+        validityDays: 7
+      });
       
       // Create invitation record
       const invitation = await base44.entities.TenantInvitation.create({
@@ -111,22 +122,39 @@ export default function PropertyDetail() {
         status: invitation.status
       });
       
-      // Generate invitation link
-      const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
-      console.log('🔵 [INVITE DEBUG] Invite URL:', inviteUrl);
+      // Generate invitation link with CORRECT baseUrl
+      const baseUrl = window.location.origin;
+      const invitePath = createPageUrl('Invite');
+      const inviteUrl = `${baseUrl}${invitePath}?token=${token}`;
+      console.log('🔵 [INVITE DEBUG] Invite link generated:', {
+        baseUrl,
+        invitePath,
+        fullUrl: inviteUrl,
+        token: `${token.substring(0, 8)}...${token.substring(token.length - 8)}`, // masked
+        expiresAt: expiresAt.toISOString()
+      });
       
-      // Check if user exists in system
+      // Check if user exists in system (with normalized email)
       let userExists = false;
       let existingUserId = null;
       try {
-        const existingUsers = await base44.entities.User.filter({ email: cleanEmail });
+        // Try exact match first
+        let existingUsers = await base44.entities.User.filter({ email: cleanEmail });
+        
+        // If no match, try case-insensitive search
+        if (existingUsers.length === 0) {
+          const allUsers = await base44.entities.User.list();
+          existingUsers = allUsers.filter(u => u.email?.toLowerCase().trim() === cleanEmail);
+        }
+        
         userExists = existingUsers.length > 0;
         existingUserId = existingUsers[0]?.id;
-        console.log(`🔵 [INVITE DEBUG] Recipient check:`, {
-          email: cleanEmail,
+        console.log(`🔵 [INVITE DEBUG] Recipient lookup:`, {
+          emailNormalized: cleanEmail,
           recipientExists: userExists,
           recipientUserId: existingUserId,
-          recipientCount: existingUsers.length
+          recipientCount: existingUsers.length,
+          recipientEmail: existingUsers[0]?.email
         });
       } catch (e) {
         console.error('❌ [INVITE DEBUG] User existence check failed:', e);
@@ -215,21 +243,27 @@ Utleieoversikt - Din komplette utleieløsning`;
         }
       }
       
-      // Create in-app notification if user exists
+      // Create in-app notification if user exists (LINKED to invitation)
       if (userExists && existingUserId) {
         try {
-          await base44.entities.Notification.create({
+          const notification = await base44.entities.Notification.create({
             user_id: existingUserId,
             type: 'agreement',
             title: 'Ny boliginvitasjon',
             message: `${user.full_name || 'En utleier'} inviterer deg til ${property.name}`,
             rental_unit_id: propertyId,
-            related_id: invitation.id,
+            related_id: invitation.id, // CRITICAL: linked to invitation
             read: false
           });
-          console.log('✅ [INVITE DEBUG] In-app notification created');
+          console.log('✅ [INVITE DEBUG] In-app notification created:', {
+            notificationId: notification.id,
+            userId: existingUserId,
+            type: 'agreement',
+            linkedInvitationId: invitation.id,
+            read: false
+          });
         } catch (notifError) {
-          console.log('⚠️ [INVITE DEBUG] Could not create notification:', notifError);
+          console.error('❌ [INVITE DEBUG] Could not create notification:', notifError);
         }
       }
       
