@@ -3,12 +3,42 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Building2, Wallet, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { createPageUrl } from '@/utils';
+import { getHomeRoute } from '@/components/roleUtils';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 export default function BottomNav({ userRole }) {
   const location = useLocation();
   const { t } = useLanguage();
+
+  // Fetch unread message count
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unreadMessages'],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      
+      const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
+      const unread = allMessages.filter(msg => 
+        msg.sender_id !== user.id && !msg.read
+      );
+      
+      console.log('🔵 [BottomNav] Unread messages:', unread.length);
+      return unread.length;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 10000
+  });
   
-  console.log('🔵 BottomNav: userRole =', userRole);
+  console.log('🔵 BottomNav mounted:', { 
+    userRole, 
+    currentPath: location.pathname,
+    homeRoute: getHomeRoute(userRole)
+  });
   
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: t('home') },
@@ -49,9 +79,14 @@ export default function BottomNav({ userRole }) {
               key={to}
               to={createPageUrl(to)}
               onClick={() => {
-                console.log('🔵 BottomNav: Navigating to', to, '| Role:', userRole);
+                console.log('🔵 BottomNav CLICK:', { 
+                  navigatingTo: to, 
+                  userRole, 
+                  fromPath: location.pathname,
+                  toUrl: createPageUrl(to)
+                });
               }}
-              className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors ${
+              className={`flex flex-col items-center px-3 py-1 rounded-lg transition-colors relative ${
                 isActive 
                   ? 'text-blue-600' 
                   : 'text-slate-500 hover:text-slate-700'
@@ -59,6 +94,11 @@ export default function BottomNav({ userRole }) {
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
               <span className="text-xs mt-1">{label}</span>
+              {to === 'Chat' && unreadCount > 0 && (
+                <span className="absolute top-0 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

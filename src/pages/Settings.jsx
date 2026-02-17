@@ -32,8 +32,6 @@ export default function Settings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [phone, setPhone] = useState('');
-  const [editingName, setEditingName] = useState(false);
-  const [fullName, setFullName] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -66,53 +64,13 @@ export default function Settings() {
     setEditingPhone(false);
   };
 
-  const handleNameSave = async () => {
-    try {
-      await base44.auth.updateMe({ full_name: fullName });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setEditingName(false);
-    } catch (e) {
-      console.error('Could not update name:', e);
-    }
-  };
-
-  const handleRoleChange = async (newRole) => {
-    console.log('🔵 Settings: Changing active role to:', newRole);
-    
-    // Check if profile is complete before switching
-    const needsProfile = !user?.full_name || !user?.birth_date || !user?.phone_number;
-    if (needsProfile) {
-      console.log('🔵 Settings: Profile incomplete, redirecting to CompleteProfile first');
-      navigate(createPageUrl('CompleteProfile'), { replace: true });
-      return;
-    }
-    
-    try {
-      await base44.auth.updateMe({ active_role: newRole });
-      localStorage.setItem('user_role_override', newRole);
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.refetchQueries({ queryKey: ['currentUser'] });
-      
-      // Navigate to appropriate dashboard
-      if (newRole === 'landlord') {
-        navigate(createPageUrl('Dashboard'), { replace: true });
-      } else {
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-      }
-    } catch (e) {
-      console.log('Could not update via API, using localStorage');
-      localStorage.setItem('user_role_override', newRole);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      if (newRole === 'landlord') {
-        navigate(createPageUrl('Dashboard'), { replace: true });
-      } else {
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-      }
-    }
-  };
-
   const handleLogout = async () => {
+    try {
+      // Clear user role before logout
+      await base44.auth.updateMe({ user_role: null });
+    } catch (e) {
+      console.log('Could not clear role:', e);
+    }
     try {
       localStorage.clear();
       sessionStorage.clear();
@@ -127,35 +85,15 @@ export default function Settings() {
   };
 
   const handleHardReset = async () => {
-    console.log('🔵 Hard reset: Starting...');
-    console.log('🔵 Hard reset: Current user:', { 
-      roles: user?.roles, 
-      active_role: user?.active_role,
-      user_role: user?.user_role 
-    });
-    
     try {
-      // Save server-side role before clearing
-      const savedActiveRole = user?.active_role || user?.user_role;
-      console.log('🔵 Hard reset: Saved active role:', savedActiveRole);
-      
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Restore active role immediately after clear
-      if (savedActiveRole) {
-        localStorage.setItem('user_role_override', savedActiveRole);
-        console.log('🔵 Hard reset: Restored active role to localStorage');
-      }
-      
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
-      
       window.location.reload();
     } catch (e) {
-      console.error('🔵 Hard reset error:', e);
       window.location.reload();
     }
   };
@@ -190,31 +128,7 @@ export default function Settings() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <span className="text-slate-600">Navn</span>
-              {editingName ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Fullt navn"
-                    className="w-40 h-8"
-                  />
-                  <Button size="sm" onClick={handleNameSave}>Lagre</Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{user?.full_name || '-'}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setFullName(user?.full_name || '');
-                      setEditingName(true);
-                    }}
-                  >
-                    Endre
-                  </Button>
-                </div>
-              )}
+              <span className="font-medium">{user?.full_name}</span>
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <span className="text-slate-600">E-post</span>
@@ -248,44 +162,17 @@ export default function Settings() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Current Role Display */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="w-4 h-4" /> Din rolle
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-              {user?.user_role === 'landlord' ? (
-                <>
-                  <div className="w-6 h-6 text-blue-600">🏢</div>
-                  <div>
-                    <div className="font-medium">Utleier</div>
-                    <div className="text-xs text-slate-500">
-                      Du administrerer utleieeiendommer
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-6 h-6 text-blue-600">🏠</div>
-                  <div>
-                    <div className="font-medium">Leietaker</div>
-                    <div className="text-xs text-slate-500">
-                      Du leier en eiendom
-                    </div>
-                  </div>
-                </>
-              )}
+            <div className="flex items-center justify-between py-2 border-t">
+              <span className="text-slate-600">Rolle</span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(createPageUrl('RoleSelection'))}
+              >
+                {(user?.active_role || user?.user_role) === 'landlord' ? t('landlord') : t('tenant')}
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-            <p className="text-xs text-slate-500">
-              Rollen ble satt ved registrering og kan ikke endres. 
-              Hvis du trenger en annen rolle, må du opprette en ny konto med en annen e-postadresse.
-            </p>
           </CardContent>
         </Card>
 

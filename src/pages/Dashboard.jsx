@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
-import NotificationBell from '@/components/NotificationBell';
+import PageHeader from '@/components/PageHeader';
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -19,15 +19,22 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me()
   });
 
-  // Redirect tenant users to TenantDashboard
+  // Redirect if user is on wrong dashboard for their role
   React.useEffect(() => {
     if (user) {
-      console.log('🔵 Dashboard: User role check:', { 
-        user_role: user.user_role
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveRole = user.active_role || user.user_role || roleOverride;
+      
+      console.log('🔵 Dashboard (Landlord): Role check:', { 
+        active_role: user.active_role,
+        user_role: user.user_role, 
+        roleOverride, 
+        effectiveRole,
+        currentPage: 'Dashboard'
       });
       
-      if (user.user_role === 'tenant') {
-        console.log('⚠️ Dashboard: Tenant detected, redirecting to TenantDashboard');
+      if (effectiveRole === 'tenant') {
+        console.log('⚠️ Dashboard: Tenant on landlord page - REDIRECTING to TenantDashboard');
         window.location.href = createPageUrl('TenantDashboard');
       }
     }
@@ -84,22 +91,10 @@ export default function Dashboard() {
 
   return (
     <div className="pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex-1" />
-          <h1 className="text-xl font-semibold text-center">Hei, {user?.full_name?.split(' ')[0] || 'Utleier'}!</h1>
-          <div className="flex-1 flex justify-end gap-1">
-            <NotificationBell />
-            <Link to={createPageUrl('Settings')}>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-        <p className="text-blue-100 text-sm text-center">Her er oversikten din</p>
-      </div>
+      <PageHeader 
+        title={`Hei, ${user?.full_name?.split(' ')[0] || 'Utleier'}!`}
+        subtitle="Her er oversikten din"
+      />
 
       <div className="p-4 -mt-6 space-y-4">
         {/* Quick Stats */}

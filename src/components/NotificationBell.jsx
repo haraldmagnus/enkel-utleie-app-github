@@ -17,6 +17,7 @@ const iconMap = {
   message: MessageSquare,
   agreement: FileText,
   maintenance: Wrench,
+  tenant_invitation: FileText
 };
 
 export default function NotificationBell() {

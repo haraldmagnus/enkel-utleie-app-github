@@ -6,35 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCircle, Loader2, Building2, Home, Check } from 'lucide-react';
+import { UserCircle, Loader2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
+  const [formData, setFormData] = useState({
+    full_name: '',
+    birth_date: '',
+    phone_number: ''
+  });
+
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
-  const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
-    birth_date: user?.birth_date || '',
-    phone_number: user?.phone_number || ''
-  });
-
-  // Prefill form with existing user data when loaded
+  // Pre-populate form with existing user data
   React.useEffect(() => {
     if (user) {
-      console.log('🔵 CompleteProfile: User loaded:', {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        user_role: user.user_role,
-        role_locked: user.role_locked
-      });
-      
       setFormData({
         full_name: user.full_name || '',
         birth_date: user.birth_date || '',
@@ -45,58 +37,42 @@ export default function CompleteProfile() {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 CompleteProfile: Saving basic profile data:', {
-        userId: user?.id,
-        email: user?.email,
-        payload: data
-      });
-      
+      console.log('🔵 Updating tenant profile:', data);
       try {
-        const updatePayload = {
-          full_name: data.full_name,
-          birth_date: data.birth_date,
-          phone_number: data.phone_number
-        };
-        
-        const response = await base44.auth.updateMe(updatePayload);
-        console.log('✅ CompleteProfile: Save successful');
-        return response;
-      } catch (error) {
-        console.error('❌ CompleteProfile: Save failed:', error);
-        throw error;
+        await base44.auth.updateMe(data);
+      } catch (e) {
+        console.log('Could not update via API, using localStorage');
+        // Store locally as fallback
+        localStorage.setItem('tenant_profile_complete', 'true');
       }
+      return data;
     },
     onSuccess: async () => {
-      console.log('✅ CompleteProfile: Profile saved, navigating to role selection');
+      console.log('✅ Profile completed');
+      // Wait for query invalidation to complete
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      navigate(createPageUrl('RoleSelection'), { replace: true });
-    },
-    onError: (error) => {
-      console.error('❌ CompleteProfile: Mutation error:', {
-        message: error.message,
-        stack: error.stack
-      });
-      alert('Kunne ikke lagre profil: ' + error.message + '\n\nSe konsoll for detaljer.');
+      // Determine where to navigate based on role
+      const roleOverride = localStorage.getItem('user_role_override');
+      const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+      if (effectiveRole === 'landlord') {
+        navigate(createPageUrl('Dashboard'), { replace: true });
+      } else {
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
+      }
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate phone number (Norwegian format - 8 digits starting with 4-9)
-    const cleanPhone = formData.phone_number.replace(/\s/g, '');
-    const phoneRegex = /^[4-9]\d{7}$/;
-    
-    if (!phoneRegex.test(cleanPhone)) {
-      alert('Vennligst oppgi et gyldig norsk telefonnummer (8 siffer, starter med 4-9)');
+    // Validate phone number (Norwegian format)
+    const phoneRegex = /^(\+47)?[4|9]\d{7}$/;
+    if (!phoneRegex.test(formData.phone_number.replace(/\s/g, ''))) {
+      alert('Vennligst oppgi et gyldig norsk telefonnummer (8 siffer)');
       return;
     }
-    
-    updateMutation.mutate({
-      full_name: formData.full_name,
-      birth_date: formData.birth_date,
-      phone_number: cleanPhone
-    });
+
+    updateMutation.mutate(formData);
   };
 
   if (userLoading) {
@@ -114,9 +90,9 @@ export default function CompleteProfile() {
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserCircle className="w-10 h-10 text-blue-600" />
           </div>
-          <CardTitle className="text-center">Fullfør registrering</CardTitle>
+          <CardTitle className="text-center">Fullfør din profil</CardTitle>
           <CardDescription className="text-center">
-            Fyll ut informasjonen for å komme i gang
+            Vi trenger litt mer informasjon for å fullføre tilknytningen til boligen
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,7 +123,7 @@ export default function CompleteProfile() {
                 type="tel"
                 value={formData.phone_number}
                 onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder="90012345"
+                placeholder="12345678"
                 required
               />
               <p className="text-xs text-slate-500 mt-1">8 siffer (norsk nummer)</p>
@@ -155,7 +131,7 @@ export default function CompleteProfile() {
 
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 mt-6"
+              className="w-full bg-blue-600 hover:bg-blue-700"
               disabled={updateMutation.isPending || !formData.full_name || !formData.birth_date || !formData.phone_number}
             >
               {updateMutation.isPending ? (
@@ -164,9 +140,13 @@ export default function CompleteProfile() {
                   Lagrer...
                 </>
               ) : (
-                'Fullfør registrering'
+                'Fullfør og fortsett'
               )}
             </Button>
+
+            <p className="text-xs text-center text-slate-500">
+              Denne informasjonen brukes i leieavtaler og for kommunikasjon med utleier
+            </p>
           </form>
         </CardContent>
       </Card>

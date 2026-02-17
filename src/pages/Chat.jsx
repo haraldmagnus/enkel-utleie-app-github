@@ -22,7 +22,26 @@ export default function Chat() {
     queryFn: () => base44.auth.me()
   });
 
-  const isLandlord = user?.user_role === 'landlord';
+  // CRITICAL: Use activeRole as single source of truth
+  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
+  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
+  const isLandlord = effectiveRole === 'landlord';
+
+  // Debug logging
+  useEffect(() => {
+    if (user) {
+      console.log('🔵 [CHAT MOUNT] Role detection:', {
+        userId: user.id,
+        email: user.email,
+        active_role: user.active_role,
+        user_role: user.user_role,
+        roleOverride,
+        EFFECTIVE_ROLE: effectiveRole,
+        isLandlord,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [user, effectiveRole]);
 
   const { data: properties = [] } = useQuery({
     queryKey: ['rentalUnits'],
@@ -38,20 +57,63 @@ export default function Chat() {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['chatMessages', selectedProperty?.id],
-    queryFn: () => base44.entities.ChatMessage.filter(
-      { rental_unit_id: selectedProperty?.id },
-      'created_date',
-      100
-    ),
-    enabled: !!selectedProperty?.id,
-    refetchInterval: 5000
+    queryFn: async () => {
+      const msgs = await base44.entities.ChatMessage.filter(
+        { rental_unit_id: selectedProperty?.id },
+        'created_date',
+        100
+      );
+      console.log('🔵 [CHAT] Fetched messages:', {
+        propertyId: selectedProperty?.id,
+        count: msgs.length,
+        messages: msgs.map(m => ({
+          id: m.id,
+          sender_id: m.sender_id,
+          sender_name: m.sender_name,
+          preview: m.message.substring(0, 30)
+        }))
+      });
+      return msgs;
+    },
+    enabled: !!selectedProperty?.id
   });
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!selectedProperty?.id) return;
+
+    console.log('🔵 [CHAT] Subscribing to messages for property:', selectedProperty.id);
+
+    const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
+      console.log('🔵 [CHAT] Message event:', event);
+      
+      if (event.data.rental_unit_id === selectedProperty.id) {
+        queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty.id] });
+        
+        // Create notification for received messages (not own)
+        if (event.type === 'create' && event.data.sender_id !== user?.id) {
+          queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [selectedProperty?.id, user?.id]);
+
   const sendMutation = useMutation({
-    mutationFn: (data) => base44.entities.ChatMessage.create(data),
+    mutationFn: async (data) => {
+      console.log('🔵 [CHAT] Sending message:', data);
+      const result = await base44.entities.ChatMessage.create(data);
+      console.log('✅ [CHAT] Message sent:', result);
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty?.id] });
       setNewMessage('');
+    },
+    onError: (error) => {
+      console.error('❌ [CHAT] Send failed:', error);
+      alert('Kunne ikke sende melding: ' + error.message);
     }
   });
 
@@ -61,15 +123,38 @@ export default function Chat() {
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedProperty) return;
+    if (!newMessage.trim() || !selectedProperty || !user) return;
 
-    sendMutation.mutate({
+    const messageData = {
       rental_unit_id: selectedProperty.id,
       sender_id: user.id,
-      sender_name: user.full_name,
-      message: newMessage.trim()
+      sender_name: user.full_name || user.email,
+      message: newMessage.trim(),
+      read: false
+    };
+
+    console.log('🔵 [CHAT] Preparing to send:', {
+      ...messageData,
+      currentRole: effectiveRole,
+      isLandlord
     });
+
+    sendMutation.mutate(messageData);
   };
+
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    if (selectedProperty?.id && messages.length > 0) {
+      const unreadMessages = messages.filter(m => !m.read && m.sender_id !== user?.id);
+      if (unreadMessages.length > 0) {
+        console.log('🔵 [CHAT] Marking messages as read:', unreadMessages.length);
+        unreadMessages.forEach(msg => {
+          base44.entities.ChatMessage.update(msg.id, { read: true }).catch(console.error);
+        });
+        queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
+      }
+    }
+  }, [selectedProperty?.id, messages, user?.id]);
 
   // Property list view
   if (!selectedProperty) {
@@ -77,6 +162,9 @@ export default function Chat() {
       <div className="pb-24">
         <div className="bg-white border-b px-4 py-4">
           <h1 className="text-xl font-bold text-slate-900">{t('chat')}</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Rolle: {isLandlord ? 'Utleier' : 'Leietaker'}
+          </p>
         </div>
 
         <div className="p-4 space-y-3">
