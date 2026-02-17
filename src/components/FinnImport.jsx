@@ -65,7 +65,9 @@ export default function FinnImport({ onImport }) {
       }
     });
 
-    setImportedData({ ...response, finn_code: code });
+    // Use address as the property name
+    const dataWithName = { ...response, name: response.address || response.name, finn_code: code };
+    setImportedData(dataWithName);
     setIsLoading(false);
   };
 

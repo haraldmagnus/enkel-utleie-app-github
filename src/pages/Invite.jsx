@@ -122,8 +122,6 @@ export default function Invite() {
         localStorage.setItem('user_role_override', 'tenant');
       }
       
-      const needsProfile = !user.full_name || !user.birth_date || !user.phone_number;
-      
       // Mark related notification as read
       try {
         const notifications = await base44.entities.Notification.filter({
