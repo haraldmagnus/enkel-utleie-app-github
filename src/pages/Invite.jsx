@@ -182,15 +182,8 @@ export default function Invite() {
       }
       
       console.log('✅ [INVITE ACCEPT] ===== ACCEPTANCE COMPLETE =====');
-      console.log('✅ [INVITE ACCEPT] Summary:', {
-        invitationAccepted: true,
-        propertyLinked: true,
-        roleSet: 'tenant',
-        needsProfile,
-        propertyId: invitation.rental_unit_id
-      });
       
-      return { needsProfile, alreadyAccepted: false, propertyId: invitation.rental_unit_id };
+      return { alreadyAccepted: false, propertyId: invitation.rental_unit_id };
     },
     onSuccess: (data) => {
       setState('DONE');
