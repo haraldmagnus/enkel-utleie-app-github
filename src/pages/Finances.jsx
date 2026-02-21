@@ -126,6 +126,8 @@ export default function Finances() {
   const totalIncome = entries.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
   const totalExpenses = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
   const netIncome = totalIncome - totalExpenses;
+  const estimatedTax = Math.max(0, netIncome) * 0.22;
+  const netAfterTax = netIncome - estimatedTax;
 
   const incomeEntries = entries.filter(e => e.type === 'income');
   const expenseEntries = entries.filter(e => e.type === 'expense');
