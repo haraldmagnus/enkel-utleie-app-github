@@ -145,6 +145,16 @@ export default function Finances() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-900">{t('finances')}</h1>
           <div className="flex gap-2">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[90px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button 
               variant="outline" 
               size="sm"
