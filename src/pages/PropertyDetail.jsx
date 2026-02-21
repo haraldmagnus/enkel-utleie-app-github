@@ -674,13 +674,11 @@ export default function PropertyDetail() {
                 </label>
               </CardContent>
             </Card>
-          </TabsContent>
+        </div>
 
-          <TabsContent value="finances" className="space-y-4">
-            <PropertyFinances propertyId={propertyId} landlordId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="agreement" className="space-y-4">
+        {/* AVTALE */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Avtale</h2>
             {/* Uploaded PDF Agreement */}
             <Card>
               <CardHeader className="pb-2">
