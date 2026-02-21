@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, ChevronDown, ChevronUp, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +33,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // Compute totals from entries filtered by year and property
   const yearStr = selectedYear ? selectedYear.toString() : new Date().getFullYear().toString();
   const filteredEntries = entries.filter(e => {
     const matchYear = e.date?.startsWith(yearStr);
@@ -45,7 +44,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
     .filter(e => e.type === 'income')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Build per-category breakdown for deductible expenses
   const autoExpensesBreakdown = deductibleCategories
     .map(cat => ({
       category: cat,
@@ -61,7 +59,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
   const effectiveIncome = form.annual_income !== '' ? Number(form.annual_income) : autoIncome;
   const effectiveExpenses = form.annual_expenses !== '' ? Number(form.annual_expenses) : autoExpenses;
   const usingAutoData = form.annual_income === '' || form.annual_expenses === '';
-
   const canCalculate = effectiveIncome > 0;
 
   const calculate = () => {
@@ -110,7 +107,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
     setResult({ income, expenses, taxFree, taxable, taxAmount, explanation });
   };
 
-  // Auto-recalculate when auto-data changes and result is shown
   React.useEffect(() => {
     if (result) {
       calculate();
@@ -138,145 +134,139 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
 
       {open && (
         <Card className="mt-2 bg-white shadow-sm border-orange-100">
-      {open && (
-        <CardContent className="space-y-4 pt-0">
-          <p className="text-xs text-slate-500 flex items-start gap-1">
-            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-blue-400" />
-            Gir et estimat basert på 2025-regler. Kontakt regnskapsfører for presis rådgivning.
-          </p>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-xs text-slate-500 flex items-start gap-1">
+              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-blue-400" />
+              Gir et estimat basert på 2025-regler. Kontakt regnskapsfører for presis rådgivning.
+            </p>
 
-          {/* Property selector */}
-          {properties.length > 0 && (
+            {properties.length > 0 && (
+              <div className="space-y-1">
+                <Label>Eiendom (valgfri)</Label>
+                <Select value={form.selected_property} onValueChange={v => set('selected_property', v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Alle eiendommer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-1">
-              <Label>Eiendom (valgfri)</Label>
-              <Select value={form.selected_property} onValueChange={v => set('selected_property', v)}>
+              <Label>Type utleie</Label>
+              <Select value={form.property_type} onValueChange={v => { set('property_type', v); setResult(null); }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Alle eiendommer" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {properties.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
+                  <SelectItem value="secondary">Sekundærbolig (ikke egen bolig)</SelectItem>
+                  <SelectItem value="primary_partial">Del av egen bolig (sokkel e.l.)</SelectItem>
+                  <SelectItem value="vacation_short">Fritidseiendom – korttidsutleie (&lt;30 dager)</SelectItem>
+                  <SelectItem value="vacation_long">Fritidseiendom – langtidsutleie</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {/* Property type */}
-          <div className="space-y-1">
-            <Label>Type utleie</Label>
-            <Select value={form.property_type} onValueChange={v => { set('property_type', v); setResult(null); }}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="secondary">Sekundærbolig (ikke egen bolig)</SelectItem>
-                <SelectItem value="primary_partial">Del av egen bolig (sokkel e.l.)</SelectItem>
-                <SelectItem value="vacation_short">Fritidseiendom – korttidsutleie (&lt;30 dager)</SelectItem>
-                <SelectItem value="vacation_long">Fritidseiendom – langtidsutleie</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Auto data notice */}
-          {usingAutoData && (autoIncome > 0 || autoExpenses > 0) && (
-            <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 flex items-start gap-1.5">
-              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-              <span>Hentet automatisk fra dine registrerte transaksjoner for {yearStr}. Du kan overstyre beløpene nedenfor.</span>
-            </div>
-          )}
-
-          {/* Income */}
-          <div className="space-y-1">
-            <Label>Årlige leieinntekter (kr)</Label>
-            <Input
-              type="number"
-              placeholder={autoIncome > 0 ? autoIncome.toString() : 'f.eks. 120000'}
-              value={form.annual_income}
-              onChange={e => { set('annual_income', e.target.value); setResult(null); }}
-            />
-            {form.annual_income === '' && autoIncome > 0 && (
-              <p className="text-xs text-slate-400">Bruker {autoIncome.toLocaleString('no')} kr fra registrerte inntekter</p>
+            {usingAutoData && (autoIncome > 0 || autoExpenses > 0) && (
+              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <span>Hentet automatisk fra dine registrerte transaksjoner for {yearStr}. Du kan overstyre beløpene nedenfor.</span>
+              </div>
             )}
-          </div>
 
-          {/* Expenses – only where relevant */}
-          {showExpenses && (
             <div className="space-y-1">
-              <Label>Fradragsberettigede utgifter (kr)</Label>
+              <Label>Årlige leieinntekter (kr)</Label>
               <Input
                 type="number"
-                placeholder={autoExpenses > 0 ? autoExpenses.toString() : 'vedlikehold, forsikring, avgifter…'}
-                value={form.annual_expenses}
-                onChange={e => { set('annual_expenses', e.target.value); setResult(null); }}
+                placeholder={autoIncome > 0 ? autoIncome.toString() : 'f.eks. 120000'}
+                value={form.annual_income}
+                onChange={e => { set('annual_income', e.target.value); setResult(null); }}
               />
-              {form.annual_expenses === '' && autoExpensesBreakdown.length > 0 && (
-                <div className="text-xs text-slate-500 mt-1 rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1">
-                  <p className="font-medium text-slate-600">Registrerte fradragsberettigede utgifter ({autoExpenses.toLocaleString('no')} kr totalt):</p>
-                  {autoExpensesBreakdown.map(item => (
-                    <div key={item.category} className="flex justify-between">
-                      <span className="text-slate-500">{item.label}</span>
-                      <span className="font-medium text-slate-700">{item.amount.toLocaleString('no')} kr</span>
-                    </div>
-                  ))}
-                </div>
+              {form.annual_income === '' && autoIncome > 0 && (
+                <p className="text-xs text-slate-400">Bruker {autoIncome.toLocaleString('no')} kr fra registrerte inntekter</p>
               )}
             </div>
-          )}
 
-          <Button
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            onClick={calculate}
-            disabled={!canCalculate}
-          >
-            Beregn estimert skatt
-          </Button>
-
-          {!canCalculate && (
-            <p className="text-xs text-center text-slate-400">
-              Fyll inn leieinntekter eller registrer inntekter i Økonomi for å aktivere kalkulatoren.
-            </p>
-          )}
-
-          {/* Result */}
-          {result && (
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Leieinntekter</span>
-                  <span className="font-medium">{fmt(result.income)}</span>
-                </div>
-                {result.taxFree > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Skattefritt beløp</span>
-                    <span className="font-medium text-green-600">− {fmt(result.taxFree)}</span>
-                  </div>
-                )}
-                {showExpenses && result.expenses > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Fradrag utgifter</span>
-                    <span className="font-medium text-green-600">− {fmt(result.expenses)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-slate-700 font-medium">Skattepliktig inntekt</span>
-                  <span className="font-semibold">{fmt(result.taxable)}</span>
-                </div>
-                <div className="flex justify-between bg-red-50 rounded-lg px-3 py-2">
-                  <span className="text-red-700 font-semibold">Estimert skatt (22 %)</span>
-                  <span className="text-red-700 font-bold text-base">{fmt(result.taxAmount)}</span>
-                </div>
-                {result.taxAmount === 0 && (
-                  <div className="bg-green-50 rounded-lg px-3 py-2 text-center">
-                    <span className="text-green-700 font-semibold">✓ Skattefri inntekt</span>
+            {showExpenses && (
+              <div className="space-y-1">
+                <Label>Fradragsberettigede utgifter (kr)</Label>
+                <Input
+                  type="number"
+                  placeholder={autoExpenses > 0 ? autoExpenses.toString() : 'vedlikehold, forsikring, avgifter…'}
+                  value={form.annual_expenses}
+                  onChange={e => { set('annual_expenses', e.target.value); setResult(null); }}
+                />
+                {form.annual_expenses === '' && autoExpensesBreakdown.length > 0 && (
+                  <div className="text-xs text-slate-500 mt-1 rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1">
+                    <p className="font-medium text-slate-600">Registrerte fradragsberettigede utgifter ({autoExpenses.toLocaleString('no')} kr totalt):</p>
+                    {autoExpensesBreakdown.map(item => (
+                      <div key={item.category} className="flex justify-between">
+                        <span className="text-slate-500">{item.label}</span>
+                        <span className="font-medium text-slate-700">{item.amount.toLocaleString('no')} kr</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed border-t pt-2">{result.explanation}</p>
-            </div>
-          )}
-        </CardContent>
+            )}
+
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={calculate}
+              disabled={!canCalculate}
+            >
+              Beregn estimert skatt
+            </Button>
+
+            {!canCalculate && (
+              <p className="text-xs text-center text-slate-400">
+                Fyll inn leieinntekter eller registrer inntekter i Økonomi for å aktivere kalkulatoren.
+              </p>
+            )}
+
+            {result && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Leieinntekter</span>
+                    <span className="font-medium">{fmt(result.income)}</span>
+                  </div>
+                  {result.taxFree > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Skattefritt beløp</span>
+                      <span className="font-medium text-green-600">− {fmt(result.taxFree)}</span>
+                    </div>
+                  )}
+                  {showExpenses && result.expenses > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Fradrag utgifter</span>
+                      <span className="font-medium text-green-600">− {fmt(result.expenses)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-slate-700 font-medium">Skattepliktig inntekt</span>
+                    <span className="font-semibold">{fmt(result.taxable)}</span>
+                  </div>
+                  <div className="flex justify-between bg-red-50 rounded-lg px-3 py-2">
+                    <span className="text-red-700 font-semibold">Estimert skatt (22 %)</span>
+                    <span className="text-red-700 font-bold text-base">{fmt(result.taxAmount)}</span>
+                  </div>
+                  {result.taxAmount === 0 && (
+                    <div className="bg-green-50 rounded-lg px-3 py-2 text-center">
+                      <span className="text-green-700 font-semibold">✓ Skattefri inntekt</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed border-t pt-2">{result.explanation}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
-    </Card>
+    </div>
   );
 }
