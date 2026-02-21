@@ -577,9 +577,17 @@ export default function PropertyDetail() {
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
-          </TabsContent>
+        </div>
 
-          <TabsContent value="photos" className="space-y-4">
+        {/* ØKONOMI */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Økonomi</h2>
+          <PropertyFinances propertyId={propertyId} landlordId={user?.id} />
+        </div>
+
+        {/* BILDER */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Bilder</h2>
             {/* Documentation Checklist */}
             <DocumentationChecklist 
               property={property} 
