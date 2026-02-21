@@ -231,6 +231,29 @@ export default function Finances() {
           </Link>
         </div>
 
+        {/* Monthly Chart */}
+        {monthlyData.length > 0 && (
+          <Card className="bg-white shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart2 className="w-4 h-4" /> Månedsoversikt {selectedYear}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 px-2">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={monthlyData} barSize={10}>
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 10 }} width={40} />
+                  <Tooltip formatter={(v) => `${v.toLocaleString()} kr`} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="Inntekt" fill="#22c55e" radius={[3,3,0,0]} />
+                  <Bar dataKey="Utgift" fill="#ef4444" radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filter */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-slate-400" />
