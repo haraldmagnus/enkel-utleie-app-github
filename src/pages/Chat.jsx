@@ -253,12 +253,24 @@ export default function Chat() {
           <div className="space-y-3">
             {messages.map(msg => {
               const isOwn = msg.sender_id === user.id;
+              const avatarUrl = isOwn ? user?.avatar_url : msg.sender_avatar_url;
               return (
                 <div 
                   key={msg.id} 
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                  {!isOwn && (
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-slate-200 mb-1">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt={msg.sender_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-slate-500">
+                          {msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                     isOwn 
                       ? 'bg-blue-600 text-white rounded-br-md' 
                       : 'bg-slate-100 text-slate-900 rounded-bl-md'
@@ -276,6 +288,17 @@ export default function Chat() {
                       })}
                     </p>
                   </div>
+                  {isOwn && (
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-blue-200 mb-1">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="Meg" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-blue-600">
+                          {user?.first_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'M'}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
