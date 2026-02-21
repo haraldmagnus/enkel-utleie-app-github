@@ -98,8 +98,9 @@ export default function Finances() {
   };
 
   const handleExport = () => {
+    const filteredEntries = entries.filter(entry => new Date(entry.date).getFullYear().toString() === selectedYear);
     const headers = ['Dato', 'Type', 'Kategori', 'Beløp', 'Beskrivelse', 'Eiendom'];
-    const rows = entries.map(entry => {
+    const rows = filteredEntries.map(entry => {
       const property = properties.find(p => p.id === entry.rental_unit_id);
       return [
         entry.date,
@@ -116,7 +117,7 @@ export default function Finances() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `utleieokonomi_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `utleieokonomi_${selectedYear}.csv`;
     link.click();
   };
 
