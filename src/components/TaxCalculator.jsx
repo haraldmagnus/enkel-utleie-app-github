@@ -95,6 +95,14 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
     setResult({ income, expenses, taxFree, taxable, taxAmount, explanation });
   };
 
+  // Auto-recalculate when auto-data changes and result is shown
+  React.useEffect(() => {
+    if (result) {
+      calculate();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoIncome, autoExpenses, form.selected_property, yearStr]);
+
   const showExpenses = ['secondary', 'primary_partial', 'vacation_long'].includes(form.property_type);
 
   return (
