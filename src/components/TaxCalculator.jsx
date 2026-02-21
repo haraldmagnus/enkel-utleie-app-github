@@ -10,6 +10,17 @@ function fmt(n) {
   return Math.round(n).toLocaleString('no') + ' kr';
 }
 
+const categoryLabels = {
+  maintenance: 'Vedlikehold',
+  repairs: 'Reparasjoner',
+  utilities: 'Strøm/vann',
+  insurance: 'Forsikring',
+  taxes: 'Skatter/avgifter',
+  other: 'Annet',
+};
+
+const deductibleCategories = ['maintenance', 'repairs', 'utilities', 'insurance', 'taxes', 'other'];
+
 export default function TaxCalculator({ properties = [], entries = [], selectedYear }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -34,15 +45,24 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
     .filter(e => e.type === 'income')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Only deductible expense categories
-  const deductibleCategories = ['maintenance', 'repairs', 'utilities', 'insurance', 'taxes'];
-  const autoExpenses = filteredEntries
-    .filter(e => e.type === 'expense' && deductibleCategories.includes(e.category))
-    .reduce((sum, e) => sum + (e.amount || 0), 0);
+  // Build per-category breakdown for deductible expenses
+  const autoExpensesBreakdown = deductibleCategories
+    .map(cat => ({
+      category: cat,
+      label: categoryLabels[cat] || cat,
+      amount: filteredEntries
+        .filter(e => e.type === 'expense' && e.category === cat)
+        .reduce((sum, e) => sum + (e.amount || 0), 0),
+    }))
+    .filter(item => item.amount > 0);
+
+  const autoExpenses = autoExpensesBreakdown.reduce((sum, item) => sum + item.amount, 0);
 
   const effectiveIncome = form.annual_income !== '' ? Number(form.annual_income) : autoIncome;
   const effectiveExpenses = form.annual_expenses !== '' ? Number(form.annual_expenses) : autoExpenses;
   const usingAutoData = form.annual_income === '' || form.annual_expenses === '';
+
+  const canCalculate = effectiveIncome > 0;
 
   const calculate = () => {
     const income = effectiveIncome;
@@ -53,13 +73,10 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
     let taxFree = 0;
 
     if (form.property_type === 'secondary') {
-      // Sekundærbolig: alt skattepliktig
       taxable = Math.max(0, income - expenses);
       taxAmount = taxable * 0.22;
       explanation = 'Sekundærbolig: alle leieinntekter er skattepliktige. Fradrag for dokumenterte kostnader.';
     } else if (form.property_type === 'primary_partial') {
-      // Primærbolig (sokkel): skattefri hvis du bruker minst halvparten selv
-      // Under 20 000 kr skattefri (forenklingsregel), over: alt skattepliktig
       if (income <= 20000) {
         taxFree = income;
         taxable = 0;
@@ -71,7 +88,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
         explanation = 'Inntekten overstiger 20 000 kr. Alle leieinntekter er skattepliktige, men du kan trekke fra kostnader.';
       }
     } else if (form.property_type === 'vacation_short') {
-      // Fritidseiendom korttidsutleie (<30 dager): 15 000 kr skattefritt, 85% av resten skattlegges
       const FREE_AMOUNT = 15000;
       if (income <= FREE_AMOUNT) {
         taxFree = income;
@@ -86,7 +102,6 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
         explanation = `Korttidsutleie av fritidseiendom: 15 000 kr er skattefritt. 85 % av resterende ${fmt(over)} (= ${fmt(taxable)}) skattlegges med 22 %.`;
       }
     } else if (form.property_type === 'vacation_long') {
-      // Langtidsutleie av fritidseiendom (uten egen bruk): alt skattepliktig som sekundærbolig
       taxable = Math.max(0, income - expenses);
       taxAmount = taxable * 0.22;
       explanation = 'Langtidsutleie av fritidseiendom uten egen bruk: skattepliktig fra første krone, som sekundærbolig.';
@@ -129,7 +144,7 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
               <Label>Eiendom (valgfri)</Label>
               <Select value={form.selected_property} onValueChange={v => set('selected_property', v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Velg eiendom…" />
+                  <SelectValue placeholder="Alle eiendommer" />
                 </SelectTrigger>
                 <SelectContent>
                   {properties.map(p => (
@@ -188,8 +203,16 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
                 value={form.annual_expenses}
                 onChange={e => { set('annual_expenses', e.target.value); setResult(null); }}
               />
-              {form.annual_expenses === '' && autoExpenses > 0 && (
-                <p className="text-xs text-slate-400">Bruker {autoExpenses.toLocaleString('no')} kr fra registrerte utgifter</p>
+              {form.annual_expenses === '' && autoExpensesBreakdown.length > 0 && (
+                <div className="text-xs text-slate-500 mt-1 rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1">
+                  <p className="font-medium text-slate-600">Registrerte fradragsberettigede utgifter ({autoExpenses.toLocaleString('no')} kr totalt):</p>
+                  {autoExpensesBreakdown.map(item => (
+                    <div key={item.category} className="flex justify-between">
+                      <span className="text-slate-500">{item.label}</span>
+                      <span className="font-medium text-slate-700">{item.amount.toLocaleString('no')} kr</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -197,10 +220,16 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
           <Button
             className="w-full bg-blue-600 hover:bg-blue-700"
             onClick={calculate}
-            disabled={!form.annual_income}
+            disabled={!canCalculate}
           >
             Beregn estimert skatt
           </Button>
+
+          {!canCalculate && (
+            <p className="text-xs text-center text-slate-400">
+              Fyll inn leieinntekter eller registrer inntekter i Økonomi for å aktivere kalkulatoren.
+            </p>
+          )}
 
           {/* Result */}
           {result && (
