@@ -216,16 +216,16 @@ export default function Finances() {
               <p className={`font-bold ${netIncome >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
                 {netIncome.toLocaleString()} kr
               </p>
+              <p className="text-xs text-blue-500 mt-0.5 border-t border-blue-200 pt-0.5">
+                Etter skatt: {netAfterTax.toLocaleString()} kr
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-purple-50 border-purple-200">
             <CardContent className="p-3 text-center">
               <FileText className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-              
+              <p className="text-xs text-purple-600">Skatt</p>
               <p className="font-bold text-purple-700">−{estimatedTax.toLocaleString()} kr</p>
-              <p className="text-xs text-purple-500 mt-0.5 font-medium border-t border-purple-200 pt-0.5">
-                Etter skatt: {netAfterTax.toLocaleString()} kr
-              </p>
             </CardContent>
           </Card>
         </div>
