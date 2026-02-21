@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, TrendingUp, TrendingDown, Receipt, Download, Trash2 } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Receipt, Trash2, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,35 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useLanguage } from '@/components/LanguageContext';
+
+const TAX_TYPE_LABELS = {
+  secondary: 'Sekundærbolig',
+  primary_partial: 'Del av egen bolig (sokkel e.l.)',
+  vacation_short: 'Fritidseiendom – korttidsleie (<30 dager)',
+  vacation_long: 'Fritidseiendom – langtidsleie',
+};
+
+function calcTax(taxType, income, expenses) {
+  if (income <= 0) return { taxable: 0, taxAmount: 0, taxFree: 0, note: '' };
+  if (taxType === 'primary_partial') {
+    if (income <= 20000) return { taxable: 0, taxAmount: 0, taxFree: income, note: 'Under 20 000 kr → skattefri' };
+    const taxable = Math.max(0, income - expenses);
+    return { taxable, taxAmount: taxable * 0.22, taxFree: 0, note: 'Over 20 000 kr → skattepliktig' };
+  }
+  if (taxType === 'vacation_short') {
+    const FREE = 15000;
+    if (income <= FREE) return { taxable: 0, taxAmount: 0, taxFree: income, note: 'Under 15 000 kr → skattefri' };
+    const taxable = (income - FREE) * 0.85;
+    return { taxable, taxAmount: taxable * 0.22, taxFree: FREE, note: '15 000 kr skattefritt, 85% av rest skattlegges' };
+  }
+  if (taxType === 'vacation_long') {
+    const taxable = Math.max(0, income - expenses);
+    return { taxable, taxAmount: taxable * 0.22, taxFree: 0, note: 'Som sekundærbolig – alle inntekter skattepliktige' };
+  }
+  // secondary (default)
+  const taxable = Math.max(0, income - expenses);
+  return { taxable, taxAmount: taxable * 0.22, taxFree: 0, note: 'Alle inntekter skattepliktige, fradrag for kostnader' };
+}
 
 const categories = {
   income: ['rent', 'deposit', 'other'],
