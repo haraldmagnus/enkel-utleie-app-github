@@ -221,6 +221,9 @@ export default function Finances() {
                 <p className={`font-bold ${netIncome >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
                   {netIncome.toLocaleString()} kr
                 </p>
+                <p className={`text-[10px] mt-0.5 ${netIncome >= 0 ? 'text-blue-500' : 'text-amber-500'}`}>
+                  etter skatt: {netAfterTax.toLocaleString()} kr
+                </p>
               </CardContent>
             </Card>
           </Link>
@@ -235,8 +238,7 @@ export default function Finances() {
           </Link>
         </div>
 
-        {/* Tax Calculator */}
-        <TaxCalculator properties={properties} entries={entries} selectedYear={selectedYear} />
+
 
         {/* Quick Actions */}
         <div className="flex gap-2">
