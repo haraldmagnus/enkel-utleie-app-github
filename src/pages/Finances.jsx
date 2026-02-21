@@ -242,11 +242,6 @@ export default function Finances() {
 
         {/* Quick Actions */}
         <div className="flex gap-2">
-          <Link to={createPageUrl('PaymentReminders')} className="flex-1">
-            <Button variant="outline" className="w-full">
-              <Bell className="w-4 h-4 mr-2" /> Påminnelser
-            </Button>
-          </Link>
           <Link to={createPageUrl('YearlyReport')} className="flex-1">
             <Button variant="outline" className="w-full">
               <FileText className="w-4 h-4 mr-2" /> Årsrapport
