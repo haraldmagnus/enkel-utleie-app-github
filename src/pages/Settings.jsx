@@ -86,6 +86,16 @@ export default function Settings() {
     base44.auth.logout();
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.auth.updateMe({ avatar_url: file_url });
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    setAvatarUploading(false);
+  };
+
   const handleGDPRConsent = () => {
     updateMutation.mutate({ 
       gdpr_consent: true, 
