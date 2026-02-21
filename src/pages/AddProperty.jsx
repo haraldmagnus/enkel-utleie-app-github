@@ -18,6 +18,13 @@ export default function AddProperty() {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
   
+  const TAX_TYPE_LABELS = {
+    secondary: 'Sekundærbolig (ikke egen bolig)',
+    primary_partial: 'Del av egen bolig (sokkel e.l.)',
+    vacation_short: 'Fritidseiendom – korttidsleie (<30 dager)',
+    vacation_long: 'Fritidseiendom – langtidsleie',
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -28,7 +35,8 @@ export default function AddProperty() {
     size_sqm: '',
     bedrooms: '',
     floor: '',
-    facilities: []
+    facilities: [],
+    tax_type: 'secondary'
   });
 
   const { data: user } = useQuery({
