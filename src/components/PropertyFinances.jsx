@@ -119,6 +119,10 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
   const totalExpenses = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
   const netIncome = totalIncome - totalExpenses;
 
+  const taxType = property?.tax_type || 'secondary';
+  const tax = calcTax(taxType, totalIncome, totalExpenses);
+  const netAfterTax = netIncome - tax.taxAmount;
+
   const openAddDialog = (type) => {
     setEntryType(type);
     setFormData({
