@@ -752,8 +752,7 @@ export default function PropertyDetail() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
 
       {/* Invite Dialog */}
