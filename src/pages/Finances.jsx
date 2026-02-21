@@ -25,6 +25,7 @@ export default function Finances() {
   const { t } = useLanguage();
   
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedProperty, setSelectedProperty] = useState('all');
   const [formData, setFormData] = useState({
     type: 'income',
