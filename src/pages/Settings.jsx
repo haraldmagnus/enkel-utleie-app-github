@@ -23,6 +23,7 @@ export default function Settings() {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [profileSaved, setProfileSaved] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
