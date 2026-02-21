@@ -121,16 +121,23 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
   const showExpenses = ['secondary', 'primary_partial', 'vacation_long'].includes(form.property_type);
 
   return (
-    <Card className="bg-white shadow-sm border-blue-100">
-      <CardHeader className="pb-2 cursor-pointer" onClick={() => setOpen(o => !o)}>
-        <CardTitle className="text-base flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-blue-600" /> Skattekalkulator
-          </span>
-          {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-        </CardTitle>
-      </CardHeader>
+    <div>
+      {/* Trigger card — same style as the 4 summary cards */}
+      <Card
+        className="bg-orange-50 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors"
+        onClick={() => setOpen(o => !o)}
+      >
+        <CardContent className="p-3 text-center">
+          <Calculator className="w-5 h-5 text-orange-600 mx-auto mb-1" />
+          <p className="text-xs text-orange-600">Skattekalkulator</p>
+          <p className="font-bold text-orange-700 flex items-center justify-center gap-1">
+            Beregn skatt {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </p>
+        </CardContent>
+      </Card>
 
+      {open && (
+        <Card className="mt-2 bg-white shadow-sm border-orange-100">
       {open && (
         <CardContent className="space-y-4 pt-0">
           <p className="text-xs text-slate-500 flex items-start gap-1">
