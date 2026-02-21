@@ -139,31 +139,29 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
 
   return (
     <div className="space-y-4">
-      {/* Tax type selector */}
+      {/* Tax type card */}
       <Card className="border-purple-100 bg-purple-50">
         <CardContent className="p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-800">Skattetype</span>
+              <div>
+                <p className="text-sm font-medium text-purple-800">Skattetype</p>
+                <p className="text-xs text-purple-600">{TAX_TYPE_LABELS[taxType]}</p>
+              </div>
             </div>
-            <Button variant="ghost" size="sm" className="text-purple-600 h-7 px-2" onClick={() => setShowTax(t => !t)}>
-              {showTax ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="h-7 text-purple-700 border-purple-200 bg-white text-xs" onClick={() => { setPendingTaxType(taxType); setShowTaxTypeDialog(true); }}>
+                Endre
+              </Button>
+              <Button variant="ghost" size="sm" className="text-purple-600 h-7 px-2" onClick={() => setShowTax(t => !t)}>
+                {showTax ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
-          <Select value={taxType} onValueChange={(v) => onUpdateProperty?.({ tax_type: v })}>
-            <SelectTrigger className="bg-white border-purple-200 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(TAX_TYPE_LABELS).map(([k, label]) => (
-                <SelectItem key={k} value={k}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           {showTax && totalIncome > 0 && (
-            <div className="mt-2 rounded-lg bg-white border border-purple-100 p-3 space-y-1.5 text-sm">
+            <div className="mt-1 rounded-lg bg-white border border-purple-100 p-3 space-y-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Leieinntekter</span>
                 <span className="font-medium">{totalIncome.toLocaleString()} kr</span>
@@ -174,7 +172,7 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
                   <span className="text-green-600 font-medium">− {tax.taxFree.toLocaleString()} kr</span>
                 </div>
               )}
-              {totalExpenses > 0 && taxType !== 'vacation_short' && taxType !== 'primary_partial_free' && (
+              {totalExpenses > 0 && taxType !== 'vacation_short' && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Fradrag utgifter</span>
                   <span className="text-green-600 font-medium">− {totalExpenses.toLocaleString()} kr</span>
@@ -202,6 +200,31 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
           )}
         </CardContent>
       </Card>
+
+      {/* Change tax type dialog */}
+      <Dialog open={showTaxTypeDialog} onOpenChange={setShowTaxTypeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Endre skattetype</DialogTitle>
+            <DialogDescription>Velg riktig type for denne eiendommen. Dette påvirker skatteberegningen.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {Object.entries(TAX_TYPE_LABELS).map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setPendingTaxType(k)}
+                className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm transition-colors ${pendingTaxType === k ? 'border-purple-500 bg-purple-50 text-purple-800 font-medium' : 'border-slate-200 bg-white text-slate-700 hover:border-purple-200'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTaxTypeDialog(false)}>Avbryt</Button>
+            <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => { onUpdateProperty?.({ tax_type: pendingTaxType }); setShowTaxTypeDialog(false); }}>Lagre</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
