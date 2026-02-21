@@ -195,39 +195,47 @@ export default function Finances() {
       <div className="p-4 space-y-4">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-3 text-center">
-              <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-1" />
-              <p className="text-xs text-green-600">{t('income')}</p>
-              <p className="font-bold text-green-700">{totalIncome.toLocaleString()} kr</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-3 text-center">
-              <TrendingDown className="w-5 h-5 text-red-600 mx-auto mb-1" />
-              <p className="text-xs text-red-600">{t('expense')}</p>
-              <p className="font-bold text-red-700">{totalExpenses.toLocaleString()} kr</p>
-            </CardContent>
-          </Card>
-          <Card className={netIncome >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}>
-            <CardContent className="p-3 text-center">
-              <Wallet className={`w-5 h-5 mx-auto mb-1 ${netIncome >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
-              <p className={`text-xs ${netIncome >= 0 ? 'text-blue-600' : 'text-amber-600'}`}>Netto</p>
-              <p className={`font-bold ${netIncome >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
-                {netIncome.toLocaleString()} kr
-              </p>
-              <p className="text-xs text-blue-500 mt-0.5 border-t border-blue-200 pt-0.5">
-                Etter skatt: {netAfterTax.toLocaleString()} kr
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-3 text-center">
-              <FileText className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-              <p className="text-xs text-purple-600">Skatt</p>
-              <p className="font-bold text-purple-700">−{estimatedTax.toLocaleString()} kr</p>
-            </CardContent>
-          </Card>
+          <Link to={createPageUrl('FinancesIncome')}>
+            <Card className="bg-green-50 border-green-200 cursor-pointer hover:bg-green-100 transition-colors">
+              <CardContent className="p-3 text-center">
+                <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                <p className="text-xs text-green-600">{t('income')}</p>
+                <p className="font-bold text-green-700">{totalIncome.toLocaleString()} kr</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to={createPageUrl('FinancesExpense')}>
+            <Card className="bg-red-50 border-red-200 cursor-pointer hover:bg-red-100 transition-colors">
+              <CardContent className="p-3 text-center">
+                <TrendingDown className="w-5 h-5 text-red-600 mx-auto mb-1" />
+                <p className="text-xs text-red-600">{t('expense')}</p>
+                <p className="font-bold text-red-700">{totalExpenses.toLocaleString()} kr</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to={createPageUrl('FinancesNet')} state={{ netIncome, estimatedTax, netAfterTax }}>
+            <Card className={`cursor-pointer hover:opacity-80 transition-opacity ${netIncome >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+              <CardContent className="p-3 text-center">
+                <Wallet className={`w-5 h-5 mx-auto mb-1 ${netIncome >= 0 ? 'text-blue-600' : 'text-amber-600'}`} />
+                <p className={`text-xs ${netIncome >= 0 ? 'text-blue-600' : 'text-amber-600'}`}>Netto</p>
+                <p className={`font-bold ${netIncome >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
+                  {netIncome.toLocaleString()} kr
+                </p>
+                <p className="text-xs text-blue-500 mt-0.5 border-t border-blue-200 pt-0.5">
+                  Etter skatt: {netAfterTax.toLocaleString()} kr
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to={createPageUrl('FinancesTax')} state={{ netIncome, estimatedTax, netAfterTax }}>
+            <Card className="bg-purple-50 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors">
+              <CardContent className="p-3 text-center">
+                <FileText className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                <p className="text-xs text-purple-600">Skatt</p>
+                <p className="font-bold text-purple-700">−{estimatedTax.toLocaleString()} kr</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Tax Calculator */}
