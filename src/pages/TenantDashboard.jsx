@@ -238,6 +238,13 @@ export default function TenantDashboard() {
           </Card>
         )}
 
+        {/* Maintenance Requests */}
+        <Card className="bg-white shadow-sm">
+          <CardContent className="pt-4 px-4 pb-4">
+            <TenantMaintenanceRequest propertyId={property.id} landlordId={property.landlord_id} />
+          </CardContent>
+        </Card>
+
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3">
           <Link to={createPageUrl('Chat')}>
