@@ -137,6 +137,70 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
 
   return (
     <div className="space-y-4">
+      {/* Tax type selector */}
+      <Card className="border-purple-100 bg-purple-50">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-800">Skattetype</span>
+            </div>
+            <Button variant="ghost" size="sm" className="text-purple-600 h-7 px-2" onClick={() => setShowTax(t => !t)}>
+              {showTax ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </div>
+          <Select value={taxType} onValueChange={(v) => onUpdateProperty?.({ tax_type: v })}>
+            <SelectTrigger className="bg-white border-purple-200 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(TAX_TYPE_LABELS).map(([k, label]) => (
+                <SelectItem key={k} value={k}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {showTax && totalIncome > 0 && (
+            <div className="mt-2 rounded-lg bg-white border border-purple-100 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Leieinntekter</span>
+                <span className="font-medium">{totalIncome.toLocaleString()} kr</span>
+              </div>
+              {tax.taxFree > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Skattefritt</span>
+                  <span className="text-green-600 font-medium">− {tax.taxFree.toLocaleString()} kr</span>
+                </div>
+              )}
+              {totalExpenses > 0 && taxType !== 'vacation_short' && taxType !== 'primary_partial_free' && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Fradrag utgifter</span>
+                  <span className="text-green-600 font-medium">− {totalExpenses.toLocaleString()} kr</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t pt-1.5">
+                <span className="text-slate-600 font-medium">Skattepliktig</span>
+                <span className="font-semibold">{Math.round(tax.taxable).toLocaleString()} kr</span>
+              </div>
+              <div className="flex justify-between bg-red-50 rounded px-2 py-1">
+                <span className="text-red-700 font-semibold">Estimert skatt (22%)</span>
+                <span className="text-red-700 font-bold">{Math.round(tax.taxAmount).toLocaleString()} kr</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Netto etter skatt</span>
+                <span className={`font-bold ${netAfterTax >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
+                  {Math.round(netAfterTax).toLocaleString()} kr
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 pt-1">{tax.note}</p>
+            </div>
+          )}
+          {showTax && totalIncome === 0 && (
+            <p className="text-xs text-purple-500 text-center py-1">Registrer inntekter for å se skatteestimat</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <Card className="bg-green-50 border-green-100">
