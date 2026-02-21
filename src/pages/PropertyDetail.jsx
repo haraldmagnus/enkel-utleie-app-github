@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, 
-  DialogFooter, DialogDescription 
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogFooter, DialogDescription
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
