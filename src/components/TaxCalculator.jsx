@@ -117,7 +117,7 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
   const showExpenses = ['secondary', 'primary_partial', 'vacation_long'].includes(form.property_type);
 
   return (
-    <div>
+    <div className="contents">
       {/* Trigger card — same style as the 4 summary cards */}
       <Card
         className="bg-orange-50 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors"
