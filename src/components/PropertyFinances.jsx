@@ -50,6 +50,8 @@ export default function PropertyFinances({ propertyId, landlordId, property, onU
   const { t } = useLanguage();
   const [showDialog, setShowDialog] = useState(false);
   const [showTax, setShowTax] = useState(false);
+  const [showTaxTypeDialog, setShowTaxTypeDialog] = useState(false);
+  const [pendingTaxType, setPendingTaxType] = useState(null);
   const [entryType, setEntryType] = useState('income');
   const [formData, setFormData] = useState({
     category: 'rent',
