@@ -342,6 +342,16 @@ export default function Settings() {
               </CardContent>
             </Card>
 
+            {/* Help */}
+            <Button
+              variant="outline"
+              className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+              onClick={() => navigate(createPageUrl('Help'))}
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Hjelp & Skatteguide
+            </Button>
+
             {/* Logout */}
             <Button 
               variant="outline" 
