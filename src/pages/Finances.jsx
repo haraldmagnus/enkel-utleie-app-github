@@ -20,7 +20,7 @@ import {
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import TaxCalculator from '@/components/TaxCalculator';
+
 
 export default function Finances() {
   const queryClient = useQueryClient();
