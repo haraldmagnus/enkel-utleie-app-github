@@ -129,6 +129,17 @@ export default function Finances() {
   const incomeEntries = entries.filter(e => e.type === 'income');
   const expenseEntries = entries.filter(e => e.type === 'expense');
 
+  // Build monthly chart data for selected year
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const month = String(i + 1).padStart(2, '0');
+    const monthEntries = entries.filter(e => e.date?.startsWith(`${selectedYear}-${month}`));
+    return {
+      month: new Date(2000, i, 1).toLocaleDateString('no', { month: 'short' }),
+      Inntekt: monthEntries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0),
+      Utgift: monthEntries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0),
+    };
+  }).filter(m => m.Inntekt > 0 || m.Utgift > 0);
+
   const categoryIcons = {
     rent: '🏠',
     deposit: '💰',
