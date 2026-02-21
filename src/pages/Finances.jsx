@@ -218,6 +218,9 @@ export default function Finances() {
           </Card>
         </div>
 
+        {/* Tax Calculator */}
+        <TaxCalculator properties={properties} />
+
         {/* Quick Actions */}
         <div className="flex gap-2">
           <Link to={createPageUrl('PaymentReminders')} className="flex-1">
