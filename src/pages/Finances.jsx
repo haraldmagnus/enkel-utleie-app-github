@@ -221,9 +221,6 @@ export default function Finances() {
                 <p className={`font-bold ${netIncome >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
                   {netIncome.toLocaleString()} kr
                 </p>
-                <p className="text-xs text-blue-500 mt-0.5 border-t border-blue-200 pt-0.5">
-                  Etter skatt: {netAfterTax.toLocaleString()} kr
-                </p>
               </CardContent>
             </Card>
           </Link>
