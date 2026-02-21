@@ -219,7 +219,7 @@ export default function Finances() {
         </div>
 
         {/* Tax Calculator */}
-        <TaxCalculator properties={properties} />
+        <TaxCalculator properties={properties} entries={entries} selectedYear={selectedYear} />
 
         {/* Quick Actions */}
         <div className="flex gap-2">
