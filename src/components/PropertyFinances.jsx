@@ -45,10 +45,11 @@ const categories = {
   expense: ['maintenance', 'repairs', 'utilities', 'insurance', 'taxes', 'other']
 };
 
-export default function PropertyFinances({ propertyId, landlordId }) {
+export default function PropertyFinances({ propertyId, landlordId, property, onUpdateProperty }) {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
   const [showDialog, setShowDialog] = useState(false);
+  const [showTax, setShowTax] = useState(false);
   const [entryType, setEntryType] = useState('income');
   const [formData, setFormData] = useState({
     category: 'rent',
