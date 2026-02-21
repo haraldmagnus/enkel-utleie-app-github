@@ -448,16 +448,10 @@ export default function PropertyDetail() {
         )}
       </div>
 
-      <div className="p-4 pb-24">
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="overview" className="text-xs px-1">Oversikt</TabsTrigger>
-            <TabsTrigger value="finances" className="text-xs px-1">Økonomi</TabsTrigger>
-            <TabsTrigger value="photos" className="text-xs px-1">Bilder</TabsTrigger>
-            <TabsTrigger value="agreement" className="text-xs px-1">Avtale</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
+      <div className="p-4 pb-24 space-y-6">
+        {/* OVERSIKT */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Oversikt</h2>
             {/* Tenant Section */}
             <Card>
               <CardHeader className="pb-2">
