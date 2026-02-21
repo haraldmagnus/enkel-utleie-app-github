@@ -63,10 +63,10 @@ const TAX_GUIDE_SECTIONS = [
     color: 'bg-blue-100 text-blue-600',
     title: 'Hva skal rapporteres til Skatteetaten?',
     content: [
-      'Som utleier er du pliktig å rapportere leieinntekter på selvangivelsen.',
-      'Utleie av bolig du selv ikke bor i: Alle inntekter er skattepliktige.',
-      'Utleie av del av egen bolig (f.eks. sokkel): Skattefri dersom din del utgjør minst halvparten av boligens verdi, og leieinntektene er under 20 000 kr per år.',
-      'Utleie av fritidseiendom: Skattefritt inntil 10 000 kr per år. Overskytende beløp skattlegges med 85%.',
+      'Skattepliktige leieinntekter skal rapporteres i skattemeldingen. Skattefrie inntekter trenger normalt ikke rapporteres.',
+      'Utleie av bolig du selv ikke bor i (sekundærbolig): All leieinntekt er skattepliktig fra første krone og skal føres i skattemeldingen.',
+      'Utleie av del av egen bolig (f.eks. sokkel): Kan være skattefri dersom du selv bruker minst halvparten av boligen (målt etter utleieverdi). Leier du ut hele boligen du bor i og inntektene er under 20 000 kr, kan den også være skattefri.',
+      'Utleie av fritidseiendom (korttidsutleie, under 30 dager): Skattefritt inntil 15 000 kr per år (ny grense fra 2025). Av det overskytende beløpet skattlegges 85 % med 22 %. Langtidsutleie av fritidseiendom uten egen bruk er skattepliktig fra første krone.',
     ]
   },
   {
@@ -74,12 +74,13 @@ const TAX_GUIDE_SECTIONS = [
     color: 'bg-green-100 text-green-600',
     title: 'Hva kan du trekke fra?',
     content: [
-      'Vedlikeholdskostnader (ikke påkostninger/forbedringer)',
+      'Vedlikeholdskostnader direkte knyttet til utleien (ikke påkostninger/forbedringer)',
       'Forsikringspremier for utleieboligen',
-      'Kommunale avgifter og eiendomsskatt',
-      'Regnskapsføring og administrative kostnader',
-      'Tap av leieinntekter ved fraflytting (med dokumentasjon)',
-      'Merk: Påkostninger (f.eks. ny kjøkkeninnredning) aktiveres og avskrives – ikke fradrag direkte.',
+      'Kommunale avgifter og eiendomsskatt for den utleide delen',
+      'Regnskapsføring og administrative kostnader for utleievirksomheten',
+      'Dokumenterte tap av leieinntekter ved fraflytting',
+      'Merk: Påkostninger og forbedringer (f.eks. ny kjøkkeninnredning) kan ikke trekkes direkte – de aktiveres og tas hensyn til ved fremtidig gevinstberegning.',
+      'Merk: Fradrag for kostnader gjelder ikke dersom inntekten er skattefri (f.eks. sokkelleilighet med egen bruk av minst halvparten).',
     ]
   },
   {
@@ -89,9 +90,9 @@ const TAX_GUIDE_SECTIONS = [
     content: [
       '1. Registrer alle leieinntekter under Økonomi → Kategori: Husleie',
       '2. Registrer alle fradragsberettigede utgifter (vedlikehold, forsikring, etc.)',
-      '3. Last opp kvitteringer som vedlegg til hver post',
+      '3. Last opp kvitteringer som dokumentasjon til hver post',
       '4. Gå til Årsrapport og velg ønsket år → last ned CSV',
-      '5. Bruk tallene fra rapporten når du fyller ut skattemeldingen',
+      '5. Bruk tallene som grunnlag når du fyller ut skattemeldingen – følg alltid Skatteetatens egne skjemaer og veiledning.',
     ]
   },
   {
@@ -99,10 +100,11 @@ const TAX_GUIDE_SECTIONS = [
     color: 'bg-orange-100 text-orange-600',
     title: 'Viktige frister og satser (2025)',
     content: [
-      'Frist for skattemeldingen: 30. april (lønnsmottakere og pensjonister)',
-      'Skattesats på leieinntekter: 22% (alminnelig inntekt)',
-      'Minstefradrag gjelder ikke for leieinntekter – faktiske kostnader trekkes fra',
-      'Depositum er ikke skattepliktig inntekt når det mottas – kun dersom det beholdes ved fraflytting',
+      'Frist for skattemeldingen: Vanligvis ca. 30. april for lønnsmottakere og pensjonister',
+      'Skattesats på netto leieinntekt: 22 % (alminnelig inntekt)',
+      'Minstefradrag gjelder ikke for leieinntekter – faktiske, dokumenterte kostnader trekkes fra',
+      'Fribeløp korttidsutleie av fritidseiendom: 15 000 kr (oppdatert for 2025)',
+      'Depositum er ikke skattepliktig når det mottas – kun dersom du faktisk beholder det ved fraflytting',
     ]
   },
 ];
