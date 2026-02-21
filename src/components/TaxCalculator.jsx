@@ -156,15 +156,26 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
             </Select>
           </div>
 
+          {/* Auto data notice */}
+          {usingAutoData && (autoIncome > 0 || autoExpenses > 0) && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              <span>Hentet automatisk fra dine registrerte transaksjoner for {yearStr}. Du kan overstyre beløpene nedenfor.</span>
+            </div>
+          )}
+
           {/* Income */}
           <div className="space-y-1">
             <Label>Årlige leieinntekter (kr)</Label>
             <Input
               type="number"
-              placeholder="f.eks. 120000"
+              placeholder={autoIncome > 0 ? autoIncome.toString() : 'f.eks. 120000'}
               value={form.annual_income}
               onChange={e => { set('annual_income', e.target.value); setResult(null); }}
             />
+            {form.annual_income === '' && autoIncome > 0 && (
+              <p className="text-xs text-slate-400">Bruker {autoIncome.toLocaleString('no')} kr fra registrerte inntekter</p>
+            )}
           </div>
 
           {/* Expenses – only where relevant */}
@@ -173,10 +184,13 @@ export default function TaxCalculator({ properties = [], entries = [], selectedY
               <Label>Fradragsberettigede utgifter (kr)</Label>
               <Input
                 type="number"
-                placeholder="vedlikehold, forsikring, avgifter…"
+                placeholder={autoExpenses > 0 ? autoExpenses.toString() : 'vedlikehold, forsikring, avgifter…'}
                 value={form.annual_expenses}
                 onChange={e => { set('annual_expenses', e.target.value); setResult(null); }}
               />
+              {form.annual_expenses === '' && autoExpenses > 0 && (
+                <p className="text-xs text-slate-400">Bruker {autoExpenses.toLocaleString('no')} kr fra registrerte utgifter</p>
+              )}
             </div>
           )}
 
