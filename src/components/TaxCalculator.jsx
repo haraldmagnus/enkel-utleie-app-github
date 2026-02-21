@@ -10,10 +10,10 @@ function fmt(n) {
   return Math.round(n).toLocaleString('no') + ' kr';
 }
 
-export default function TaxCalculator({ properties = [] }) {
+export default function TaxCalculator({ properties = [], entries = [], selectedYear }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    property_type: 'secondary', // secondary | primary_partial | vacation_short | vacation_long
+    property_type: 'secondary',
     annual_income: '',
     annual_expenses: '',
     selected_property: ''
@@ -22,9 +22,31 @@ export default function TaxCalculator({ properties = [] }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  // Compute totals from entries filtered by year and property
+  const yearStr = selectedYear ? selectedYear.toString() : new Date().getFullYear().toString();
+  const filteredEntries = entries.filter(e => {
+    const matchYear = e.date?.startsWith(yearStr);
+    const matchProp = !form.selected_property || e.rental_unit_id === form.selected_property;
+    return matchYear && matchProp;
+  });
+
+  const autoIncome = filteredEntries
+    .filter(e => e.type === 'income')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // Only deductible expense categories
+  const deductibleCategories = ['maintenance', 'repairs', 'utilities', 'insurance', 'taxes'];
+  const autoExpenses = filteredEntries
+    .filter(e => e.type === 'expense' && deductibleCategories.includes(e.category))
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  const effectiveIncome = form.annual_income !== '' ? Number(form.annual_income) : autoIncome;
+  const effectiveExpenses = form.annual_expenses !== '' ? Number(form.annual_expenses) : autoExpenses;
+  const usingAutoData = form.annual_income === '' || form.annual_expenses === '';
+
   const calculate = () => {
-    const income = Number(form.annual_income) || 0;
-    const expenses = Number(form.annual_expenses) || 0;
+    const income = effectiveIncome;
+    const expenses = effectiveExpenses;
     let taxable = 0;
     let taxAmount = 0;
     let explanation = '';
