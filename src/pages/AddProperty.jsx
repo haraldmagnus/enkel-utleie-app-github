@@ -196,6 +196,20 @@ export default function AddProperty() {
                 </div>
 
                 <div>
+                  <Label>Skattetype</Label>
+                  <Select value={formData.tax_type} onValueChange={(v) => setFormData({ ...formData, tax_type: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(TAX_TYPE_LABELS).map(([k, label]) => (
+                        <SelectItem key={k} value={k}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="description">{t('description')}</Label>
                   <Textarea
                     id="description"
