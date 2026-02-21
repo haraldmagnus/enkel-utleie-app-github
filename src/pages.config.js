@@ -66,6 +66,7 @@ import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
 import YearlyReport from './pages/YearlyReport';
+import Help from './pages/Help';
 import __Layout from './Layout.jsx';
 
 
@@ -89,6 +90,7 @@ export const PAGES = {
     "TenantDashboard": TenantDashboard,
     "TenantPhotos": TenantPhotos,
     "YearlyReport": YearlyReport,
+    "Help": Help,
 }
 
 export const pagesConfig = {
