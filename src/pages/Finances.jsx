@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Wallet, Plus, TrendingUp, TrendingDown, Download, 
-  Filter, Building2, Trash2, Bell, FileText
+  Filter, Building2, Trash2, Bell, FileText, BarChart2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Finances() {
   const queryClient = useQueryClient();
