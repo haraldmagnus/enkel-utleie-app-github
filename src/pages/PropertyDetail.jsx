@@ -582,7 +582,7 @@ export default function PropertyDetail() {
         {/* ØKONOMI */}
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Økonomi</h2>
-          <PropertyFinances propertyId={propertyId} landlordId={user?.id} />
+          <PropertyFinances propertyId={propertyId} landlordId={user?.id} property={property} onUpdateProperty={(data) => updateMutation.mutate(data)} />
         </div>
 
         {/* BILDER */}
