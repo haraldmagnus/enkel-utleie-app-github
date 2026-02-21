@@ -126,6 +126,28 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center gap-3 pb-2">
+                  <div className="relative">
+                    {user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt="Profilbilde"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-blue-200"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-200">
+                        <User className="w-9 h-9 text-blue-400" />
+                      </div>
+                    )}
+                    <label className="absolute bottom-0 right-0 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-blue-700 transition-colors">
+                      <Camera className="w-3.5 h-3.5 text-white" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={avatarUploading} />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-500">{avatarUploading ? 'Laster opp...' : 'Trykk for å bytte bilde'}</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="firstName">Fornavn</Label>
