@@ -18,11 +18,16 @@ export default function Properties() {
     queryFn: () => base44.auth.me()
   });
 
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.filter({ landlord_id: user?.id }),
+    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
     enabled: !!user?.id
   });
+
+  // Show properties where user is a landlord (primary or co-landlord)
+  const properties = allProperties.filter(p =>
+    p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id)
+  );
 
   const statusColors = {
     vacant: 'bg-green-100 text-green-700',
