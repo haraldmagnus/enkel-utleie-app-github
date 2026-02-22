@@ -211,7 +211,9 @@ export default function Chat() {
                       </div>
                       {hasOccupant ? (
                         <Badge className="bg-green-100 text-green-700">
-                          {isLandlord ? 'Leietaker' : 'Utleier'}
+                          {isLandlord 
+                            ? `${(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).length} leietaker(e)`
+                            : 'Gruppe'}
                         </Badge>
                       ) : (
                         <Badge variant="outline">Ingen chat</Badge>
