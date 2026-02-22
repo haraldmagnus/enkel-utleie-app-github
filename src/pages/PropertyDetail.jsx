@@ -37,6 +37,8 @@ export default function PropertyDetail() {
   const [uploadingType, setUploadingType] = useState(null);
   const [showRentSplitDialog, setShowRentSplitDialog] = useState(false);
   const [rentSplits, setRentSplits] = useState([]);
+  const [showCoLandlordDialog, setShowCoLandlordDialog] = useState(false);
+  const [coLandlordEmail, setCoLandlordEmail] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
