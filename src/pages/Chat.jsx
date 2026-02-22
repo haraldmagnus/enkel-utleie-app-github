@@ -294,14 +294,23 @@ export default function Chat() {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => setSelectedProperty(null)}
+          onClick={() => {
+            if (selectedProperty?.is_shared_housing && selectedRoom) {
+              setSelectedRoom(null);
+            } else {
+              setSelectedProperty(null);
+              setSelectedRoom(null);
+            }
+          }}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
-          <h2 className="font-semibold text-slate-900">{selectedProperty.name}</h2>
+          <h2 className="font-semibold text-slate-900">
+            {selectedRoom ? selectedRoom.name : selectedProperty.name}
+          </h2>
           <p className="text-xs text-slate-500">
-            Gruppechat
+            {selectedRoom ? selectedProperty.name : 'Chat'}
           </p>
         </div>
       </div>
