@@ -100,7 +100,7 @@ export default function YearlyReport() {
         e.type === 'income' ? 'Inntekt' : 'Utgift',
         t(e.category),
         e.description || '',
-        e.amount,
+        getDisplayAmount(e),
         property?.name || ''
       ];
     });
