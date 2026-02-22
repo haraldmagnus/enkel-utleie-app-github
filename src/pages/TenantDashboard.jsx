@@ -246,25 +246,7 @@ export default function TenantDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link to={createPageUrl('Chat')}>
-            <Card className="bg-blue-50 border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
-              <CardContent className="p-4 text-center">
-                <MessageSquare className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="font-medium text-blue-700">{t('chat')}</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link to={createPageUrl('CalendarPage')}>
-            <Card className="bg-purple-50 border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer">
-              <CardContent className="p-4 text-center">
-                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="font-medium text-purple-700">{t('calendar')}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+
       </div>
     </div>
   );
