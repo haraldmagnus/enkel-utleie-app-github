@@ -35,6 +35,8 @@ export default function PropertyDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showManualTenantDialog, setShowManualTenantDialog] = useState(false);
   const [uploadingType, setUploadingType] = useState(null);
+  const [showRentSplitDialog, setShowRentSplitDialog] = useState(false);
+  const [rentSplits, setRentSplits] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
