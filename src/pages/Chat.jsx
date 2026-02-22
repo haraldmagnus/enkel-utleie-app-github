@@ -205,7 +205,7 @@ export default function Chat() {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-slate-900">{room.name}</p>
-                  <p className="text-xs text-slate-500">{room.tenant_email || 'Ledig'}</p>
+                  <p className="text-xs text-slate-500">{room.tenant_name || room.tenant_email || 'Ledig'}</p>
                 </div>
                 <Badge className={room.tenant_id ? 'bg-blue-100 text-blue-700' : room.tenant_email ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}>
                   {room.tenant_id ? 'Utleid' : room.tenant_email ? 'Venter' : 'Ledig'}
