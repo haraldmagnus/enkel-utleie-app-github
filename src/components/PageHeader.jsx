@@ -12,7 +12,7 @@ export default function PageHeader({
   showSettings = true 
 }) {
   return (
-    <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-b-3xl">
+    <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white px-6 py-3 rounded-b-3xl">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl font-semibold flex-1">{title}</h1>
         <div className="flex gap-1">
