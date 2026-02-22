@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AcceptCoLandlord from './pages/AcceptCoLandlord';
 import AddProperty from './pages/AddProperty';
 import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
@@ -71,11 +72,11 @@ import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
 import YearlyReport from './pages/YearlyReport';
-import AcceptCoLandlord from './pages/AcceptCoLandlord';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AcceptCoLandlord": AcceptCoLandlord,
     "AddProperty": AddProperty,
     "CalendarPage": CalendarPage,
     "Chat": Chat,
@@ -100,7 +101,6 @@ export const PAGES = {
     "TenantDashboard": TenantDashboard,
     "TenantPhotos": TenantPhotos,
     "YearlyReport": YearlyReport,
-    "AcceptCoLandlord": AcceptCoLandlord,
 }
 
 export const pagesConfig = {
