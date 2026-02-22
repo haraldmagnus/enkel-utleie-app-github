@@ -14,6 +14,7 @@ export default function YearlyReport() {
   const { t } = useLanguage();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedProperty, setSelectedProperty] = useState('all');
+  const [reportMode, setReportMode] = useState('full'); // 'full' or 'personal'
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
