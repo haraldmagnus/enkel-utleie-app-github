@@ -689,7 +689,8 @@ export default function PropertyDetail() {
                   </div>
                 )}
               </CardContent>
-            </Card>}
+            </Card>
+            )}
 
             {/* Co-Landlords Section */}
             <Card>
