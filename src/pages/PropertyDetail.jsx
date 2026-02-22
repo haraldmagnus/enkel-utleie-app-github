@@ -546,10 +546,79 @@ export default function PropertyDetail() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      Leietaker: <strong>{property.tenant_email}</strong>
-                    </p>
+                  <div className="space-y-3">
+                    {/* All tenants */}
+                    <div className="bg-blue-50 p-3 rounded-lg space-y-1">
+                      {(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).map((email, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <p className="text-sm text-blue-800">
+                            <strong>Leietaker {i + 1}:</strong> {email}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs text-red-500 hover:text-red-700 px-2"
+                            onClick={async () => {
+                              if (confirm(`Fjerne ${email} som leietaker?`)) {
+                                const updatedEmails = (property.tenant_emails || []).filter(e => e !== email);
+                                const updatedTenantIds = (property.tenant_ids || []).filter(id => {
+                                  const matchingTenant = updatedEmails.length === 0;
+                                  return !matchingTenant;
+                                });
+                                updateMutation.mutate({
+                                  tenant_emails: updatedEmails,
+                                  tenant_email: updatedEmails[0] || null,
+                                  status: updatedEmails.length === 0 ? 'vacant' : 'occupied',
+                                  rent_splits: (property.rent_splits || []).filter(s => s.user_email !== email)
+                                });
+                              }
+                            }}
+                          >
+                            Fjern
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Add another tenant button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setShowInviteDialog(true)}
+                    >
+                      <Mail className="w-4 h-4 mr-2" /> Legg til leietaker
+                    </Button>
+                    {/* Rent split */}
+                    {(property.tenant_emails || []).length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                        onClick={() => {
+                          const existing = property.rent_splits || [];
+                          const emails = property.tenant_emails || [];
+                          const splits = emails.map(email => {
+                            const found = existing.find(s => s.user_email === email);
+                            return found || { user_email: email, user_name: email, percentage: Math.round(100 / emails.length), amount: 0 };
+                          });
+                          setRentSplits(splits);
+                          setShowRentSplitDialog(true);
+                        }}
+                      >
+                        <Wallet className="w-4 h-4 mr-2" /> Sett husleiefordeling
+                      </Button>
+                    )}
+                    {property.rent_splits && property.rent_splits.length > 0 && (
+                      <div className="bg-slate-50 rounded-lg p-2 space-y-1">
+                        <p className="text-xs font-medium text-slate-500">Husleiefordeling:</p>
+                        {property.rent_splits.map((s, i) => (
+                          <div key={i} className="flex justify-between text-xs text-slate-600">
+                            <span>{s.user_name || s.user_email}</span>
+                            <span>{s.percentage}% ({Math.round((property.monthly_rent || 0) * s.percentage / 100).toLocaleString()} kr)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
