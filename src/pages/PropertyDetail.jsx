@@ -40,6 +40,7 @@ export default function PropertyDetail() {
   const [rentSplits, setRentSplits] = useState([]);
   const [showCoLandlordDialog, setShowCoLandlordDialog] = useState(false);
   const [coLandlordEmail, setCoLandlordEmail] = useState('');
+  const [togglingShared, setTogglingShared] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
