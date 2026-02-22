@@ -64,14 +64,20 @@ export default function Chat() {
     }
   });
 
+  // Determine which room (if any) this user is assigned to in a shared housing
+  const getMyRoom = (property) => {
+    if (!property?.is_shared_housing || !property?.rooms) return null;
+    return property.rooms.find(r =>
+      r.tenant_id === user?.id || r.tenant_email === user?.email
+    ) || null;
+  };
+
   const { data: messages = [] } = useQuery({
-    queryKey: ['chatMessages', selectedProperty?.id],
+    queryKey: ['chatMessages', selectedProperty?.id, selectedRoom?.id ?? null],
     queryFn: async () => {
-      const msgs = await base44.entities.ChatMessage.filter(
-        { rental_unit_id: selectedProperty?.id },
-        'created_date',
-        100
-      );
+      const filter = { rental_unit_id: selectedProperty?.id };
+      if (selectedRoom?.id) filter.room_id = selectedRoom.id;
+      const msgs = await base44.entities.ChatMessage.filter(filter, 'created_date', 100);
       console.log('🔵 [CHAT] Fetched messages:', {
         propertyId: selectedProperty?.id,
         count: msgs.length,
