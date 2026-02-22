@@ -100,7 +100,8 @@ export default function Finances() {
     createMutation.mutate({
       ...formData,
       amount: Number(formData.amount),
-      landlord_id: user.id
+      landlord_id: user.id,
+      user_id: user.id
     });
   };
 
