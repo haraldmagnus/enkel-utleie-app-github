@@ -44,11 +44,15 @@ export default function Finances() {
     queryFn: () => base44.auth.me()
   });
 
-  const { data: properties = [] } = useQuery({
+  const { data: allProperties = [] } = useQuery({
     queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.filter({ landlord_id: user?.id }),
+    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
     enabled: !!user?.id
   });
+
+  const properties = allProperties.filter(p =>
+    p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id)
+  );
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['finances', selectedProperty],
