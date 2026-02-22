@@ -42,13 +42,20 @@ export default function TenantDashboard() {
     }
   }, [user]);
 
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['tenantProperties'],
-    queryFn: () => base44.entities.RentalUnit.filter({ tenant_id: user?.id }),
+    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
     enabled: !!user?.id
   });
 
-  const property = properties[0]; // Tenant typically has one property
+  const properties = allProperties.filter(p =>
+    p.tenant_id === user?.id ||
+    (p.tenant_ids || []).includes(user?.id) ||
+    p.tenant_email === user?.email ||
+    (p.tenant_emails || []).includes(user?.email)
+  );
+
+  const property = properties[0];
 
   const { data: agreement } = useQuery({
     queryKey: ['tenantAgreement', property?.id],
