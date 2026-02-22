@@ -1025,41 +1025,69 @@ export default function PropertyDetail() {
               disabled={!coLandlordEmail}
               onClick={async () => {
                 const cleanEmail = coLandlordEmail.toLowerCase().trim();
-                const found = await base44.entities.User.filter({ email: cleanEmail });
-                if (!found || found.length === 0) {
-                  alert('Ingen bruker funnet med denne e-postadressen. Personen må registrere seg i appen først.');
-                  return;
-                }
-                const newUser = found[0];
-                const newId = newUser.id;
-                const existingIds = property.landlord_ids || [property.landlord_id];
-                if (existingIds.includes(newId)) {
-                  alert('Denne brukeren er allerede tilknyttet eiendommen.');
-                  return;
-                }
-                const updatedIds = [...new Set([...existingIds, newId])];
-                updateMutation.mutate({ landlord_ids: updatedIds });
 
-                // Send e-post til ny medutleier
+                // Sjekk om det allerede finnes en aktiv invitasjon
+                const existingInvites = await base44.entities.CoLandlordInvitation.filter({
+                  rental_unit_id: propertyId,
+                  co_landlord_email: cleanEmail,
+                  status: 'pending'
+                });
+                if (existingInvites.length > 0) {
+                  alert('Det er allerede sendt en invitasjon til denne e-postadressen som ikke er besvart ennå.');
+                  return;
+                }
+
+                // Sjekk om bruker allerede er medutleier
+                const existingIds = property.landlord_ids || [property.landlord_id];
+                const existingUsers = await base44.entities.User.filter({ email: cleanEmail });
+                if (existingUsers.length > 0 && existingIds.includes(existingUsers[0].id)) {
+                  alert('Denne brukeren er allerede tilknyttet eiendommen som utleier.');
+                  return;
+                }
+
+                // Opprett invitasjon
+                const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + 7);
+
+                const invitation = await base44.entities.CoLandlordInvitation.create({
+                  rental_unit_id: propertyId,
+                  inviting_landlord_id: user.id,
+                  co_landlord_email: cleanEmail,
+                  token,
+                  status: 'pending',
+                  expires_at: expiresAt.toISOString()
+                });
+
+                const inviteUrl = `${window.location.origin}${createPageUrl('AcceptCoLandlord')}?token=${token}`;
+
+                // Send e-post
                 try {
                   await base44.integrations.Core.SendEmail({
                     to: cleanEmail,
                     from_name: 'Enkel Utleie',
-                    subject: `Du er lagt til som medutleier på ${property.name}`,
-                    body: `<!DOCTYPE html><html><body style="font-family: sans-serif; background: #f5f5f5; padding: 20px;">
-<table width="600" style="background: white; border-radius: 12px; overflow: hidden; margin: auto;">
-  <tr><td style="background: linear-gradient(135deg,#2563eb,#1d4ed8); padding: 32px 24px; text-align: center;">
-    <h1 style="margin:0;color:white;font-size:22px;">🏠 Du er lagt til som medutleier</h1>
+                    subject: `Invitasjon til å bli medutleier på ${property.name}`,
+                    body: `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#f5f5f5;padding:20px;">
+<table width="600" style="background:white;border-radius:12px;overflow:hidden;margin:auto;">
+  <tr><td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 24px;text-align:center;">
+    <h1 style="margin:0;color:white;font-size:22px;">🏠 Invitasjon til medutleier</h1>
   </td></tr>
-  <tr><td style="padding: 32px 24px;">
-    <p style="font-size:16px;color:#1f2937;">Hei${newUser.full_name ? ` ${newUser.full_name}` : ''}!</p>
-    <p style="font-size:15px;color:#374151;">${user?.full_name || 'En utleier'} har lagt deg til som medutleier på:</p>
+  <tr><td style="padding:32px 24px;">
+    <p style="font-size:16px;color:#1f2937;">Hei!</p>
+    <p style="font-size:15px;color:#374151;">${user?.full_name || 'En utleier'} inviterer deg til å bli medutleier på:</p>
     <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:8px;padding:20px;margin:20px 0;">
       <p style="margin:0 0 8px;font-size:18px;font-weight:600;color:#1e40af;">${property.name}</p>
       <p style="margin:0;font-size:14px;color:#4b5563;">📍 ${property.address}</p>
       ${property.monthly_rent ? `<p style="margin:8px 0 0;font-size:15px;color:#059669;font-weight:600;">💰 ${property.monthly_rent.toLocaleString()} kr/måned</p>` : ''}
     </div>
-    <p style="font-size:14px;color:#6b7280;">Du finner eiendommen i appen din under "Eiendommer".</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td align="center">
+        <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">
+          Aksepter invitasjon
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:13px;color:#9ca3af;text-align:center;">⏰ Invitasjonen er gyldig i 7 dager</p>
   </td></tr>
   <tr><td style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb;">
     <p style="margin:0;font-size:13px;color:#9ca3af;">Enkel Utleie – Din komplette utleieløsning</p>
@@ -1067,26 +1095,29 @@ export default function PropertyDetail() {
 </table></body></html>`
                   });
                 } catch (e) {
-                  console.error('E-post til medutleier feilet:', e);
+                  console.error('E-post feilet:', e);
                 }
 
-                // Send in-app notifikasjon
-                try {
-                  await base44.entities.Notification.create({
-                    user_id: newId,
-                    type: 'agreement',
-                    title: 'Du er lagt til som medutleier',
-                    message: `${user?.full_name || 'En utleier'} har lagt deg til som medutleier på ${property.name}`,
-                    rental_unit_id: propertyId,
-                    read: false
-                  });
-                } catch (e) {
-                  console.error('Notifikasjon feilet:', e);
+                // In-app notifikasjon (hvis bruker finnes)
+                if (existingUsers.length > 0) {
+                  try {
+                    await base44.entities.Notification.create({
+                      user_id: existingUsers[0].id,
+                      type: 'agreement',
+                      title: 'Invitasjon til å bli medutleier',
+                      message: `${user?.full_name || 'En utleier'} inviterer deg til å bli medutleier på ${property.name}`,
+                      rental_unit_id: propertyId,
+                      related_id: invitation.id,
+                      read: false
+                    });
+                  } catch (e) {
+                    console.error('Notifikasjon feilet:', e);
+                  }
                 }
 
                 setShowCoLandlordDialog(false);
                 setCoLandlordEmail('');
-                alert(`✅ ${cleanEmail} er lagt til som medutleier og har fått e-post og varsel i appen.`);
+                alert(`✅ Invitasjon sendt til ${cleanEmail}! De må akseptere før de får tilgang.`);
               }}
             >
               Legg til
