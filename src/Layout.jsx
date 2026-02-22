@@ -101,6 +101,38 @@ function LayoutContent({ children, currentPageName }) {
   });
   
   const showNav = effectiveRole && !noNavPages.includes(currentPageName);
+  const showHeader = effectiveRole && !noNavPages.includes(currentPageName);
+
+  // Page-specific header titles
+  const pageTitles = {
+    Dashboard: user ? `Hei, ${user?.first_name || user?.full_name?.split(' ')[0] || 'deg'}!` : '',
+    TenantDashboard: user ? `Hei, ${user?.full_name?.split(' ')[0] || 'Leietaker'}!` : '',
+    Properties: 'Eiendommer',
+    Finances: 'Økonomi',
+    CalendarPage: 'Kalender',
+    Chat: 'Meldinger',
+    Settings: 'Innstillinger',
+    Help: 'Hjelp',
+    Notifications: 'Varsler',
+    YearlyReport: 'Årsrapport',
+    FinancesIncome: 'Inntekter',
+    FinancesExpense: 'Utgifter',
+    FinancesNet: 'Netto',
+    FinancesTax: 'Skatt',
+    AddProperty: 'Legg til eiendom',
+    EditProperty: 'Rediger eiendom',
+    PropertyDetail: 'Eiendom',
+    PaymentReminders: 'Betalingspåminnelser',
+    TenantPhotos: 'Bilder',
+    SignAgreement: 'Signer avtale',
+    CreateAgreement: 'Leiekontrakt',
+    Invite: 'Inviter leietaker',
+  };
+
+  const pageSubtitles = {
+    Dashboard: 'Her er oversikten din',
+    TenantDashboard: 'Her er din leieoversikt',
+  };
 
   if (isLoading) {
     return (
