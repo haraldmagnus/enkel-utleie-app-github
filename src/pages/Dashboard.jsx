@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/components/LanguageContext';
 import { createPageUrl } from '@/utils';
-import PageHeader from '@/components/PageHeader';
 
 export default function Dashboard() {
   const { t } = useLanguage();
