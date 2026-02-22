@@ -638,6 +638,52 @@ export default function PropertyDetail() {
               </CardContent>
             </Card>
 
+            {/* Co-Landlords Section */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Medutleiere
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {coLandlords.length === 0 ? (
+                  <p className="text-sm text-slate-500 mb-3">Ingen medutleiere tilknyttet</p>
+                ) : (
+                  <div className="space-y-2 mb-3">
+                    {coLandlords.map(u => (
+                      <div key={u.id} className="flex items-center justify-between bg-slate-50 rounded-lg p-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{u.full_name || u.email}</p>
+                          <p className="text-xs text-slate-500">{u.email}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 text-xs px-2"
+                          onClick={async () => {
+                            if (confirm(`Fjerne ${u.email} som medutleier?`)) {
+                              const updatedIds = (property.landlord_ids || []).filter(id => id !== u.id);
+                              updateMutation.mutate({ landlord_ids: updatedIds });
+                            }
+                          }}
+                        >
+                          Fjern
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowCoLandlordDialog(true)}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" /> Legg til medutleier
+                </Button>
+              </CardContent>
+            </Card>
+
             {property.description && (
               <Card>
                 <CardHeader className="pb-2">
