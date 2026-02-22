@@ -978,6 +978,55 @@ export default function PropertyDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Co-Landlord Dialog */}
+      <Dialog open={showCoLandlordDialog} onOpenChange={setShowCoLandlordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Legg til medutleier</DialogTitle>
+            <DialogDescription>
+              Skriv inn e-postadressen til medutleieren du vil legge til. De må allerede ha en konto i appen.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="email"
+              placeholder="medutleier@example.com"
+              value={coLandlordEmail}
+              onChange={(e) => setCoLandlordEmail(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowCoLandlordDialog(false); setCoLandlordEmail(''); }}>
+              {t('cancel')}
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={!coLandlordEmail}
+              onClick={async () => {
+                const cleanEmail = coLandlordEmail.toLowerCase().trim();
+                const found = await base44.entities.User.filter({ email: cleanEmail });
+                if (!found || found.length === 0) {
+                  alert('Ingen bruker funnet med denne e-postadressen. Personen må registrere seg i appen først.');
+                  return;
+                }
+                const newId = found[0].id;
+                const existingIds = property.landlord_ids || [property.landlord_id];
+                if (existingIds.includes(newId)) {
+                  alert('Denne brukeren er allerede tilknyttet eiendommen.');
+                  return;
+                }
+                const updatedIds = [...new Set([...existingIds, newId])];
+                updateMutation.mutate({ landlord_ids: updatedIds });
+                setShowCoLandlordDialog(false);
+                setCoLandlordEmail('');
+              }}
+            >
+              Legg til
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Manual Tenant Dialog */}
       <ManualTenantForm
         open={showManualTenantDialog}
