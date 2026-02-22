@@ -154,6 +154,22 @@ export default function YearlyReport() {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Report Mode Toggle */}
+        <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+          <button
+            className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${reportMode === 'full' ? 'bg-white shadow font-medium text-slate-900' : 'text-slate-500'}`}
+            onClick={() => setReportMode('full')}
+          >
+            Samlet rapport
+          </button>
+          <button
+            className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${reportMode === 'personal' ? 'bg-white shadow font-medium text-slate-900' : 'text-slate-500'}`}
+            onClick={() => setReportMode('personal')}
+          >
+            Personlig rapport
+          </button>
+        </div>
+
         {/* Filters */}
         <div className="flex gap-3">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
