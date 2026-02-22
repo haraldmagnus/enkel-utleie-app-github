@@ -33,6 +33,17 @@ export default function YearlyReport() {
     enabled: !!user?.id
   });
 
+  // For personal report: filter entries by user_id or adjust rent amounts by split
+  const getPersonalAmount = (entry) => {
+    if (entry.category === 'rent' && entry.rent_splits && entry.rent_splits.length > 0) {
+      const mySplit = entry.rent_splits.find(s => s.user_id === user?.id);
+      if (mySplit) return (entry.amount * mySplit.percentage) / 100;
+    }
+    // For non-rent entries: only include if created by this user
+    if (entry.user_id && entry.user_id !== user?.id) return null;
+    return entry.amount;
+  };
+
   // Filter by year and property
   const entries = allEntries.filter(e => {
     const entryYear = new Date(e.date).getFullYear().toString();
