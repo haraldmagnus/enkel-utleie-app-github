@@ -86,24 +86,16 @@ export default function Chat() {
   // Real-time subscription
   useEffect(() => {
     if (!selectedProperty?.id) return;
-
-    console.log('🔵 [CHAT] Subscribing to messages for property:', selectedProperty.id);
-
     const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
-      console.log('🔵 [CHAT] Message event:', event);
-      
       if (event.data.rental_unit_id === selectedProperty.id) {
-        queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty.id] });
-        
-        // Create notification for received messages (not own)
+        queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty.id, selectedRoom?.id ?? null] });
         if (event.type === 'create' && event.data.sender_id !== user?.id) {
           queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
         }
       }
     });
-
     return unsubscribe;
-  }, [selectedProperty?.id, user?.id]);
+  }, [selectedProperty?.id, selectedRoom?.id, user?.id]);
 
   const sendMutation = useMutation({
     mutationFn: async (data) => {
