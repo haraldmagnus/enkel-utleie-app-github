@@ -207,8 +207,8 @@ export default function Chat() {
                   <p className="font-medium text-slate-900">{room.name}</p>
                   <p className="text-xs text-slate-500">{room.tenant_email || 'Ledig'}</p>
                 </div>
-                <Badge className={room.status === 'occupied' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
-                  {room.status === 'occupied' ? 'Utleid' : room.status === 'pending_invitation' ? 'Venter' : 'Ledig'}
+                <Badge className={room.tenant_id ? 'bg-blue-100 text-blue-700' : room.tenant_email ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}>
+                  {room.tenant_id ? 'Utleid' : room.tenant_email ? 'Venter' : 'Ledig'}
                 </Badge>
               </CardContent>
             </Card>
