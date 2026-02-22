@@ -244,7 +244,7 @@ export default function Chat() {
         <div className="flex-1">
           <h2 className="font-semibold text-slate-900">{selectedProperty.name}</h2>
           <p className="text-xs text-slate-500">
-            {isLandlord ? 'Chat med leietaker' : 'Chat med utleier'}
+            Gruppechat
           </p>
         </div>
       </div>
