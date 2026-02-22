@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Send, Building2, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Send, Building2, ArrowLeft, BedDouble } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,8 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   
   const [selectedProperty, setSelectedProperty] = useState(null);
+  // For shared housing: selectedRoom = { id, name } or null (means property-level chat)
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [newMessage, setNewMessage] = useState('');
 
   const { data: user } = useQuery({
