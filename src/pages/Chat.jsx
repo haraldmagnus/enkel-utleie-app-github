@@ -44,16 +44,22 @@ export default function Chat() {
     }
   }, [user, effectiveRole]);
 
-  const { data: properties = [] } = useQuery({
+  const { data: allProperties = [] } = useQuery({
     queryKey: ['rentalUnits'],
-    queryFn: async () => {
-      if (isLandlord) {
-        return base44.entities.RentalUnit.filter({ landlord_id: user?.id });
-      } else {
-        return base44.entities.RentalUnit.filter({ tenant_id: user?.id });
-      }
-    },
+    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
     enabled: !!user?.id
+  });
+
+  // Filter properties where user is involved (any role)
+  const properties = allProperties.filter(p => {
+    if (isLandlord) {
+      return p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id);
+    } else {
+      return p.tenant_id === user?.id || 
+             (p.tenant_ids || []).includes(user?.id) ||
+             p.tenant_email === user?.email ||
+             (p.tenant_emails || []).includes(user?.email);
+    }
   });
 
   const { data: messages = [] } = useQuery({
