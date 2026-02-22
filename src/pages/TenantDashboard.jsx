@@ -48,12 +48,22 @@ export default function TenantDashboard() {
     enabled: !!user?.id
   });
 
-  const properties = allProperties.filter(p =>
-    p.tenant_id === user?.id ||
-    (p.tenant_ids || []).includes(user?.id) ||
-    p.tenant_email === user?.email ||
-    (p.tenant_emails || []).includes(user?.email)
-  );
+  const properties = allProperties.filter(p => {
+    // Standard tenant check
+    if (
+      p.tenant_id === user?.id ||
+      (p.tenant_ids || []).includes(user?.id) ||
+      p.tenant_email === user?.email ||
+      (p.tenant_emails || []).includes(user?.email)
+    ) return true;
+    // Shared housing: check if user is assigned to any room
+    if (p.is_shared_housing && p.rooms) {
+      return p.rooms.some(r =>
+        r.tenant_id === user?.id || r.tenant_email === user?.email
+      );
+    }
+    return false;
+  });
 
   const property = properties[0];
 
