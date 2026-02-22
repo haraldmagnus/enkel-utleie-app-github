@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, Building2, MapPin, Users, FileText, Camera, 
-  Mail, Trash2, Edit2, Check, X, UserPlus, Wallet
+  Mail, Trash2, Edit2, Check, X, UserPlus, Wallet, BedDouble
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
