@@ -45,22 +45,38 @@ export default function YearlyReport() {
   };
 
   // Filter by year and property
-  const entries = allEntries.filter(e => {
+  const baseEntries = allEntries.filter(e => {
     const entryYear = new Date(e.date).getFullYear().toString();
     const matchesYear = entryYear === selectedYear;
     const matchesProperty = selectedProperty === 'all' || e.rental_unit_id === selectedProperty;
     return matchesYear && matchesProperty;
   });
 
+  // Apply personal/full mode
+  const entries = reportMode === 'personal'
+    ? baseEntries.filter(e => {
+        const amt = getPersonalAmount(e);
+        return amt !== null;
+      })
+    : baseEntries;
+
+  const getDisplayAmount = (e) => {
+    if (reportMode === 'personal') {
+      return getPersonalAmount(e) ?? e.amount;
+    }
+    return e.amount;
+  };
+
   // Calculate totals by category
   const incomeByCategory = {};
   const expenseByCategory = {};
   
   entries.forEach(e => {
+    const amt = getDisplayAmount(e);
     if (e.type === 'income') {
-      incomeByCategory[e.category] = (incomeByCategory[e.category] || 0) + e.amount;
+      incomeByCategory[e.category] = (incomeByCategory[e.category] || 0) + amt;
     } else {
-      expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + e.amount;
+      expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + amt;
     }
   });
 
