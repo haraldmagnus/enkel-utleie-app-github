@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  User, Globe, LogOut, Bell, Shield, RefreshCw, AlertTriangle, Save, ChevronRight, Camera, HelpCircle
+  User, Globe, LogOut, Bell, Shield, RefreshCw, AlertTriangle, Save, ChevronRight, Camera, HelpCircle, Mail
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,6 @@ export default function Settings() {
     queryFn: () => base44.auth.me()
   });
 
-  // Pre-populate fields when user loads
   React.useEffect(() => {
     if (user) {
       setFirstName(user.first_name || '');
@@ -105,8 +104,6 @@ export default function Settings() {
 
   return (
     <div className="pb-20">
-
-
       <div className="p-4">
         <Tabs defaultValue="profile">
           <TabsList className="w-full mb-4">
@@ -124,7 +121,6 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Avatar Upload */}
                 <div className="flex flex-col items-center gap-3 pb-2">
                   <div className="relative">
                     {user?.avatar_url ? (
@@ -315,6 +311,26 @@ export default function Settings() {
                     Godkjent: {new Date(user.gdpr_consent_date).toLocaleDateString('no')}
                   </p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Support */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Mail className="w-4 h-4" /> Kontakt support
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-500 mb-3">
+                  Har du spørsmål eller trenger hjelp? Vi er her for deg.
+                </p>
+                <a href="mailto:support@enkelutleie.com">
+                  <Button variant="outline" className="w-full text-blue-600 border-blue-200 hover:bg-blue-50">
+                    <Mail className="w-4 h-4 mr-2" />
+                    support@enkelutleie.com
+                  </Button>
+                </a>
               </CardContent>
             </Card>
 
