@@ -353,6 +353,11 @@ export default function Finances() {
             <DialogTitle>{t('addEntry')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Receipt Scanner */}
+            <ReceiptScanner
+              onScanned={(data) => setFormData((prev) => ({ ...prev, ...data }))}
+            />
+
             <div>
               <Label>Type</Label>
               <Select
