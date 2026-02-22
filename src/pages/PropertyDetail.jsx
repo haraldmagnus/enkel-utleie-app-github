@@ -52,6 +52,18 @@ export default function PropertyDetail() {
     enabled: !!propertyId
   });
 
+  const { data: coLandlords = [] } = useQuery({
+    queryKey: ['coLandlords', propertyId],
+    queryFn: async () => {
+      const ids = property?.landlord_ids || [];
+      if (ids.length <= 1) return [];
+      const others = ids.filter(id => id !== user?.id);
+      const users = await Promise.all(others.map(id => base44.entities.User.filter({ id }).then(r => r[0])));
+      return users.filter(Boolean);
+    },
+    enabled: !!property && !!user
+  });
+
   const { data: agreement } = useQuery({
     queryKey: ['agreement', propertyId],
     queryFn: () => base44.entities.RentalAgreement.filter({ rental_unit_id: propertyId }),
