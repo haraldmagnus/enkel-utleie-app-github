@@ -202,7 +202,17 @@ function LayoutContent({ children, currentPageName }) {
         .hover\\:bg-blue-500:hover { background-color: rgb(59 130 246); }
         .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
       `}</style>
-      {children}
+      {showHeader && (
+        <div className="sticky top-0 z-40">
+          <PageHeader
+            title={pageTitles[currentPageName] || ''}
+            subtitle={pageSubtitles[currentPageName]}
+          />
+        </div>
+      )}
+      <div>
+        {children}
+      </div>
       {showNav && <BottomNav userRole={effectiveRole} />}
     </div>
   );
