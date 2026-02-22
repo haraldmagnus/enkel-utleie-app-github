@@ -79,9 +79,7 @@ export default function Settings() {
     try {
       localStorage.clear();
       sessionStorage.clear();
-    } catch (e) {
-      console.log('Clear error:', e);
-    }
+    } catch (e) {}
     base44.auth.logout();
   };
 
@@ -107,9 +105,9 @@ export default function Settings() {
       <div className="p-4">
         <Tabs defaultValue="profile">
           <TabsList className="w-full mb-4">
-            <TabsTrigger value="profile" className="flex-1">Profil</TabsTrigger>
-            <TabsTrigger value="notifications" className="flex-1">Varsler</TabsTrigger>
-            <TabsTrigger value="other" className="flex-1">Annet</TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1">{t('profile')}</TabsTrigger>
+            <TabsTrigger value="notifications" className="flex-1">{t('notifications')}</TabsTrigger>
+            <TabsTrigger value="other" className="flex-1">{t('other')}</TabsTrigger>
           </TabsList>
 
           {/* PROFILE TAB */}
@@ -117,7 +115,7 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <User className="w-4 h-4" /> Profilinformasjon
+                  <User className="w-4 h-4" /> {t('profileInformation')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -126,7 +124,7 @@ export default function Settings() {
                     {user?.avatar_url ? (
                       <img
                         src={user.avatar_url}
-                        alt="Profilbilde"
+                        alt="Avatar"
                         className="w-20 h-20 rounded-full object-cover border-2 border-blue-200"
                       />
                     ) : (
@@ -139,12 +137,12 @@ export default function Settings() {
                       <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={avatarUploading} />
                     </label>
                   </div>
-                  <p className="text-xs text-slate-500">{avatarUploading ? 'Laster opp...' : 'Trykk for å bytte bilde'}</p>
+                  <p className="text-xs text-slate-500">{avatarUploading ? t('uploading') : t('tapToChangeImage')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="firstName">Fornavn</Label>
+                    <Label htmlFor="firstName">{t('firstName')}</Label>
                     <Input
                       id="firstName"
                       value={firstName}
@@ -154,7 +152,7 @@ export default function Settings() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="lastName">Etternavn</Label>
+                    <Label htmlFor="lastName">{t('lastName')}</Label>
                     <Input
                       id="lastName"
                       value={lastName}
@@ -166,7 +164,7 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="phone">Telefonnummer</Label>
+                  <Label htmlFor="phone">{t('phoneNumber')}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -175,16 +173,16 @@ export default function Settings() {
                     placeholder="+47 900 00 000"
                     autoComplete="tel"
                   />
-                  <p className="text-xs text-slate-500">Med eller uten landkode, f.eks. +47 eller 0047</p>
+                  <p className="text-xs text-slate-500">{t('phoneDescription')}</p>
                 </div>
 
                 <div className="pt-1 border-t space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">E-post</span>
+                    <span className="text-sm text-slate-600">{t('email')}</span>
                     <span className="text-sm font-medium text-slate-700">{user?.email}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Rolle</span>
+                    <span className="text-sm text-slate-600">{t('role')}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -203,7 +201,7 @@ export default function Settings() {
                   disabled={updateMutation.isPending}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {profileSaved ? '✓ Lagret!' : 'Lagre profil'}
+                  {profileSaved ? t('saved') : t('saveProfile')}
                 </Button>
               </CardContent>
             </Card>
@@ -214,14 +212,14 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Bell className="w-4 h-4" /> Varslingsinnstillinger
+                  <Bell className="w-4 h-4" /> {t('notificationSettings')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Kalender</Label>
-                    <p className="text-xs text-slate-500">Varsler for hendelser</p>
+                    <Label>{t('calendar')}</Label>
+                    <p className="text-xs text-slate-500">{t('calendarNotifications')}</p>
                   </div>
                   <Switch
                     checked={user?.notify_calendar !== false}
@@ -230,8 +228,8 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Betalinger</Label>
-                    <p className="text-xs text-slate-500">Påminnelser om leie</p>
+                    <Label>{t('payments')}</Label>
+                    <p className="text-xs text-slate-500">{t('paymentReminders')}</p>
                   </div>
                   <Switch
                     checked={user?.notify_payments !== false}
@@ -240,8 +238,8 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Meldinger</Label>
-                    <p className="text-xs text-slate-500">Nye meldinger fra leietaker/utleier</p>
+                    <Label>{t('messages')}</Label>
+                    <p className="text-xs text-slate-500">{t('newMessages')}</p>
                   </div>
                   <Switch
                     checked={user?.notify_messages !== false}
@@ -250,8 +248,8 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Vedlikehold</Label>
-                    <p className="text-xs text-slate-500">Oppdateringer på oppgaver</p>
+                    <Label>{t('maintenance')}</Label>
+                    <p className="text-xs text-slate-500">{t('maintenanceUpdates')}</p>
                   </div>
                   <Switch
                     checked={user?.notify_maintenance !== false}
@@ -268,7 +266,7 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Globe className="w-4 h-4" /> Språk
+                  <Globe className="w-4 h-4" /> {t('language')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -276,7 +274,7 @@ export default function Settings() {
                   <div>
                     <Label>English</Label>
                     <p className="text-sm text-slate-500">
-                      {language === 'en' ? 'Currently active' : 'Bytt til engelsk'}
+                      {language === 'en' ? t('currentlyActive') : t('switchToEnglish')}
                     </p>
                   </div>
                   <Switch
@@ -291,24 +289,24 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Personvern
+                  <Shield className="w-4 h-4" /> {t('privacy')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between py-1">
                   <div>
-                    <span className="text-sm text-slate-600">Samtykke til databehandling</span>
-                    <p className="text-xs text-slate-500">GDPR-samtykke for lagring av data</p>
+                    <span className="text-sm text-slate-600">{t('dataProcessingConsent')}</span>
+                    <p className="text-xs text-slate-500">{t('gdprConsentDescription')}</p>
                   </div>
                   {user?.gdpr_consent ? (
-                    <span className="text-green-600 text-sm">✓ Godkjent</span>
+                    <span className="text-green-600 text-sm">{t('approved')}</span>
                   ) : (
-                    <Button size="sm" onClick={handleGDPRConsent}>Godkjenn</Button>
+                    <Button size="sm" onClick={handleGDPRConsent}>{t('approve')}</Button>
                   )}
                 </div>
                 {user?.gdpr_consent_date && (
                   <p className="text-xs text-slate-400 mt-1">
-                    Godkjent: {new Date(user.gdpr_consent_date).toLocaleDateString('no')}
+                    {t('approvedOn')} {new Date(user.gdpr_consent_date).toLocaleDateString()}
                   </p>
                 )}
               </CardContent>
@@ -318,12 +316,12 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Mail className="w-4 h-4" /> Kontakt support
+                  <Mail className="w-4 h-4" /> {t('contactSupport')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-500 mb-3">
-                  Har du spørsmål eller trenger hjelp? Vi er her for deg.
+                  {t('supportDescription')}
                 </p>
                 <a href="mailto:support@enkelutleie.com">
                   <Button variant="outline" className="w-full text-blue-600 border-blue-200 hover:bg-blue-50">
@@ -338,12 +336,12 @@ export default function Settings() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" /> Feilsøking
+                  <AlertTriangle className="w-4 h-4" /> {t('troubleshooting')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-500 mb-3">
-                  Hvis appen ikke fungerer som forventet, prøv å tilbakestille.
+                  {t('troubleshootingDescription')}
                 </p>
                 <Button 
                   variant="outline" 
@@ -351,7 +349,7 @@ export default function Settings() {
                   onClick={handleHardReset}
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Hard tilbakestilling
+                  {t('hardReset')}
                 </Button>
               </CardContent>
             </Card>
@@ -363,7 +361,7 @@ export default function Settings() {
               onClick={() => navigate(createPageUrl('Help'))}
             >
               <HelpCircle className="w-4 h-4 mr-2" />
-              Hjelp & Skatteguide
+              {t('helpAndTaxGuide')}
             </Button>
 
             {/* Logout */}
@@ -373,7 +371,7 @@ export default function Settings() {
               onClick={handleLogout}
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Logg ut
+              {t('logout')}
             </Button>
           </TabsContent>
         </Tabs>
