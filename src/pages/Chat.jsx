@@ -78,16 +78,6 @@ export default function Chat() {
       const filter = { rental_unit_id: selectedProperty?.id };
       if (selectedRoom?.id) filter.room_id = selectedRoom.id;
       const msgs = await base44.entities.ChatMessage.filter(filter, 'created_date', 100);
-      console.log('🔵 [CHAT] Fetched messages:', {
-        propertyId: selectedProperty?.id,
-        count: msgs.length,
-        messages: msgs.map(m => ({
-          id: m.id,
-          sender_id: m.sender_id,
-          sender_name: m.sender_name,
-          preview: m.message.substring(0, 30)
-        }))
-      });
       return msgs;
     },
     enabled: !!selectedProperty?.id
