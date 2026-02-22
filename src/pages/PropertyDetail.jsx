@@ -885,6 +885,39 @@ export default function PropertyDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Rent Split Dialog */}
+      <Dialog open={showRentSplitDialog} onOpenChange={setShowRentSplitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Husleiefordeling</DialogTitle>
+            <DialogDescription>
+              Angi hvor stor andel av husleien ({property?.monthly_rent?.toLocaleString()} kr) hver leietaker skal betale.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <RentSplitEditor
+              splits={rentSplits}
+              onChange={setRentSplits}
+              totalAmount={property?.monthly_rent || 0}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRentSplitDialog(false)}>Avbryt</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                const total = rentSplits.reduce((s, r) => s + (Number(r.percentage) || 0), 0);
+                if (Math.abs(total - 100) > 0.01) return alert('Andeler må summere til 100%');
+                updateMutation.mutate({ rent_splits: rentSplits });
+                setShowRentSplitDialog(false);
+              }}
+            >
+              Lagre fordeling
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Manual Tenant Dialog */}
       <ManualTenantForm
         open={showManualTenantDialog}
