@@ -132,10 +132,17 @@ export default function Notifications() {
           <div className="space-y-3">
             {notifications.map(notification => {
               const Icon = iconMap[notification.type] || Bell;
+              const url = getNotificationUrl(notification);
               return (
                 <Card 
                   key={notification.id} 
-                  className={`${!notification.read ? 'border-blue-200 bg-blue-50/50' : ''}`}
+                  className={`${!notification.read ? 'border-blue-200 bg-blue-50/50' : ''} ${url ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                  onClick={() => {
+                    if (url) {
+                      if (!notification.read) markReadMutation.mutate(notification.id);
+                      navigate(url);
+                    }
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
@@ -144,6 +151,7 @@ export default function Notifications() {
                         notification.type === 'calendar_event' ? 'bg-purple-100' :
                         notification.type === 'message' ? 'bg-blue-100' :
                         notification.type === 'maintenance' ? 'bg-yellow-100' :
+                        notification.type === 'invitation' ? 'bg-orange-100' :
                         'bg-slate-100'
                       }`}>
                         <Icon className={`w-5 h-5 ${
@@ -151,17 +159,21 @@ export default function Notifications() {
                           notification.type === 'calendar_event' ? 'text-purple-600' :
                           notification.type === 'message' ? 'text-blue-600' :
                           notification.type === 'maintenance' ? 'text-yellow-600' :
+                          notification.type === 'invitation' ? 'text-orange-600' :
                           'text-slate-600'
                         }`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className={`font-medium ${!notification.read ? 'text-slate-900' : 'text-slate-700'}`}>
                             {notification.title}
                           </span>
                           <Badge variant="outline" className="text-xs">
-                            {typeLabels[notification.type]}
+                            {typeLabels[notification.type] || 'Varsel'}
                           </Badge>
+                          {url && (
+                            <Badge className="text-xs bg-blue-100 text-blue-700">Trykk for å åpne →</Badge>
+                          )}
                         </div>
                         <p className="text-sm text-slate-500 mt-1">{notification.message}</p>
                         <p className="text-xs text-slate-400 mt-2">
@@ -173,7 +185,7 @@ export default function Notifications() {
                           })}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
                         {!notification.read && (
                           <Button 
                             variant="ghost" 
