@@ -351,9 +351,12 @@ export default function PropertyDetail() {
         console.log('ℹ️ [INVITE DEBUG] Skipping in-app notification/chat for new user (will be created at login)');
       }
       
-      // Update property status
+      // Update property status - append to existing tenant emails
+      const existingEmails = property.tenant_emails || (property.tenant_email ? [property.tenant_email] : []);
+      const updatedEmails = [...new Set([...existingEmails, cleanEmail])];
       updateMutation.mutate({
         tenant_email: cleanEmail,
+        tenant_emails: updatedEmails,
         status: 'pending_invitation'
       });
       
