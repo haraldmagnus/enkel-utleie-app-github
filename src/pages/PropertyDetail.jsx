@@ -661,6 +661,39 @@ export default function PropertyDetail() {
               </CardContent>
             </Card>
 
+            {/* Shared Housing Toggle */}
+            <Card>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <BedDouble className="w-5 h-5 text-slate-500" />
+                  <div>
+                    <p className="font-medium text-slate-800">Bofellesskap</p>
+                    <p className="text-xs text-slate-500">Individuelle leietakere per soverom</p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    setTogglingShared(true);
+                    updateMutation.mutate({ is_shared_housing: !property.is_shared_housing });
+                    setTogglingShared(false);
+                  }}
+                  disabled={togglingShared}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${property.is_shared_housing ? 'bg-blue-600' : 'bg-slate-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.is_shared_housing ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </CardContent>
+            </Card>
+
+            {/* Shared Housing Rooms */}
+            {property.is_shared_housing && (
+              <SharedHousingRooms
+                property={property}
+                user={user}
+                onUpdate={(data) => updateMutation.mutate(data)}
+              />
+            )}
+
             {/* Co-Landlords Section */}
             <Card>
               <CardHeader className="pb-2">
