@@ -168,14 +168,13 @@ export default function Chat() {
     if (selectedProperty?.id && messages.length > 0) {
       const unreadMessages = messages.filter(m => !m.read && m.sender_id !== user?.id);
       if (unreadMessages.length > 0) {
-        console.log('🔵 [CHAT] Marking messages as read:', unreadMessages.length);
         unreadMessages.forEach(msg => {
           base44.entities.ChatMessage.update(msg.id, { read: true }).catch(console.error);
         });
         queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
       }
     }
-  }, [selectedProperty?.id, messages, user?.id]);
+  }, [selectedProperty?.id, selectedRoom?.id, messages, user?.id]);
 
   // Property list view
   if (!selectedProperty) {
