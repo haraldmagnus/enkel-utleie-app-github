@@ -21,6 +21,7 @@ import ManualTenantForm from '@/components/ManualTenantForm';
 import AgreementUpload from '@/components/AgreementUpload';
 import DocumentationChecklist from '@/components/DocumentationChecklist';
 import RentSplitEditor from '@/components/RentSplitEditor';
+import SharedHousingRooms from '@/components/SharedHousingRooms';
 
 export default function PropertyDetail() {
   const navigate = useNavigate();
