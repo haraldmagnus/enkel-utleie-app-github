@@ -273,6 +273,11 @@ export default function YearlyReport() {
           Last ned CSV for skatt
         </Button>
 
+        {reportMode === 'personal' && (
+          <p className="text-xs text-blue-600 text-center bg-blue-50 rounded-lg p-2">
+            Personlig rapport viser din andel av husleie og dine egne utgifter
+          </p>
+        )}
         <p className="text-xs text-slate-500 text-center">
           Filen kan importeres i regnskapsprogram eller åpnes i Excel
         </p>
