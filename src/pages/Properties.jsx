@@ -43,19 +43,16 @@ export default function Properties() {
 
   return (
     <div className="pb-24">
-      <div className="bg-white border-b px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-900">{t('properties')}</h1>
-          {properties.length < 5 && (
-            <Link to={createPageUrl('AddProperty')}>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-1" /> {t('add')}
-              </Button>
-            </Link>
-          )}
-        </div>
+      <div className="px-4 pt-3 flex justify-end">
+        {properties.length < 5 && (
+          <Link to={createPageUrl('AddProperty')}>
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-1" /> {t('add')}
+            </Button>
+          </Link>
+        )}
         {properties.length >= 5 && (
-          <p className="text-sm text-amber-600 mt-2">{t('maxProperties')}</p>
+          <p className="text-sm text-amber-600">{t('maxProperties')}</p>
         )}
       </div>
 

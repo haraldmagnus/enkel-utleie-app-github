@@ -105,9 +105,7 @@ export default function Settings() {
 
   return (
     <div className="pb-20">
-      <div className="bg-white border-b px-4 py-4">
-        <h1 className="text-xl font-bold text-slate-900">{t('settings')}</h1>
-      </div>
+
 
       <div className="p-4">
         <Tabs defaultValue="profile">

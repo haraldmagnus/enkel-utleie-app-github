@@ -162,9 +162,8 @@ export default function Chat() {
   if (!selectedProperty) {
     return (
       <div className="pb-24">
-        <div className="bg-white border-b px-4 py-4">
-          <h1 className="text-xl font-bold text-slate-900">{t('chat')}</h1>
-          <p className="text-xs text-slate-500 mt-1">
+        <div className="px-4 pt-2">
+          <p className="text-xs text-slate-500">
             Rolle: {isLandlord ? 'Utleier' : 'Leietaker'}
           </p>
         </div>

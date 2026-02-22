@@ -156,9 +156,8 @@ export default function Finances() {
 
   return (
     <div className="pb-24">
-      <div className="bg-white border-b px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-900">{t('finances')}</h1>
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="w-[90px] h-9">

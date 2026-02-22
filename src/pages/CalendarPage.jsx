@@ -137,20 +137,17 @@ export default function CalendarPage() {
 
   return (
     <div className="pb-24">
-      <div className="bg-white border-b px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-900">{t('calendar')}</h1>
-          <Button 
-            size="sm" 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => {
-              resetForm();
-              setShowAddDialog(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
-          </Button>
-        </div>
+      <div className="px-4 pt-3 flex justify-end">
+        <Button 
+          size="sm" 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => {
+            resetForm();
+            setShowAddDialog(true);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
+        </Button>
       </div>
 
       <div className="p-4 space-y-4">
