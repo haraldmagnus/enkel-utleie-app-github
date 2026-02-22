@@ -1030,7 +1030,8 @@ export default function PropertyDetail() {
                   alert('Ingen bruker funnet med denne e-postadressen. Personen må registrere seg i appen først.');
                   return;
                 }
-                const newId = found[0].id;
+                const newUser = found[0];
+                const newId = newUser.id;
                 const existingIds = property.landlord_ids || [property.landlord_id];
                 if (existingIds.includes(newId)) {
                   alert('Denne brukeren er allerede tilknyttet eiendommen.');
@@ -1038,8 +1039,54 @@ export default function PropertyDetail() {
                 }
                 const updatedIds = [...new Set([...existingIds, newId])];
                 updateMutation.mutate({ landlord_ids: updatedIds });
+
+                // Send e-post til ny medutleier
+                try {
+                  await base44.integrations.Core.SendEmail({
+                    to: cleanEmail,
+                    from_name: 'Enkel Utleie',
+                    subject: `Du er lagt til som medutleier på ${property.name}`,
+                    body: `<!DOCTYPE html><html><body style="font-family: sans-serif; background: #f5f5f5; padding: 20px;">
+<table width="600" style="background: white; border-radius: 12px; overflow: hidden; margin: auto;">
+  <tr><td style="background: linear-gradient(135deg,#2563eb,#1d4ed8); padding: 32px 24px; text-align: center;">
+    <h1 style="margin:0;color:white;font-size:22px;">🏠 Du er lagt til som medutleier</h1>
+  </td></tr>
+  <tr><td style="padding: 32px 24px;">
+    <p style="font-size:16px;color:#1f2937;">Hei${newUser.full_name ? ` ${newUser.full_name}` : ''}!</p>
+    <p style="font-size:15px;color:#374151;">${user?.full_name || 'En utleier'} har lagt deg til som medutleier på:</p>
+    <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:8px;padding:20px;margin:20px 0;">
+      <p style="margin:0 0 8px;font-size:18px;font-weight:600;color:#1e40af;">${property.name}</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;">📍 ${property.address}</p>
+      ${property.monthly_rent ? `<p style="margin:8px 0 0;font-size:15px;color:#059669;font-weight:600;">💰 ${property.monthly_rent.toLocaleString()} kr/måned</p>` : ''}
+    </div>
+    <p style="font-size:14px;color:#6b7280;">Du finner eiendommen i appen din under "Eiendommer".</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:13px;color:#9ca3af;">Enkel Utleie – Din komplette utleieløsning</p>
+  </td></tr>
+</table></body></html>`
+                  });
+                } catch (e) {
+                  console.error('E-post til medutleier feilet:', e);
+                }
+
+                // Send in-app notifikasjon
+                try {
+                  await base44.entities.Notification.create({
+                    user_id: newId,
+                    type: 'agreement',
+                    title: 'Du er lagt til som medutleier',
+                    message: `${user?.full_name || 'En utleier'} har lagt deg til som medutleier på ${property.name}`,
+                    rental_unit_id: propertyId,
+                    read: false
+                  });
+                } catch (e) {
+                  console.error('Notifikasjon feilet:', e);
+                }
+
                 setShowCoLandlordDialog(false);
                 setCoLandlordEmail('');
+                alert(`✅ ${cleanEmail} er lagt til som medutleier og har fått e-post og varsel i appen.`);
               }}
             >
               Legg til
