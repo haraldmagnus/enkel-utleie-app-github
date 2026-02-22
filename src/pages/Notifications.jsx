@@ -14,7 +14,26 @@ const iconMap = {
   message: MessageSquare,
   agreement: FileText,
   maintenance: Wrench,
+  invitation: Home,
 };
+
+// Returns a URL if the notification should be clickable
+function getNotificationUrl(notification) {
+  if (notification.type === 'message' && notification.rental_unit_id) {
+    return createPageUrl('Chat');
+  }
+  if (notification.type === 'agreement' && notification.related_id) {
+    return createPageUrl(`SignAgreement?id=${notification.related_id}`);
+  }
+  if (notification.type === 'calendar_event') {
+    return createPageUrl('CalendarPage');
+  }
+  // Invitation notifications – link to TenantDashboard which shows PendingInvitations
+  if (notification.type === 'invitation' || (notification.title && notification.title.toLowerCase().includes('invitasjon'))) {
+    return createPageUrl('TenantDashboard');
+  }
+  return null;
+}
 
 const typeLabels = {
   calendar_event: 'Kalender',
