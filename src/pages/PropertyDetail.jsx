@@ -550,14 +550,35 @@ export default function PropertyDetail() {
                         Leieperiode: {property.manual_lease_start} {property.manual_lease_end ? `- ${property.manual_lease_end}` : '→'}
                       </p>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowManualTenantDialog(true)}
-                      className="mt-2"
-                    >
-                      <Edit2 className="w-3 h-3 mr-1" /> Rediger
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowManualTenantDialog(true)}
+                        className="flex-1"
+                      >
+                        <Edit2 className="w-3 h-3 mr-1" /> Rediger
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          if (confirm('Fjerne leietaker fra denne boligen? Historiske regnskapsdata beholdes.')) {
+                            updateMutation.mutate({
+                              manual_tenant_name: null,
+                              manual_tenant_phone: null,
+                              manual_tenant_email: null,
+                              manual_lease_start: null,
+                              manual_lease_end: null,
+                              status: 'vacant'
+                            });
+                          }
+                        }}
+                      >
+                        <X className="w-3 h-3 mr-1" /> Fjern leietaker
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
