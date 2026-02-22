@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LanguageProvider, useLanguage } from '@/components/LanguageContext';
 import BottomNav from '@/components/BottomNav';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import PageHeader from '@/components/PageHeader';
 import { createPageUrl } from '@/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
