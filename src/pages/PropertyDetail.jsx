@@ -504,7 +504,8 @@ export default function PropertyDetail() {
             )}
 
             {/* Tenant Section – only when NOT shared housing */}
-            {!property.is_shared_housing && <Card>
+            {!property.is_shared_housing && (
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="w-4 h-4" /> Leietaker
