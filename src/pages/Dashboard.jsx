@@ -90,12 +90,7 @@ export default function Dashboard() {
 
   return (
     <div className="pb-20">
-      <PageHeader 
-        title={`Hei, ${user?.first_name || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'deg'}!`}
-        subtitle="Her er oversikten din"
-      />
-
-      <div className="p-4 -mt-6 space-y-4">
+      <div className="p-4 space-y-4">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-white shadow-sm">

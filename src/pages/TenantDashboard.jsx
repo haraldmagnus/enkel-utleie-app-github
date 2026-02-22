@@ -106,12 +106,7 @@ export default function TenantDashboard() {
 
   return (
     <div className="pb-24">
-      <PageHeader 
-        title={`Hei, ${user?.full_name?.split(' ')[0] || 'Leietaker'}!`}
-        subtitle="Her er din leieoversikt"
-      />
-
-      <div className="p-4 -mt-6 space-y-4">
+      <div className="p-4 space-y-4">
         {/* Pending Invitations Component */}
         <PendingInvitations userId={user?.id} userEmail={user?.email} />
 
