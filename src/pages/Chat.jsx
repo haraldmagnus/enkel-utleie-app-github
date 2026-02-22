@@ -109,9 +109,29 @@ export default function Chat() {
 
   const sendMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔵 [CHAT] Sending message:', data);
       const result = await base44.entities.ChatMessage.create(data);
-      console.log('✅ [CHAT] Message sent:', result);
+
+      // Send notification to all OTHER users linked to this property
+      const prop = selectedProperty;
+      const allLinkedIds = [
+        prop.landlord_id,
+        ...(prop.landlord_ids || []),
+        prop.tenant_id,
+        ...(prop.tenant_ids || [])
+      ].filter(Boolean);
+      const recipientIds = [...new Set(allLinkedIds)].filter(id => id !== user?.id);
+
+      await Promise.all(recipientIds.map(recipientId =>
+        base44.entities.Notification.create({
+          user_id: recipientId,
+          type: 'message',
+          title: 'Ny melding',
+          message: `${data.sender_name}: ${data.message.substring(0, 80)}`,
+          rental_unit_id: prop.id,
+          read: false
+        })
+      ));
+
       return result;
     },
     onSuccess: () => {
