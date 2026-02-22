@@ -176,16 +176,52 @@ export default function Chat() {
     }
   }, [selectedProperty?.id, selectedRoom?.id, messages, user?.id]);
 
+  // For shared housing: show room picker after selecting property
+  if (selectedProperty?.is_shared_housing && !selectedRoom) {
+    const myRoom = getMyRoom(selectedProperty);
+    const rooms = selectedProperty.rooms || [];
+    // Tenants only see their own room; landlords see all rooms
+    const visibleRooms = isLandlord ? rooms : rooms.filter(r => r.id === myRoom?.id);
+
+    return (
+      <div className="pb-24">
+        <div className="p-4 space-y-3">
+          <button className="flex items-center gap-2 text-sm text-blue-600 mb-1" onClick={() => setSelectedProperty(null)}>
+            <ArrowLeft className="w-4 h-4" /> Tilbake
+          </button>
+          <h2 className="font-semibold text-slate-800">{selectedProperty.name} – Velg chat</h2>
+          {visibleRooms.length === 0 && (
+            <Card><CardContent className="p-6 text-center text-slate-500 text-sm">Ingen tilgjengelige rom å chatte i.</CardContent></Card>
+          )}
+          {visibleRooms.map(room => (
+            <Card
+              key={room.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedRoom({ id: room.id, name: room.name })}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <BedDouble className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-slate-900">{room.name}</p>
+                  <p className="text-xs text-slate-500">{room.tenant_email || 'Ledig'}</p>
+                </div>
+                <Badge className={room.status === 'occupied' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                  {room.status === 'occupied' ? 'Utleid' : room.status === 'pending_invitation' ? 'Venter' : 'Ledig'}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Property list view
   if (!selectedProperty) {
     return (
       <div className="pb-24">
-        <div className="px-4 pt-2">
-          <p className="text-xs text-slate-500">
-            Rolle: {isLandlord ? 'Utleier' : 'Leietaker'}
-          </p>
-        </div>
-
         <div className="p-4 space-y-3">
           {/* Pending Invitations */}
           <PendingInvitations userId={user?.id} userEmail={user?.email} />
@@ -204,18 +240,24 @@ export default function Chat() {
             </Card>
           ) : (
             properties.map(property => {
-              const hasOccupant = property.status === 'occupied' || property.tenant_email;
-              
+              const hasOccupant = property.status === 'occupied' || property.tenant_email || property.is_shared_housing;
               return (
                 <Card 
                   key={property.id}
                   className={`cursor-pointer transition-shadow ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
-                  onClick={() => hasOccupant && setSelectedProperty(property)}
+                  onClick={() => {
+                    if (!hasOccupant) return;
+                    setSelectedRoom(null);
+                    setSelectedProperty(property);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <Building2 className="w-6 h-6 text-blue-600" />
+                        {property.is_shared_housing
+                          ? <BedDouble className="w-6 h-6 text-blue-600" />
+                          : <Building2 className="w-6 h-6 text-blue-600" />
+                        }
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-slate-900">{property.name}</h3>
@@ -223,9 +265,12 @@ export default function Chat() {
                       </div>
                       {hasOccupant ? (
                         <Badge className="bg-green-100 text-green-700">
-                          {isLandlord 
-                            ? `${(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).length} leietaker(e)`
-                            : 'Gruppe'}
+                          {property.is_shared_housing
+                            ? `${(property.rooms || []).length} rom`
+                            : isLandlord
+                              ? `${(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).length} leietaker(e)`
+                              : 'Chat'
+                          }
                         </Badge>
                       ) : (
                         <Badge variant="outline">Ingen chat</Badge>
