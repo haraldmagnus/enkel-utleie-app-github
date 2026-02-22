@@ -168,6 +168,11 @@ function LayoutContent({ children, currentPageName }) {
           padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
+        /* Sticky header offset */
+        .page-content-with-header {
+          padding-top: 0;
+        }
+        
         .bg-blue-50 { background-color: rgb(239 246 255); }
         .bg-blue-100 { background-color: rgb(219 234 254); }
         .bg-blue-200 { background-color: rgb(191 219 254); }
