@@ -6,6 +6,7 @@ import {
   Wallet, Plus, TrendingUp, TrendingDown, Download,
   Filter, Building2, Trash2, Bell, FileText, BarChart2 } from
 'lucide-react';
+import ReceiptScanner from '@/components/ReceiptScanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
