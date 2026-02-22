@@ -298,7 +298,7 @@ export default function PropertyDetail() {
       try {
         const emailResult = await base44.integrations.Core.SendEmail({
           to: cleanEmail,
-          from_name: user.full_name || 'Utleieoversikt',
+          from_name: 'Enkel Utleie',
           subject: emailSubject,
           body: emailBody.trim()
         });
