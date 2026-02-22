@@ -101,15 +101,23 @@ export default function Chat() {
     mutationFn: async (data) => {
       const result = await base44.entities.ChatMessage.create(data);
 
-      // Send notification to all OTHER users linked to this property
+      // Notify recipients: for shared housing room chat → landlords + that room's tenant only
       const prop = selectedProperty;
-      const allLinkedIds = [
-        prop.landlord_id,
-        ...(prop.landlord_ids || []),
-        prop.tenant_id,
-        ...(prop.tenant_ids || [])
-      ].filter(Boolean);
-      const recipientIds = [...new Set(allLinkedIds)].filter(id => id !== user?.id);
+      let recipientIds = [];
+      if (prop.is_shared_housing && selectedRoom) {
+        const room = (prop.rooms || []).find(r => r.id === selectedRoom.id);
+        const roomTenantId = room?.tenant_id;
+        const landlordIds = [prop.landlord_id, ...(prop.landlord_ids || [])].filter(Boolean);
+        recipientIds = [...new Set([...landlordIds, roomTenantId].filter(Boolean))].filter(id => id !== user?.id);
+      } else {
+        const allLinkedIds = [
+          prop.landlord_id,
+          ...(prop.landlord_ids || []),
+          prop.tenant_id,
+          ...(prop.tenant_ids || [])
+        ].filter(Boolean);
+        recipientIds = [...new Set(allLinkedIds)].filter(id => id !== user?.id);
+      }
 
       await Promise.all(recipientIds.map(recipientId =>
         base44.entities.Notification.create({
@@ -125,7 +133,7 @@ export default function Chat() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty?.id] });
+      queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty?.id, selectedRoom?.id ?? null] });
       setNewMessage('');
     },
     onError: (error) => {
