@@ -152,18 +152,13 @@ export default function Chat() {
 
     const messageData = {
       rental_unit_id: selectedProperty.id,
+      room_id: selectedRoom?.id || null,
       sender_id: user.id,
       sender_name: (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : (user.first_name || user.full_name || user.email),
       sender_avatar_url: user.avatar_url || null,
       message: newMessage.trim(),
       read: false
     };
-
-    console.log('🔵 [CHAT] Preparing to send:', {
-      ...messageData,
-      currentRole: effectiveRole,
-      isLandlord
-    });
 
     sendMutation.mutate(messageData);
   };
