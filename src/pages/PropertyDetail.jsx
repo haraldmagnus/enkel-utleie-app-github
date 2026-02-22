@@ -20,6 +20,7 @@ import PropertyFinances from '@/components/PropertyFinances';
 import ManualTenantForm from '@/components/ManualTenantForm';
 import AgreementUpload from '@/components/AgreementUpload';
 import DocumentationChecklist from '@/components/DocumentationChecklist';
+import RentSplitEditor from '@/components/RentSplitEditor';
 
 export default function PropertyDetail() {
   const navigate = useNavigate();
