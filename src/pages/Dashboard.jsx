@@ -12,6 +12,7 @@ import { createPageUrl } from '@/utils';
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
