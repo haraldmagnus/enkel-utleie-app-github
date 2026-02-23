@@ -6,6 +6,7 @@ import {
   ArrowLeft, Building2, Edit2, UserPlus, Mail, FileText,
   Camera, Trash2, Users, MessageSquare, Wrench, Wallet, ChevronRight, Plus, Upload, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
 import MaintenanceSection from '@/components/property/MaintenanceSection';
 import FinancesSection from '@/components/property/FinancesSection';
