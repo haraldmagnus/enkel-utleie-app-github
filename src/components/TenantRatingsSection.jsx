@@ -43,7 +43,23 @@ export default function TenantRatingsSection({ userId }) {
             <div key={rating.id} className="bg-white rounded-2xl border border-gray-100 p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-500">Fra: Eiendommen #{rating.rental_unit_id.slice(0, 8)}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-medium text-gray-500">Fra: Eiendommen #{rating.rental_unit_id.slice(0, 8)}</p>
+                    {rating.star_rating && (
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= rating.star_rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-400">{new Date(rating.created_date).toLocaleDateString('no')}</p>
                 </div>
                 {deleteId === rating.id ? (
