@@ -24,7 +24,6 @@ export default function PropertyDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('id');
 
-  const [activeTab, setActiveTab] = useState('overview');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
