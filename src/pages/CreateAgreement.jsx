@@ -144,8 +144,14 @@ export default function CreateAgreement() {
         {/* Parties */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2"><FileText className="w-4 h-4 text-blue-500" /> Parter</h2>
-          <F label="Utleiers navn" k="landlord_name" required />
-          <F label="Utleiers adresse" k="landlord_address" />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Utleiers navn <span className="text-red-400">*</span></label>
+            <input type="text" value={form.landlord_name} onChange={e => setForm(f => ({ ...f, landlord_name: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Utleiers adresse</label>
+            <input type="text" value={form.landlord_address} onChange={e => setForm(f => ({ ...f, landlord_address: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
           {property && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-500">Leietaker: <strong>{property.manual_tenant_name || property.tenant_email || 'Ikke satt'}</strong></p>
@@ -157,10 +163,22 @@ export default function CreateAgreement() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="font-semibold text-gray-900 text-sm">Periode og beløp</h2>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Startdato" k="start_date" type="date" required />
-            <F label="Sluttdato (tom = løpende)" k="end_date" type="date" />
-            <F label="Månedlig leie (kr)" k="monthly_rent" type="number" required />
-            <F label="Depositum (kr)" k="deposit" type="number" />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Startdato <span className="text-red-400">*</span></label>
+              <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Sluttdato (tom = løpende)</label>
+              <input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Månedlig leie (kr) <span className="text-red-400">*</span></label>
+              <input type="number" value={form.monthly_rent} onChange={e => setForm(f => ({ ...f, monthly_rent: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Depositum (kr)</label>
+              <input type="number" value={form.deposit} onChange={e => setForm(f => ({ ...f, deposit: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
           </div>
         </div>
 
@@ -168,10 +186,22 @@ export default function CreateAgreement() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="font-semibold text-gray-900 text-sm">Betalingsdetaljer</h2>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Forfallsdag (1-28)" k="rent_due_day" type="number" />
-            <F label="Kontonr. for leie" k="rent_account" />
-            <F label="Kontonr. for depositum" k="deposit_account" />
-            <F label="Oppsigelsestid (mnd)" k="notice_period_months" type="number" />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Forfallsdag (1-28)</label>
+              <input type="number" value={form.rent_due_day} onChange={e => setForm(f => ({ ...f, rent_due_day: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Kontonr. for leie</label>
+              <input type="text" value={form.rent_account} onChange={e => setForm(f => ({ ...f, rent_account: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Kontonr. for depositum</label>
+              <input type="text" value={form.deposit_account} onChange={e => setForm(f => ({ ...f, deposit_account: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Oppsigelsestid (mnd)</label>
+              <input type="number" value={form.notice_period_months} onChange={e => setForm(f => ({ ...f, notice_period_months: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
           </div>
         </div>
 
