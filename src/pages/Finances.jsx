@@ -84,7 +84,39 @@ function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
   );
 }
 
+function exportCsv(entries, properties, year) {
+  const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
+  const rows = [
+    ['Dato', 'Type', 'Kategori', 'Eiendom', 'Beskrivelse', 'Beløp (kr)']
+  ];
+  entries
+    .filter(e => e.date?.startsWith(year))
+    .sort((a, b) => a.date?.localeCompare(b.date))
+    .forEach(e => {
+      rows.push([
+        e.date || '',
+        e.type === 'income' ? 'Inntekt' : 'Utgift',
+        CAT_LABELS[e.category] || e.category || '',
+        propMap[e.rental_unit_id] || '',
+        e.description || '',
+        e.type === 'expense' ? -e.amount : e.amount,
+      ]);
+    });
+
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `aarsoppgave-${year}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function Finances() {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
