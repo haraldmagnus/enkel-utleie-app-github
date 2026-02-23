@@ -107,6 +107,128 @@ export default function PropertyDetail() {
     if (window.confirm('Slette denne eiendommen? Kan ikke angres.')) deleteMutation.mutate();
   };
 
+  const exportAgreementPdf = () => {
+    if (!agreement) return;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const colW = pageW - margin * 2;
+    let y = 20;
+
+    const addText = (text, size = 10, bold = false, color = [30, 30, 30]) => {
+      doc.setFontSize(size);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(String(text || ''), colW);
+      lines.forEach(line => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += size * 0.45;
+      });
+      y += 2;
+    };
+
+    addText('LEIEAVTALE', 20, true, [30, 64, 175]);
+    if (property?.name) addText(property.name, 11, false, [100, 100, 100]);
+    y += 4;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    const fieldPairs = [
+      ['Utleier', agreement.landlord_name],
+      ['Utleiers adresse', agreement.landlord_address],
+      ['Leietaker', agreement.tenant_name],
+      ['Adresse', property?.address],
+      ['Startdato', agreement.start_date],
+      agreement.end_date && ['Sluttdato', agreement.end_date],
+      ['Månedlig leie', `${agreement.monthly_rent?.toLocaleString()} kr`],
+      agreement.deposit && ['Depositum', `${agreement.deposit?.toLocaleString()} kr`],
+      agreement.rent_due_day && ['Forfallsdag', `${agreement.rent_due_day}. i måneden`],
+      agreement.rent_account && ['Kontonr. for leie', agreement.rent_account],
+      agreement.deposit_account && ['Kontonr. for depositum', agreement.deposit_account],
+      ['Oppsigelsestid', `${agreement.notice_period_months} måneder`],
+      ['Kjæledyr', agreement.pets_allowed ? 'Tillatt' : 'Ikke tillatt'],
+      ['Røyking', agreement.smoking_allowed ? 'Tillatt' : 'Ikke tillatt'],
+      ['Strøm/vann', agreement.utilities_included ? 'Inkludert' : 'Ikke inkludert'],
+    ].filter(Boolean);
+
+    fieldPairs.forEach(([label, value]) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label + ':', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+      doc.text(String(value || ''), margin + 55, y);
+      y += 6;
+    });
+
+    y += 4;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    if (agreement.terms) {
+      addText('VILKÅR OG BETINGELSER', 11, true);
+      addText(agreement.terms, 8.5);
+      y += 4;
+    }
+
+    if (y > 200) { doc.addPage(); y = 20; }
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+    addText('SIGNATURER', 11, true);
+    y += 4;
+
+    const halfW = (pageW - margin * 2) / 2;
+    const sigImgH = 20;
+    const sigImgW = 60;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Utleier', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(agreement.landlord_name || '', margin, y + 5);
+    if (agreement.landlord_signature_image) {
+      doc.addImage(agreement.landlord_signature_image, 'PNG', margin, y + 8, sigImgW, sigImgH);
+    }
+    doc.setDrawColor(150, 150, 150);
+    doc.line(margin, y + 30, margin + 70, y + 30);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    if (agreement.landlord_signed && agreement.landlord_signed_date) {
+      doc.text('Signert ' + new Date(agreement.landlord_signed_date).toLocaleDateString('nb-NO'), margin, y + 35);
+    } else {
+      doc.text('Ikke signert', margin, y + 35);
+    }
+
+    const col2 = margin + halfW + 5;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Leietaker', col2, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(agreement.tenant_name || '', col2, y + 5);
+    if (agreement.tenant_signature_image) {
+      doc.addImage(agreement.tenant_signature_image, 'PNG', col2, y + 8, sigImgW, sigImgH);
+    }
+    doc.setDrawColor(150, 150, 150);
+    doc.line(col2, y + 30, col2 + 70, y + 30);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    if (agreement.tenant_signed && agreement.tenant_signed_date) {
+      doc.text('Signert ' + new Date(agreement.tenant_signed_date).toLocaleDateString('nb-NO'), col2, y + 35);
+    } else {
+      doc.text('Ikke signert', col2, y + 35);
+    }
+
+    doc.save(`leieavtale-${property?.name || 'avtale'}.pdf`);
+  };
+
   if (isLoading || !property) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center"><Building2 className="w-10 h-10 text-gray-200 mx-auto mb-2 animate-pulse" /><p className="text-gray-400">Laster...</p></div>
