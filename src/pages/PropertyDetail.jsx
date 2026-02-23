@@ -96,9 +96,6 @@ export default function PropertyDetail() {
   const statusLabel = { occupied: 'Utleid', vacant: 'Ledig', pending_invitation: 'Invitert' };
   const statusStyle = { occupied: 'bg-blue-100 text-blue-700', vacant: 'bg-green-100 text-green-700', pending_invitation: 'bg-yellow-100 text-yellow-700' };
 
-  const [editingFinn, setEditingFinn] = useState(false);
-  const [finnCode, setFinnCode] = useState(property?.finn_code || '');
-
   const saveFinnCode = () => {
     updateMutation.mutate({ finn_code: finnCode });
     setEditingFinn(false);
