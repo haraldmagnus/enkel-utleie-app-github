@@ -94,6 +94,7 @@ function NotificationsInner() {
         hasUserRole: !!user?.user_role,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, effectiveRole]);
 
   const { data: notifications = [], isLoading, error: notifError } = useQuery({
