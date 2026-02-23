@@ -494,12 +494,6 @@ export default function PropertyDetail() {
           </div>
         </section>
 
-        {/* ── VEDLIKEHOLD (nederst) ── */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Vedlikehold</h2>
-          <MaintenanceSection propertyId={propertyId} landlordId={user?.id} property={property} />
-        </section>
-
         {/* ── SLETT ── */}
         <button onClick={handleDelete} className="w-full flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-red-100 text-red-600 hover:bg-red-50 transition-colors mb-4">
           <Trash2 className="w-4 h-4" />
