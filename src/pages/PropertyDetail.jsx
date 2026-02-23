@@ -175,6 +175,84 @@ export default function PropertyDetail() {
           </div>
         </section>
 
+        {/* ── LEIEAVTALE (samlet) ── */}
+        <section>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Leieavtale</h2>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Digital agreement */}
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-purple-500" /> Digital leieavtale</h3>
+            </div>
+            {agreement ? (
+              <div className="p-4 space-y-3">
+                <div className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-medium ${agreement.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${agreement.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                  {agreement.status === 'active' ? 'Aktiv og signert' : agreement.status === 'pending_tenant' ? 'Venter på leietakers signatur' : agreement.status === 'draft' ? 'Utkast' : agreement.status}
+                </div>
+                <p className="text-sm text-gray-600">Periode: {agreement.start_date} → {agreement.end_date || 'løpende'}</p>
+                <p className="text-sm text-gray-600">Leie: {agreement.monthly_rent?.toLocaleString()} kr/mnd</p>
+                <div className="flex gap-2">
+                  <Link to={createPageUrl(`CreateAgreement?propertyId=${propertyId}&agreementId=${agreement.id}`)} className="flex-1 text-center bg-blue-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-blue-700 transition-colors">
+                    Rediger
+                  </Link>
+                  {agreement.status !== 'active' && (
+                    <Link to={createPageUrl(`SignAgreement?id=${agreement.id}`)} className="flex-1 text-center bg-green-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-green-700 transition-colors">
+                      Signer
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 text-center">
+                <p className="text-gray-400 text-sm mb-3">Ingen digital leieavtale opprettet</p>
+                <Link to={createPageUrl(`CreateAgreement?propertyId=${propertyId}`)} className="inline-flex items-center gap-2 bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors">
+                  <Plus className="w-4 h-4" /> Opprett leieavtale
+                </Link>
+              </div>
+            )}
+
+            {/* Uploaded PDF */}
+            <div className="border-t border-gray-100">
+              <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2"><Upload className="w-4 h-4 text-blue-500" /> Opplastet avtale (PDF)</h3>
+                {!property.uploaded_agreement_url && (
+                  <label className="flex items-center gap-1 text-blue-600 text-xs font-medium cursor-pointer hover:text-blue-700">
+                    <Upload className="w-3.5 h-3.5" /> Last opp
+                    <input type="file" accept="application/pdf" onChange={handleUploadAgreement} className="hidden" />
+                  </label>
+                )}
+              </div>
+              <div className="p-4">
+                {uploadingPdf ? (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 animate-pulse"><Upload className="w-4 h-4" /> Laster opp...</div>
+                ) : property.uploaded_agreement_url ? (
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-8 h-8 text-red-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Leieavtale.pdf</p>
+                      {property.uploaded_agreement_date && <p className="text-xs text-gray-400">Lastet opp {new Date(property.uploaded_agreement_date).toLocaleDateString('no')}</p>}
+                    </div>
+                    <a href={property.uploaded_agreement_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors">
+                      <Download className="w-4 h-4 text-blue-600" />
+                    </a>
+                    <button onClick={() => updateMutation.mutate({ uploaded_agreement_url: null, uploaded_agreement_date: null })} className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors">
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-1">
+                    <p className="text-gray-400 text-sm mb-2">Ingen PDF lastet opp</p>
+                    <label className="cursor-pointer inline-flex items-center gap-2 bg-gray-100 text-gray-700 rounded-xl px-4 py-2 text-sm font-medium hover:bg-gray-200 transition-colors">
+                      <Upload className="w-4 h-4" /> Velg PDF
+                      <input type="file" accept="application/pdf" onChange={handleUploadAgreement} className="hidden" />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── LEIETAKER ── */}
         <section>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -221,29 +299,6 @@ export default function PropertyDetail() {
           </div>
         </section>
 
-        {/* ── LEIEAVTALE ── */}
-        <section>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-purple-500" /> Leieavtale</h3>
-            </div>
-            {agreement ? (
-              <Link to={createPageUrl(`CreateAgreement?propertyId=${propertyId}&agreementId=${agreement.id}`)} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
-                <div className={`text-xs px-2 py-1 rounded-full font-medium ${agreement.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  {agreement.status === 'active' ? 'Aktiv' : agreement.status === 'pending_tenant' ? 'Venter på signatur' : agreement.status}
-                </div>
-                <span className="text-sm text-gray-600 flex-1">Fra {agreement.start_date} · {agreement.monthly_rent?.toLocaleString()} kr/mnd</span>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
-              </Link>
-            ) : (
-              <Link to={createPageUrl(`CreateAgreement?propertyId=${propertyId}`)} className="flex items-center gap-3 p-4 text-blue-600 hover:bg-blue-50 transition-colors">
-                <Plus className="w-4 h-4" />
-                <span className="text-sm font-medium">Opprett leieavtale</span>
-              </Link>
-            )}
-          </div>
-        </section>
-
         {/* ── INNFLYTTINGSBILDER ── */}
         <section>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -272,16 +327,33 @@ export default function PropertyDetail() {
           <FinancesSection propertyId={propertyId} landlordId={user?.id} property={property} onUpdateProperty={(d) => updateMutation.mutate(d)} />
         </section>
 
-        {/* ── VEDLIKEHOLD ── */}
+        {/* ── DOKUMENTER (utflyttingsbilder) ── */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Vedlikehold</h2>
-          <MaintenanceSection propertyId={propertyId} landlordId={user?.id} />
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Utflyttingsbilder</h2>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Camera className="w-4 h-4 text-red-500" /> Utflyttingsbilder</h3>
+              <label className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer">
+                <Plus className="w-4 h-4" /> Legg til
+                <input type="file" accept="image/*" multiple onChange={handleMoveOutPhotoUpload} className="hidden" />
+              </label>
+            </div>
+            {(property.move_out_photos || []).length > 0 ? (
+              <div className="p-3 grid grid-cols-4 gap-2">
+                {property.move_out_photos.map((url, i) => (
+                  <img key={i} src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 p-4 text-center">Ingen bilder ennå</p>
+            )}
+          </div>
         </section>
 
-        {/* ── DOKUMENTER ── */}
+        {/* ── VEDLIKEHOLD (nederst) ── */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Dokumenter</h2>
-          <DocsSection propertyId={propertyId} property={property} agreement={agreement} onUpdateProperty={(d) => updateMutation.mutate(d)} />
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Vedlikehold</h2>
+          <MaintenanceSection propertyId={propertyId} landlordId={user?.id} property={property} />
         </section>
 
         {/* ── SLETT ── */}
