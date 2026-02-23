@@ -179,22 +179,40 @@ export default function Finances() {
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+        <button
+          onClick={() => navigate(createPageUrl(`TransactionList?type=income&year=${selectedYear}`))}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center hover:border-green-200 hover:shadow-md transition-all active:scale-95"
+        >
           <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-2" />
           <p className="text-lg font-bold text-green-700">{totalIncome.toLocaleString()}</p>
           <p className="text-xs text-gray-400">Inntekter (kr)</p>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+          <p className="text-[10px] text-green-500 mt-1 flex items-center justify-center gap-0.5">Se alle <ChevronRight className="w-2.5 h-2.5" /></p>
+        </button>
+        <button
+          onClick={() => navigate(createPageUrl(`TransactionList?type=expense&year=${selectedYear}`))}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center hover:border-red-200 hover:shadow-md transition-all active:scale-95"
+        >
           <TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-2" />
           <p className="text-lg font-bold text-red-700">{totalExpenses.toLocaleString()}</p>
           <p className="text-xs text-gray-400">Utgifter (kr)</p>
-        </div>
+          <p className="text-[10px] text-red-500 mt-1 flex items-center justify-center gap-0.5">Se alle <ChevronRight className="w-2.5 h-2.5" /></p>
+        </button>
         <div className={`rounded-2xl shadow-sm border p-4 text-center ${net >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
           <Wallet className={`w-5 h-5 mx-auto mb-2 ${net >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
           <p className={`text-lg font-bold ${net >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{net.toLocaleString()}</p>
           <p className="text-xs text-gray-400">Netto (kr)</p>
         </div>
       </div>
+
+      {/* CSV Export */}
+      {yearEntries.length > 0 && (
+        <button
+          onClick={() => exportCsv(entries, properties, selectedYear)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
+        </button>
+      )}
 
       {/* Monthly chart */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
