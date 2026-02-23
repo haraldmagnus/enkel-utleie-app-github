@@ -9,6 +9,17 @@ import { createPageUrl } from '@/utils';
 const TAX_RATE = 0.22;
 const TAX_FREE_THRESHOLD = 10000; // NOK per year, tax-free if renting part of own home under this
 
+const CAT_LABELS = {
+  'rent': 'Leieinntekt',
+  'deposit': 'Depositum',
+  'maintenance': 'Vedlikehold',
+  'repairs': 'Reparasjoner',
+  'utilities': 'Verktøy',
+  'insurance': 'Forsikring',
+  'taxes': 'Skatter',
+  'other': 'Annet'
+};
+
 function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
   const [showInfo, setShowInfo] = useState(false);
 
