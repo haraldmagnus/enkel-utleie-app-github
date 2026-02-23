@@ -76,7 +76,11 @@ export default function BottomNav({ userRole }) {
   const isLinkActive = (linkTo) => {
     const path = location.pathname;
     if (linkTo === 'Dashboard') {
-      return path.includes('Dashboard');
+      // Exact match for landlord dashboard - must NOT match TenantDashboard
+      return path.includes('/Dashboard') && !path.includes('TenantDashboard');
+    }
+    if (linkTo === 'TenantDashboard') {
+      return path.includes('TenantDashboard');
     }
     if (linkTo === 'Properties' && (path.includes('Properties') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty'))) {
       return true;
