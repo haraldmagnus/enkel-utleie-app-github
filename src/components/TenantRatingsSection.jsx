@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { Trash2, AlertCircle, Star } from 'lucide-react';
 
 export default function TenantRatingsSection({ userId }) {
   const queryClient = useQueryClient();
