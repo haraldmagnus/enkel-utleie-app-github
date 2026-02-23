@@ -121,6 +121,37 @@ export default function Settings() {
         <ChevronRight className="w-5 h-5 text-gray-300" />
       </button>
 
+
+       {/* Tenant rating opt-in */}
+       {role === 'tenant' && (
+         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+           <div className="flex items-center gap-3 mb-4">
+             <div className="w-9 h-9 bg-yellow-100 rounded-xl flex items-center justify-center">
+               <Star className="w-4 h-4 text-yellow-600" />
+             </div>
+             <div className="flex-1">
+               <p className="font-medium text-gray-900">Vurderingssystem</p>
+               <p className="text-xs text-gray-400">Leietaker</p>
+             </div>
+             <Switch
+               checked={user?.rating_opt_in || false}
+               onCheckedChange={toggleRatingOptIn}
+             />
+           </div>
+           <p className="text-xs text-gray-600 leading-relaxed">
+             Hvis du velger å delta, vil utleiere kunne legge igjen objektive vurderinger fra dine leieforhold. Du har alltid rett til å se, rette og slette alle data om deg selv.
+           </p>
+         </div>
+       )}
+
+       {/* Tenant ratings view */}
+       {role === 'tenant' && user?.rating_opt_in && (
+         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+           <p className="font-medium text-gray-900 mb-4">Dine vurderinger fra utleiere</p>
+           <TenantRatingsSection userId={user?.id} />
+         </div>
+       )}
+
       {/* Menu */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {menuItems.map(({ icon: Icon, label, to }, i) => (
