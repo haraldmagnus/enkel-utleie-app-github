@@ -22,6 +22,7 @@ export default function PropertyDetail() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
   const [editingFinn, setEditingFinn] = useState(false);
   const [finnCode, setFinnCode] = useState('');
 
