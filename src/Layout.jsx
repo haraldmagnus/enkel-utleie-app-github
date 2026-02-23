@@ -121,6 +121,7 @@ function TopBar({ user, currentPageName }) {
 }
 
 function NotifBell({ user, navigate }) {
+  const [showDropdown, setShowDropdown] = useState(false);
   const { data: notifs = [] } = useQuery({
     queryKey: ['notifsBell', user?.id],
     queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 20),
@@ -128,18 +129,51 @@ function NotifBell({ user, navigate }) {
     refetchInterval: 30000
   });
 
+  const handleNotificationClick = async (notification) => {
+    await base44.entities.Notification.update(notification.id, { read: true });
+    setShowDropdown(false);
+    if (notification.related_id && notification.type === 'maintenance') {
+      navigate(createPageUrl('TenantMaintenance'));
+    } else if (notification.rental_unit_id) {
+      navigate(createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`));
+    }
+  };
+
   return (
-    <button
-      onClick={() => navigate(createPageUrl('Notifications'))}
-      className="relative w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-400 transition-colors"
-    >
-      <Bell className="w-4 h-4 text-white" />
-      {notifs.length > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-          {notifs.length > 9 ? '9+' : notifs.length}
-        </span>
+    <div className="relative">
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="relative w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-400 transition-colors"
+      >
+        <Bell className="w-4 h-4 text-white" />
+        {notifs.length > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+            {notifs.length > 9 ? '9+' : notifs.length}
+          </span>
+        )}
+      </button>
+      {showDropdown && (
+        <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 max-h-96 overflow-y-auto">
+          {notifs.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {notifs.map(notif => (
+                <button
+                  key={notif.id}
+                  onClick={() => handleNotificationClick(notif)}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors"
+                >
+                  <p className="text-sm font-semibold text-gray-900">{notif.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">{notif.message}</p>
+                  <p className="text-xs text-gray-400 mt-1">{new Date(notif.created_date).toLocaleDateString('no')}</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-gray-400 text-sm">Ingen varslinger</div>
+          )}
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
