@@ -47,13 +47,24 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import RoleSelection from './pages/RoleSelection';
+import Dashboard from './pages/Dashboard';
+import Properties from './pages/Properties';
+import AddProperty from './pages/AddProperty';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "RoleSelection": RoleSelection,
+    "Dashboard": Dashboard,
+    "Properties": Properties,
+    "AddProperty": AddProperty,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
+    mainPage: "RoleSelection",
     Pages: PAGES,
     Layout: __Layout,
 };
