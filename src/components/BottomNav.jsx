@@ -20,7 +20,7 @@ export default function BottomNav({ userRole }) {
   const effectiveRole = user?.active_role || user?.user_role || (typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null);
 
   const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['unreadMessages', effectiveRole],
+    queryKey: ['unreadMessages', effectiveRole, user?.id],
     queryFn: async () => {
       if (!user?.id || !effectiveRole) return 0;
       
@@ -36,17 +36,17 @@ export default function BottomNav({ userRole }) {
       
       if (propertyIds.length === 0) return 0;
       
-      const allMessages = await base44.entities.ChatMessage.list('-created_date', 1000);
+      // Fetch only unread messages not sent by the current user, limited to 200
+      const allMessages = await base44.entities.ChatMessage.filter({ read: false }, '-created_date', 200);
       const unread = allMessages.filter(msg => 
         propertyIds.includes(msg.rental_unit_id) &&
-        msg.sender_id !== user.id && 
-        !msg.read
+        msg.sender_id !== user.id
       );
       
       return unread.length;
     },
     enabled: !!user?.id && !!effectiveRole,
-    refetchInterval: 10000
+    refetchInterval: 15000
   });
   
   console.log('🔵 BottomNav mounted:', { 
