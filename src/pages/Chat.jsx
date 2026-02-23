@@ -16,9 +16,28 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   
   const [selectedProperty, setSelectedProperty] = useState(null);
-  // For shared housing: selectedRoom = { id, name } or null (means property-level chat)
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+
+  // Auto-select property from URL params (e.g. when navigating from a notification)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get('propertyId');
+    const roomId = urlParams.get('roomId');
+    if (propertyId && !selectedProperty) {
+      base44.entities.RentalUnit.get(propertyId)
+        .then(property => {
+          if (property) {
+            setSelectedProperty(property);
+            if (roomId && property.is_shared_housing && property.rooms) {
+              const room = property.rooms.find(r => r.id === roomId);
+              if (room) setSelectedRoom({ id: room.id, name: room.name });
+            }
+          }
+        })
+        .catch(err => console.error('Could not load property from URL:', err));
+    }
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
