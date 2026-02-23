@@ -53,6 +53,10 @@ import Properties from './pages/Properties';
 import AddProperty from './pages/AddProperty';
 import Settings from './pages/Settings';
 import PropertyDetail from './pages/PropertyDetail';
+import EditProperty from './pages/EditProperty';
+import Finances from './pages/Finances';
+import CalendarPage from './pages/CalendarPage';
+import Chat from './pages/Chat';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +67,10 @@ export const PAGES = {
     "AddProperty": AddProperty,
     "Settings": Settings,
     "PropertyDetail": PropertyDetail,
+    "EditProperty": EditProperty,
+    "Finances": Finances,
+    "CalendarPage": CalendarPage,
+    "Chat": Chat,
 }
 
 export const pagesConfig = {
