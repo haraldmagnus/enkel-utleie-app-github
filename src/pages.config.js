@@ -62,6 +62,9 @@ import TenantMaintenance from './pages/TenantMaintenance';
 import Notifications from './pages/Notifications';
 import CreateAgreement from './pages/CreateAgreement';
 import SignAgreement from './pages/SignAgreement';
+import Invite from './pages/Invite';
+import Help from './pages/Help';
+import ErrorLogs from './pages/ErrorLogs';
 import __Layout from './Layout.jsx';
 
 
@@ -81,6 +84,9 @@ export const PAGES = {
     "Notifications": Notifications,
     "CreateAgreement": CreateAgreement,
     "SignAgreement": SignAgreement,
+    "Invite": Invite,
+    "Help": Help,
+    "ErrorLogs": ErrorLogs,
 }
 
 export const pagesConfig = {
