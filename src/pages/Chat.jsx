@@ -19,7 +19,6 @@ export default function Chat() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [newMessage, setNewMessage] = useState('');
 
-  // Auto-select property from URL params (e.g. when navigating from a notification)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const propertyId = urlParams.get('propertyId');
@@ -35,7 +34,7 @@ export default function Chat() {
             }
           }
         })
-        .catch(err => console.error('Could not load property from URL:', err));
+        .catch(() => {});
     }
   }, []);
 
@@ -44,26 +43,9 @@ export default function Chat() {
     queryFn: () => base44.auth.me()
   });
 
-  // CRITICAL: Use activeRole as single source of truth
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
   const effectiveRole = user?.active_role || user?.user_role || roleOverride;
   const isLandlord = effectiveRole === 'landlord';
-
-  // Debug logging
-  useEffect(() => {
-    if (user) {
-      console.log('🔵 [CHAT MOUNT] Role detection:', {
-        userId: user.id,
-        email: user.email,
-        active_role: user.active_role,
-        user_role: user.user_role,
-        roleOverride,
-        EFFECTIVE_ROLE: effectiveRole,
-        isLandlord,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, [user, effectiveRole]);
 
   const { data: allProperties = [] } = useQuery({
     queryKey: ['rentalUnits'],
@@ -71,7 +53,6 @@ export default function Chat() {
     enabled: !!user?.id
   });
 
-  // Filter properties where user is involved (any role)
   const properties = allProperties.filter(p => {
     if (isLandlord) {
       return p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id);
@@ -83,12 +64,9 @@ export default function Chat() {
     }
   });
 
-  // Determine which room (if any) this user is assigned to in a shared housing
   const getMyRoom = (property) => {
     if (!property?.is_shared_housing || !property?.rooms) return null;
-    return property.rooms.find(r =>
-      r.tenant_id === user?.id || r.tenant_email === user?.email
-    ) || null;
+    return property.rooms.find(r => r.tenant_id === user?.id || r.tenant_email === user?.email) || null;
   };
 
   const { data: messages = [] } = useQuery({
@@ -96,13 +74,11 @@ export default function Chat() {
     queryFn: async () => {
       const filter = { rental_unit_id: selectedProperty?.id };
       if (selectedRoom?.id) filter.room_id = selectedRoom.id;
-      const msgs = await base44.entities.ChatMessage.filter(filter, 'created_date', 100);
-      return msgs;
+      return base44.entities.ChatMessage.filter(filter, 'created_date', 100);
     },
     enabled: !!selectedProperty?.id
   });
 
-  // Real-time subscription
   useEffect(() => {
     if (!selectedProperty?.id) return;
     const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
@@ -119,8 +95,6 @@ export default function Chat() {
   const sendMutation = useMutation({
     mutationFn: async (data) => {
       const result = await base44.entities.ChatMessage.create(data);
-
-      // Notify recipients: for shared housing room chat → landlords + that room's tenant only
       const prop = selectedProperty;
       let recipientIds = [];
       if (prop.is_shared_housing && selectedRoom) {
@@ -129,35 +103,21 @@ export default function Chat() {
         const landlordIds = [prop.landlord_id, ...(prop.landlord_ids || [])].filter(Boolean);
         recipientIds = [...new Set([...landlordIds, roomTenantId].filter(Boolean))].filter(id => id !== user?.id);
       } else {
-        const allLinkedIds = [
-          prop.landlord_id,
-          ...(prop.landlord_ids || []),
-          prop.tenant_id,
-          ...(prop.tenant_ids || [])
-        ].filter(Boolean);
+        const allLinkedIds = [prop.landlord_id, ...(prop.landlord_ids || []), prop.tenant_id, ...(prop.tenant_ids || [])].filter(Boolean);
         recipientIds = [...new Set(allLinkedIds)].filter(id => id !== user?.id);
       }
-
       await Promise.all(recipientIds.map(recipientId =>
         base44.entities.Notification.create({
-          user_id: recipientId,
-          type: 'message',
-          title: 'Ny melding',
+          user_id: recipientId, type: 'message', title: 'Ny melding',
           message: `${data.sender_name}: ${data.message.substring(0, 80)}`,
-          rental_unit_id: prop.id,
-          read: false
+          rental_unit_id: prop.id, read: false
         })
       ));
-
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedProperty?.id, selectedRoom?.id ?? null] });
       setNewMessage('');
-    },
-    onError: (error) => {
-      console.error('❌ [CHAT] Send failed:', error);
-      alert('Kunne ikke sende melding: ' + error.message);
     }
   });
 
@@ -165,41 +125,35 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedProperty || !user) return;
-
-    const messageData = {
-      rental_unit_id: selectedProperty.id,
-      room_id: selectedRoom?.id || null,
-      sender_id: user.id,
-      sender_name: (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : (user.first_name || user.full_name || user.email),
-      sender_avatar_url: user.avatar_url || null,
-      message: newMessage.trim(),
-      read: false
-    };
-
-    sendMutation.mutate(messageData);
-  };
-
-  // Mark messages as read when chat is opened
   useEffect(() => {
     if (selectedProperty?.id && messages.length > 0) {
       const unreadMessages = messages.filter(m => !m.read && m.sender_id !== user?.id);
       if (unreadMessages.length > 0) {
         unreadMessages.forEach(msg => {
-          base44.entities.ChatMessage.update(msg.id, { read: true }).catch(console.error);
+          base44.entities.ChatMessage.update(msg.id, { read: true }).catch(() => {});
         });
         queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
       }
     }
   }, [selectedProperty?.id, selectedRoom?.id, messages, user?.id]);
 
-  // For shared housing: show room picker after selecting property
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedProperty || !user) return;
+    sendMutation.mutate({
+      rental_unit_id: selectedProperty.id,
+      room_id: selectedRoom?.id || null,
+      sender_id: user.id,
+      sender_name: user.full_name || user.email,
+      sender_avatar_url: user.avatar_url || null,
+      message: newMessage.trim(),
+      read: false
+    });
+  };
+
   if (selectedProperty?.is_shared_housing && !selectedRoom) {
     const myRoom = getMyRoom(selectedProperty);
     const rooms = selectedProperty.rooms || [];
-    // Tenants only see their own room; landlords see all rooms
     const visibleRooms = isLandlord ? rooms : rooms.filter(r => r.id === myRoom?.id);
 
     return (
@@ -213,11 +167,7 @@ export default function Chat() {
             <Card><CardContent className="p-6 text-center text-slate-500 text-sm">Ingen tilgjengelige rom å chatte i.</CardContent></Card>
           )}
           {visibleRooms.map(room => (
-            <Card
-              key={room.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedRoom({ id: room.id, name: room.name })}
-            >
+            <Card key={room.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedRoom({ id: room.id, name: room.name })}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                   <BedDouble className="w-5 h-5 text-blue-600" />
@@ -237,46 +187,30 @@ export default function Chat() {
     );
   }
 
-  // Property list view
   if (!selectedProperty) {
     return (
       <div className="pb-24">
         <div className="p-4 space-y-3">
-          {/* Pending Invitations */}
           <PendingInvitations userId={user?.id} userEmail={user?.email} />
-          
           {properties.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">
-                  {isLandlord 
-                    ? 'Legg til en eiendom for å starte chat' 
-                    : 'Ingen tilkoblede eiendommer'
-                  }
-                </p>
+                <p className="text-slate-500">{isLandlord ? 'Legg til en eiendom for å starte chat' : 'Ingen tilkoblede eiendommer'}</p>
               </CardContent>
             </Card>
           ) : (
             properties.map(property => {
               const hasOccupant = property.status === 'occupied' || property.tenant_email || property.is_shared_housing;
               return (
-                <Card 
-                  key={property.id}
+                <Card key={property.id}
                   className={`cursor-pointer transition-shadow ${hasOccupant ? 'hover:shadow-md' : 'opacity-50'}`}
-                  onClick={() => {
-                    if (!hasOccupant) return;
-                    setSelectedRoom(null);
-                    setSelectedProperty(property);
-                  }}
+                  onClick={() => { if (!hasOccupant) return; setSelectedRoom(null); setSelectedProperty(property); }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                        {property.is_shared_housing
-                          ? <BedDouble className="w-6 h-6 text-blue-600" />
-                          : <Building2 className="w-6 h-6 text-blue-600" />
-                        }
+                        {property.is_shared_housing ? <BedDouble className="w-6 h-6 text-blue-600" /> : <Building2 className="w-6 h-6 text-blue-600" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-slate-900">{property.name}</h3>
@@ -284,12 +218,7 @@ export default function Chat() {
                       </div>
                       {hasOccupant ? (
                         <Badge className="bg-green-100 text-green-700">
-                          {property.is_shared_housing
-                            ? `${(property.rooms || []).length} rom`
-                            : isLandlord
-                              ? `${(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).length} leietaker(e)`
-                              : 'Chat'
-                          }
+                          {property.is_shared_housing ? `${(property.rooms || []).length} rom` : isLandlord ? `${(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).length} leietaker(e)` : 'Chat'}
                         </Badge>
                       ) : (
                         <Badge variant="outline">Ingen chat</Badge>
@@ -305,36 +234,20 @@ export default function Chat() {
     );
   }
 
-  // Chat view
   return (
     <div className="h-screen flex flex-col pb-20">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => {
-            if (selectedProperty?.is_shared_housing && selectedRoom) {
-              setSelectedRoom(null);
-            } else {
-              setSelectedProperty(null);
-              setSelectedRoom(null);
-            }
-          }}
+      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+        <Button variant="ghost" size="icon"
+          onClick={() => { if (selectedProperty?.is_shared_housing && selectedRoom) { setSelectedRoom(null); } else { setSelectedProperty(null); setSelectedRoom(null); } }}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
-          <h2 className="font-semibold text-slate-900">
-            {selectedRoom ? selectedRoom.name : selectedProperty.name}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {selectedRoom ? selectedProperty.name : 'Chat'}
-          </p>
+          <h2 className="font-semibold text-slate-900">{selectedRoom ? selectedRoom.name : selectedProperty.name}</h2>
+          <p className="text-xs text-slate-500">{selectedRoom ? selectedProperty.name : 'Chat'}</p>
         </div>
       </div>
 
-      {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         {messages.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
@@ -345,51 +258,24 @@ export default function Chat() {
         ) : (
           <div className="space-y-3">
             {messages.map(msg => {
-              const isOwn = msg.sender_id === user.id;
-              const avatarUrl = isOwn ? user?.avatar_url : msg.sender_avatar_url;
+              const isOwn = msg.sender_id === user?.id;
               return (
-                <div 
-                  key={msg.id} 
-                  className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
-                >
+                <div key={msg.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   {!isOwn && (
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-slate-200 mb-1">
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt={msg.sender_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-slate-500">
-                          {msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                      )}
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-slate-200 mb-1 flex items-center justify-center text-xs font-semibold text-slate-500">
+                      {msg.sender_avatar_url ? <img src={msg.sender_avatar_url} alt="" className="w-full h-full object-cover" /> : msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                   )}
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                    isOwn 
-                      ? 'bg-blue-600 text-white rounded-br-md' 
-                      : 'bg-slate-100 text-slate-900 rounded-bl-md'
-                  }`}>
-                    {!isOwn && (
-                      <p className="text-xs font-medium mb-1 opacity-70">
-                        {msg.sender_name}
-                      </p>
-                    )}
+                  <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isOwn ? 'bg-blue-600 text-white rounded-br-md' : 'bg-slate-100 text-slate-900 rounded-bl-md'}`}>
+                    {!isOwn && <p className="text-xs font-medium mb-1 opacity-70">{msg.sender_name}</p>}
                     <p className="text-sm">{msg.message}</p>
                     <p className={`text-xs mt-1 ${isOwn ? 'text-blue-200' : 'text-slate-400'}`}>
-                      {new Date(msg.created_date).toLocaleTimeString('no', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
+                      {new Date(msg.created_date).toLocaleTimeString('no', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                   {isOwn && (
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-blue-200 mb-1">
-                      {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Meg" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-blue-600">
-                          {user?.first_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'M'}
-                        </div>
-                      )}
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-blue-200 mb-1 flex items-center justify-center text-xs font-semibold text-blue-600">
+                      {user?.avatar_url ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" /> : user?.email?.charAt(0)?.toUpperCase() || 'M'}
                     </div>
                   )}
                 </div>
@@ -400,20 +286,10 @@ export default function Chat() {
         )}
       </ScrollArea>
 
-      {/* Input */}
       <form onSubmit={handleSend} className="p-4 bg-white border-t">
         <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={t('typeMessage')}
-            className="flex-1"
-          />
-          <Button 
-            type="submit" 
-            className="bg-blue-600 hover:bg-blue-700"
-            disabled={!newMessage.trim() || sendMutation.isPending}
-          >
+          <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={t('typeMessage')} className="flex-1" />
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!newMessage.trim() || sendMutation.isPending}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
