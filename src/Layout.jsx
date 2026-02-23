@@ -186,7 +186,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {showTopBar && <TopBar user={user} currentPageName={currentPageName} />}
-      <div className={showNav ? 'pb-20' : ''}>
+      <div className={`${showTopBar ? 'pt-[60px]' : ''} ${showNav ? 'pb-20' : ''}`}>
         {children}
       </div>
       {showNav && <BottomNav user={user} />}
