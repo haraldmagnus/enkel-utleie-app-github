@@ -18,7 +18,7 @@ const iconMap = {
 };
 
 // Returns a URL if the notification should be clickable
-function getNotificationUrl(notification) {
+function getNotificationUrl(notification, effectiveRole) {
   if (notification.type === 'message' && notification.rental_unit_id) {
     return createPageUrl('Chat');
   }
@@ -28,7 +28,23 @@ function getNotificationUrl(notification) {
   if (notification.type === 'calendar_event') {
     return createPageUrl('CalendarPage');
   }
-  // Invitation notifications – link to TenantDashboard which shows PendingInvitations
+  if (notification.type === 'maintenance' && notification.rental_unit_id) {
+    // Landlords go to property detail, tenants stay on dashboard
+    return effectiveRole === 'landlord'
+      ? createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`)
+      : createPageUrl('TenantDashboard');
+  }
+  if (notification.type === 'payment_reminder' && notification.rental_unit_id) {
+    return effectiveRole === 'landlord'
+      ? createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`)
+      : createPageUrl('TenantDashboard');
+  }
+  if (notification.rental_unit_id) {
+    return effectiveRole === 'landlord'
+      ? createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`)
+      : createPageUrl('TenantDashboard');
+  }
+  // Invitation notifications
   if (notification.type === 'invitation' || (notification.title && notification.title.toLowerCase().includes('invitasjon'))) {
     return createPageUrl('TenantDashboard');
   }
