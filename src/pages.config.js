@@ -57,6 +57,11 @@ import EditProperty from './pages/EditProperty';
 import Finances from './pages/Finances';
 import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
+import TenantDashboard from './pages/TenantDashboard';
+import TenantMaintenance from './pages/TenantMaintenance';
+import Notifications from './pages/Notifications';
+import CreateAgreement from './pages/CreateAgreement';
+import SignAgreement from './pages/SignAgreement';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +76,11 @@ export const PAGES = {
     "Finances": Finances,
     "CalendarPage": CalendarPage,
     "Chat": Chat,
+    "TenantDashboard": TenantDashboard,
+    "TenantMaintenance": TenantMaintenance,
+    "Notifications": Notifications,
+    "CreateAgreement": CreateAgreement,
+    "SignAgreement": SignAgreement,
 }
 
 export const pagesConfig = {
