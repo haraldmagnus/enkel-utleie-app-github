@@ -101,6 +101,11 @@ export default function PropertyDetail() {
     setEditingFinn(false);
   };
 
+  const _saveFinnCode = () => {
+    updateMutation.mutate({ finn_code: finnCode });
+    setEditingFinn(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Blue Header */}
