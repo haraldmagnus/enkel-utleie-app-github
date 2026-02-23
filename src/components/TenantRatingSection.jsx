@@ -69,7 +69,7 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
               type="button"
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
-              onClick={() => setRating(star)}
+              onClick={() => { setRating(star); setError(''); }}
               className="transition-transform hover:scale-110"
             >
               <Star
@@ -103,6 +103,9 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
         </>
       )}
 
+      {error && (
+        <p className="text-xs text-red-600 text-center bg-red-50 p-2 rounded">{error}</p>
+      )}
       {submitted && (
         <p className="text-xs text-green-600 text-center">✓ Vurdering lagret</p>
       )}
