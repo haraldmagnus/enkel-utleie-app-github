@@ -1,177 +1,195 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { LanguageProvider, useLanguage } from '@/components/LanguageContext';
-import BottomNav from '@/components/BottomNav';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import PageHeader from '@/components/PageHeader';
+import { Home, Building2, Wallet, Calendar, MessageSquare, Bell, Settings, ChevronRight } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
-// Pages that render their own internal header (no global header on these)
-const SELF_HEADER_PAGES = [
-  'PropertyDetail', 'AddProperty', 'EditProperty', 'CreateAgreement',
-  'SignAgreement', 'TenantPhotos', 'Invite', 'AcceptCoLandlord',
-  'PaymentReminders', 'YearlyReport'
-];
+const NO_NAV_PAGES = ['RoleSelection', 'Invite', 'AcceptCoLandlord'];
+const NO_HEADER_PAGES = ['RoleSelection', 'Invite', 'AcceptCoLandlord'];
 
-function LayoutContent({ children, currentPageName }) {
-  const navigate = useNavigate();
-  const { setLanguage } = useLanguage();
+function BottomNav({ user }) {
+  const location = useLocation();
+  const role = user?.active_role || user?.user_role;
 
-  const { data: user, isLoading, error } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+  const { data: unread = 0 } = useQuery({
+    queryKey: ['unreadMsgs', user?.id],
+    queryFn: async () => {
+      const msgs = await base44.entities.ChatMessage.filter({ read: false }, '-created_date', 100);
+      return msgs.filter(m => m.sender_id !== user?.id).length;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 20000
   });
 
-  useEffect(() => {
-    if (error) {
-      console.error('Auth error:', error);
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {
-        console.log('Storage clear error:', e);
-      }
-    }
-  }, [error]);
+  const { data: unreadNotifs = 0 } = useQuery({
+    queryKey: ['unreadNotifs', user?.id],
+    queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 50).then(r => r.length),
+    enabled: !!user?.id,
+    refetchInterval: 30000
+  });
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      if (user.language) {
-        setLanguage(user.language);
-      }
-      
-      const roleOverride = localStorage.getItem('user_role_override');
-      const effectiveUserRole = user.active_role || user.user_role || roleOverride;
-      
-      if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
-        navigate(createPageUrl('RoleSelection'), { replace: true });
-        return;
-      }
-      
-      const isOnLandlordDash = currentPageName === 'Dashboard';
-      const isOnTenantDash = currentPageName === 'TenantDashboard';
-      
-      if (effectiveUserRole === 'landlord' && isOnTenantDash) {
-        navigate(createPageUrl('Dashboard'), { replace: true });
-        return;
-      }
-      
-      if (effectiveUserRole === 'tenant' && isOnLandlordDash) {
-        navigate(createPageUrl('TenantDashboard'), { replace: true });
-        return;
-      }
-    }
-  }, [user, isLoading, currentPageName, navigate, setLanguage]);
+  const landlordLinks = [
+    { to: 'Dashboard', icon: Home, label: 'Hjem' },
+    { to: 'Properties', icon: Building2, label: 'Eiendommer' },
+    { to: 'Finances', icon: Wallet, label: 'Økonomi' },
+    { to: 'CalendarPage', icon: Calendar, label: 'Kalender' },
+    { to: 'Chat', icon: MessageSquare, label: 'Chat', badge: unread },
+  ];
 
-  const noNavPages = ['RoleSelection'];
-  const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
-  const effectiveRole = user?.active_role || user?.user_role || roleOverride;
-  
-  const showNav = effectiveRole && !noNavPages.includes(currentPageName);
-  const showHeader = effectiveRole && !noNavPages.includes(currentPageName) && !SELF_HEADER_PAGES.includes(currentPageName);
+  const tenantLinks = [
+    { to: 'TenantDashboard', icon: Home, label: 'Hjem' },
+    { to: 'CalendarPage', icon: Calendar, label: 'Kalender' },
+    { to: 'Chat', icon: MessageSquare, label: 'Chat', badge: unread },
+    { to: 'Settings', icon: Settings, label: 'Innstillinger' },
+  ];
+
+  const links = role === 'landlord' ? landlordLinks : tenantLinks;
+  const path = location.pathname;
+
+  const isActive = (to) => {
+    if (to === 'Dashboard') return path.includes('/Dashboard') && !path.includes('TenantDashboard');
+    if (to === 'Properties') return path.includes('Properties') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty');
+    return path.includes(to);
+  };
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 shadow-lg">
+      <div className="flex justify-around items-center max-w-lg mx-auto px-1 py-2">
+        {links.map(({ to, icon: Icon, label, badge }) => {
+          const active = isActive(to);
+          return (
+            <Link key={to} to={createPageUrl(to)} className={`flex flex-col items-center px-3 py-1 rounded-xl transition-all relative ${active ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-blue-50' : ''}`}>
+                <Icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
+              </div>
+              <span className={`text-[10px] mt-0.5 font-medium ${active ? 'text-blue-600' : 'text-gray-400'}`}>{label}</span>
+              {badge > 0 && (
+                <span className="absolute top-0 right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function TopBar({ user, currentPageName }) {
+  const navigate = useNavigate();
+  const role = user?.active_role || user?.user_role;
 
   const pageTitles = {
-    Dashboard: user ? `Hei, ${user?.first_name || user?.full_name?.split(' ')[0] || 'deg'}!` : '',
-    TenantDashboard: user ? `Hei, ${user?.full_name?.split(' ')[0] || 'Leietaker'}!` : '',
+    Dashboard: `Hei, ${user?.full_name?.split(' ')[0] || 'deg'} 👋`,
+    TenantDashboard: `Hei, ${user?.full_name?.split(' ')[0] || 'deg'} 👋`,
     Properties: 'Eiendommer',
     Finances: 'Økonomi',
     CalendarPage: 'Kalender',
     Chat: 'Meldinger',
     Settings: 'Innstillinger',
-    Help: 'Hjelp',
     Notifications: 'Varsler',
-    FinancesIncome: 'Inntekter',
-    FinancesExpense: 'Utgifter',
-    FinancesNet: 'Netto',
-    FinancesTax: 'Skatt',
+    Help: 'Hjelp & Support',
+    ErrorLogs: 'Aktivitetslogg',
   };
 
-  const pageSubtitles = {
-    Dashboard: 'Her er oversikten din',
-    TenantDashboard: 'Her er din leieoversikt',
-  };
+  const title = pageTitles[currentPageName];
+  if (!title) return null;
+
+  return (
+    <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
+        <div>
+          <h1 className={`font-bold text-gray-900 ${currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard' ? 'text-xl' : 'text-lg'}`}>{title}</h1>
+          {(currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard') && (
+            <p className="text-xs text-gray-400 mt-0.5">Enkel Utleie</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <NotifBell user={user} navigate={navigate} />
+          <Link to={createPageUrl('Settings')}>
+            <button className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+              {user?.full_name?.charAt(0) || '?'}
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotifBell({ user, navigate }) {
+  const { data: notifs = [] } = useQuery({
+    queryKey: ['notifsBell', user?.id],
+    queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 20),
+    enabled: !!user?.id,
+    refetchInterval: 30000
+  });
+
+  return (
+    <button
+      onClick={() => navigate(createPageUrl('Notifications'))}
+      className="relative w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+    >
+      <Bell className="w-4 h-4 text-gray-600" />
+      {notifs.length > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+          {notifs.length > 9 ? '9+' : notifs.length}
+        </span>
+      )}
+    </button>
+  );
+}
+
+export default function Layout({ children, currentPageName }) {
+  const navigate = useNavigate();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  useEffect(() => {
+    if (isLoading) return;
+    const role = user?.active_role || user?.user_role;
+    if (!role && !NO_NAV_PAGES.includes(currentPageName)) {
+      navigate(createPageUrl('RoleSelection'), { replace: true });
+      return;
+    }
+    if (role === 'landlord' && currentPageName === 'TenantDashboard') {
+      navigate(createPageUrl('Dashboard'), { replace: true });
+    }
+    if (role === 'tenant' && currentPageName === 'Dashboard') {
+      navigate(createPageUrl('TenantDashboard'), { replace: true });
+    }
+  }, [user, isLoading, currentPageName, navigate]);
+
+  const role = user?.active_role || user?.user_role;
+  const showNav = role && !NO_NAV_PAGES.includes(currentPageName);
+  const showTopBar = role && !NO_HEADER_PAGES.includes(currentPageName);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-50 flex items-center justify-center">
-        <div className="space-y-4 w-full max-w-sm p-6">
-          <Skeleton className="h-8 w-48 mx-auto" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-24 w-full" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center animate-pulse">
+            <Building2 className="w-6 h-6 text-white" />
+          </div>
+          <p className="text-gray-400 text-sm">Laster...</p>
         </div>
       </div>
     );
   }
 
-  const themeStyles = user?.theme === 'pink' ? `
-    :root {
-      --primary: 330 80% 60%;
-      --primary-foreground: 0 0% 100%;
-    }
-  ` : `
-    :root {
-      --primary: 220 90% 56%;
-      --primary-foreground: 0 0% 100%;
-    }
-  `;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <style>{`
-        ${themeStyles}
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
-        .bg-blue-50 { background-color: rgb(239 246 255); }
-        .bg-blue-100 { background-color: rgb(219 234 254); }
-        .bg-blue-200 { background-color: rgb(191 219 254); }
-        .bg-blue-500 { background-color: rgb(59 130 246); }
-        .bg-blue-600 { background-color: rgb(37 99 235); }
-        .bg-blue-700 { background-color: rgb(29 78 216); }
-        .bg-blue-800 { background-color: rgb(30 64 175); }
-        .text-blue-50 { color: rgb(239 246 255); }
-        .text-blue-100 { color: rgb(219 234 254); }
-        .text-blue-500 { color: rgb(59 130 246); }
-        .text-blue-600 { color: rgb(37 99 235); }
-        .text-blue-700 { color: rgb(29 78 216); }
-        .text-blue-800 { color: rgb(30 64 175); }
-        .text-blue-900 { color: rgb(30 58 138); }
-        .border-blue-200 { border-color: rgb(191 219 254); }
-        .border-blue-300 { border-color: rgb(147 197 253); }
-        .from-blue-50 { --tw-gradient-from: rgb(239 246 255); }
-        .from-blue-100 { --tw-gradient-from: rgb(219 234 254); }
-        .from-blue-600 { --tw-gradient-from: rgb(37 99 235); }
-        .to-blue-50 { --tw-gradient-to: rgb(239 246 255); }
-        .to-blue-700 { --tw-gradient-to: rgb(29 78 216); }
-        .to-blue-800 { --tw-gradient-to: rgb(30 64 175); }
-        .hover\\:bg-blue-500:hover { background-color: rgb(59 130 246); }
-        .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
-      `}</style>
-      {showHeader && (
-        <div className="sticky top-0 z-40">
-          <PageHeader
-            title={pageTitles[currentPageName] || ''}
-            subtitle={pageSubtitles[currentPageName]}
-          />
-        </div>
-      )}
-      <div>
+    <div className="min-h-screen bg-gray-50">
+      {showTopBar && <TopBar user={user} currentPageName={currentPageName} />}
+      <div className={showNav ? 'pb-20' : ''}>
         {children}
       </div>
-      {showNav && <BottomNav userRole={effectiveRole} />}
+      {showNav && <BottomNav user={user} />}
     </div>
-  );
-}
-
-export default function Layout({ children, currentPageName }) {
-  return (
-    <ErrorBoundary>
-      <LanguageProvider>
-        <LayoutContent currentPageName={currentPageName}>
-          {children}
-        </LayoutContent>
-      </LanguageProvider>
-    </ErrorBoundary>
   );
 }
