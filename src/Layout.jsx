@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -122,6 +122,7 @@ function TopBar({ user, currentPageName }) {
 
 function NotifBell({ user, navigate }) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const { data: notifs = [] } = useQuery({
     queryKey: ['notifsBell', user?.id],
     queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 20),
@@ -139,8 +140,21 @@ function NotifBell({ user, navigate }) {
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showDropdown]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="relative w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-400 transition-colors"

@@ -54,7 +54,6 @@ import CreateAgreement from './pages/CreateAgreement';
 import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
 import ErrorLogs from './pages/ErrorLogs';
-import Finances from './pages/Finances';
 import Help from './pages/Help';
 import Invite from './pages/Invite';
 import Notifications from './pages/Notifications';
@@ -66,6 +65,7 @@ import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantMaintenance from './pages/TenantMaintenance';
 import TransactionList from './pages/TransactionList';
+import Finances from './pages/Finances';
 import __Layout from './Layout.jsx';
 
 
@@ -77,7 +77,6 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "EditProperty": EditProperty,
     "ErrorLogs": ErrorLogs,
-    "Finances": Finances,
     "Help": Help,
     "Invite": Invite,
     "Notifications": Notifications,
@@ -89,6 +88,7 @@ export const PAGES = {
     "TenantDashboard": TenantDashboard,
     "TenantMaintenance": TenantMaintenance,
     "TransactionList": TransactionList,
+    "Finances": Finances,
 }
 
 export const pagesConfig = {
