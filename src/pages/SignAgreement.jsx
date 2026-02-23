@@ -34,8 +34,9 @@ export default function SignAgreement() {
 
   const signMutation = useMutation({
     mutationFn: async () => {
-      const userRole = user?.active_role || user?.user_role;
-      const signingAsLandlord = userRole === 'landlord';
+      // Use the same ID-based logic as the render
+      const signingAsLandlord = user?.id === agreement?.landlord_id || 
+        (user?.id !== agreement?.tenant_id && (user?.active_role || user?.user_role) === 'landlord');
       const now = new Date().toISOString();
       const updates = signingAsLandlord
         ? { landlord_signed: true, landlord_signed_date: now }
