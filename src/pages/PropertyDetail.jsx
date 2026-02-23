@@ -11,11 +11,11 @@ import MaintenanceSection from '@/components/property/MaintenanceSection';
 import FinancesSection from '@/components/property/FinancesSection';
 import DocsSection from '@/components/property/DocsSection';
 
-const TABS = [
-  { id: 'overview', label: 'Oversikt', icon: Building2 },
-  { id: 'finances', label: 'Økonomi', icon: Wallet },
-  { id: 'maintenance', label: 'Vedlikehold', icon: Wrench },
-  { id: 'docs', label: 'Dokumenter', icon: FileText },
+const SECTIONS = [
+  { id: 'overview', label: 'Oversikt' },
+  { id: 'finances', label: 'Økonomi' },
+  { id: 'maintenance', label: 'Vedlikehold' },
+  { id: 'docs', label: 'Dokumenter' },
 ];
 
 export default function PropertyDetail() {
