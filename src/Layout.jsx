@@ -99,18 +99,18 @@ function TopBar({ user, currentPageName }) {
   if (!title) return null;
 
   return (
-    <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
+    <div className="sticky top-0 z-40 bg-blue-600 shadow-md">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
         <div>
-          <h1 className={`font-bold text-gray-900 ${currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard' ? 'text-xl' : 'text-lg'}`}>{title}</h1>
+          <h1 className={`font-bold text-white ${currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard' ? 'text-xl' : 'text-lg'}`}>{title}</h1>
           {(currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard') && (
-            <p className="text-xs text-gray-400 mt-0.5">Enkel Utleie</p>
+            <p className="text-xs text-blue-200 mt-0.5">Enkel Utleie</p>
           )}
         </div>
         <div className="flex items-center gap-2">
           <NotifBell user={user} navigate={navigate} />
           <Link to={createPageUrl('Settings')}>
-            <button className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+            <button className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold hover:bg-blue-400 transition-colors">
               {user?.full_name?.charAt(0) || '?'}
             </button>
           </Link>
