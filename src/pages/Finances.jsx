@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Wallet, Calendar, Building2, Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { TrendingUp, TrendingDown, Wallet, Calendar, Building2, Info, Download, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+
+const CAT_LABELS = { rent: 'Leie', deposit: 'Depositum', maintenance: 'Vedlikehold', repairs: 'Reparasjoner', utilities: 'Strøm/vann', insurance: 'Forsikring', taxes: 'Skatt', other: 'Annet' };
 
 const CAT_LABELS = { rent: 'Leie', deposit: 'Depositum', maintenance: 'Vedlikehold', repairs: 'Reparasjoner', utilities: 'Strøm/vann', insurance: 'Forsikring', taxes: 'Skatt', other: 'Annet' };
 
