@@ -162,7 +162,6 @@ export default function Finances() {
   const maxVal = Math.max(...months.map(m => Math.max(m.income, m.expense)), 1);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 3 }, (_, i) => String(currentYear - i));
   const downloadYears = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
 
   // Per property breakdown
@@ -179,15 +178,6 @@ export default function Finances() {
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-4">
-      {/* Year selector */}
-      <div className="flex gap-2">
-        {years.map(y => (
-          <button key={y} onClick={() => setSelectedYear(y)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${selectedYear === y ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            {y}
-          </button>
-        ))}
-      </div>
-
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         <button
