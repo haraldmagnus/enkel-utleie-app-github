@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Wrench, Trash2, Check } from 'lucide-react';
+import { Plus, Wrench, Trash2, Check, Calendar } from 'lucide-react';
 
 const STATUS = { pending: { label: 'Venter', style: 'bg-yellow-100 text-yellow-700' }, in_progress: { label: 'Pågår', style: 'bg-blue-100 text-blue-700' }, completed: { label: 'Fullført', style: 'bg-green-100 text-green-700' }, cancelled: { label: 'Kansellert', style: 'bg-gray-100 text-gray-600' } };
 const PRIORITY = { low: { label: 'Lav', style: 'bg-gray-100 text-gray-600' }, medium: { label: 'Medium', style: 'bg-yellow-100 text-yellow-700' }, high: { label: 'Høy', style: 'bg-red-100 text-red-700' } };
 
-export default function MaintenanceSection({ propertyId, landlordId }) {
+export default function MaintenanceSection({ propertyId, landlordId, property }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', priority: 'medium', vendor_name: '', vendor_phone: '', estimated_cost: '', due_date: '' });
@@ -18,8 +18,43 @@ export default function MaintenanceSection({ propertyId, landlordId }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (d) => base44.entities.MaintenanceTask.create(d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['maintenance', propertyId] }); setShowForm(false); setForm({ title: '', description: '', priority: 'medium', vendor_name: '', vendor_phone: '', estimated_cost: '', due_date: '' }); }
+    mutationFn: async (d) => {
+      const task = await base44.entities.MaintenanceTask.create(d);
+
+      // Create calendar event if due_date is set
+      if (d.due_date) {
+        await base44.entities.CalendarEvent.create({
+          rental_unit_id: propertyId,
+          title: `🔧 ${d.title}`,
+          description: d.description || '',
+          date: d.due_date,
+          event_type: 'maintenance',
+        });
+      }
+
+      // Notify tenant if linked
+      const tenantId = property?.tenant_id;
+      if (tenantId) {
+        await base44.entities.Notification.create({
+          user_id: tenantId,
+          role: 'tenant',
+          type: 'maintenance',
+          title: 'Ny vedlikeholdsoppgave',
+          message: `${d.title}${d.due_date ? ` – planlagt ${new Date(d.due_date).toLocaleDateString('nb-NO')}` : ''}`,
+          rental_unit_id: propertyId,
+          related_id: task.id,
+          read: false,
+        });
+      }
+
+      return task;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      setShowForm(false);
+      setForm({ title: '', description: '', priority: 'medium', vendor_name: '', vendor_phone: '', estimated_cost: '', due_date: '' });
+    }
   });
 
   const updateMutation = useMutation({
@@ -34,7 +69,14 @@ export default function MaintenanceSection({ propertyId, landlordId }) {
 
   const submit = (e) => {
     e.preventDefault();
-    createMutation.mutate({ ...form, rental_unit_id: propertyId, landlord_id: landlordId, status: 'pending', estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : null });
+    createMutation.mutate({
+      ...form,
+      rental_unit_id: propertyId,
+      landlord_id: landlordId,
+      status: 'pending',
+      estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : null,
+      due_date: form.due_date || null,
+    });
   };
 
   return (
@@ -60,6 +102,10 @@ export default function MaintenanceSection({ propertyId, landlordId }) {
               <input type="number" value={form.estimated_cost} onChange={e => setForm({...form, estimated_cost: e.target.value})} placeholder="Estimert kostnad (kr)" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <input value={form.vendor_name} onChange={e => setForm({...form, vendor_name: e.target.value})} placeholder="Leverandør/håndverker" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <input value={form.vendor_phone} onChange={e => setForm({...form, vendor_phone: e.target.value})} placeholder="Telefon" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Dato (vises i kalender)</label>
+              <input type="date" value={form.due_date} onChange={e => setForm({...form, due_date: e.target.value})} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={createMutation.isPending} className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">Lagre</button>
@@ -91,6 +137,11 @@ export default function MaintenanceSection({ propertyId, landlordId }) {
                   {task.description && <p className="text-xs text-gray-500 mb-1">{task.description}</p>}
                   {task.vendor_name && <p className="text-xs text-gray-500">👷 {task.vendor_name} {task.vendor_phone && `· ${task.vendor_phone}`}</p>}
                   {task.estimated_cost && <p className="text-xs text-gray-500">Estimert: {task.estimated_cost.toLocaleString()} kr</p>}
+                  {task.due_date && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                      <Calendar className="w-3 h-3" /> {new Date(task.due_date).toLocaleDateString('nb-NO')}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <select value={task.status} onChange={e => updateMutation.mutate({ id: task.id, data: { status: e.target.value, ...(e.target.value === 'completed' ? { completed_date: new Date().toISOString().split('T')[0] } : {}) } })} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none">
