@@ -375,6 +375,52 @@ export default function PropertyDetail() {
           </div>
         </section>
 
+        {/* ── LEIETAKER ── */}
+        <section>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Users className="w-4 h-4 text-blue-500" /> Leietaker</h3>
+              {property.status !== 'occupied' && (
+                <button onClick={() => setShowInviteForm(!showInviteForm)} className="flex items-center gap-1.5 bg-blue-600 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors">
+                  <UserPlus className="w-3 h-3" /> Inviter
+                </button>
+              )}
+            </div>
+            {showInviteForm && (
+              <form onSubmit={handleInvite} className="p-4 bg-blue-50 border-b border-blue-100">
+                <p className="text-sm font-medium text-blue-800 mb-2">Inviter leietaker via e-post</p>
+                <div className="flex gap-2">
+                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="epost@eksempel.no" required className="flex-1 px-3 py-2 border border-blue-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <button type="submit" disabled={inviteLoading} className="bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">{inviteLoading ? '...' : 'Send'}</button>
+                </div>
+              </form>
+            )}
+            <div className="p-4">
+              {property.status === 'occupied' && (property.tenant_email || property.manual_tenant_name) ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{property.manual_tenant_name || property.tenant_email}</p>
+                    {property.tenant_email && <p className="text-xs text-gray-400">{property.tenant_email}</p>}
+                  </div>
+                  <Link to={createPageUrl(`Chat?propertyId=${propertyId}`)} className="ml-auto w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors">
+                    <MessageSquare className="w-4 h-4 text-blue-600" />
+                  </Link>
+                </div>
+              ) : property.status === 'pending_invitation' ? (
+                <div className="flex items-center gap-3 text-yellow-700">
+                  <Mail className="w-4 h-4" />
+                  <p className="text-sm">Invitasjon sendt til {property.tenant_email}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-2">Ingen leietaker ennå</p>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* ── LEIEAVTALE (samlet) ── */}
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Leieavtale</h2>
@@ -452,52 +498,6 @@ export default function PropertyDetail() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── LEIETAKER ── */}
-        <section>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Users className="w-4 h-4 text-blue-500" /> Leietaker</h3>
-              {property.status !== 'occupied' && (
-                <button onClick={() => setShowInviteForm(!showInviteForm)} className="flex items-center gap-1.5 bg-blue-600 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors">
-                  <UserPlus className="w-3 h-3" /> Inviter
-                </button>
-              )}
-            </div>
-            {showInviteForm && (
-              <form onSubmit={handleInvite} className="p-4 bg-blue-50 border-b border-blue-100">
-                <p className="text-sm font-medium text-blue-800 mb-2">Inviter leietaker via e-post</p>
-                <div className="flex gap-2">
-                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="epost@eksempel.no" required className="flex-1 px-3 py-2 border border-blue-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <button type="submit" disabled={inviteLoading} className="bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">{inviteLoading ? '...' : 'Send'}</button>
-                </div>
-              </form>
-            )}
-            <div className="p-4">
-              {property.status === 'occupied' && (property.tenant_email || property.manual_tenant_name) ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{property.manual_tenant_name || property.tenant_email}</p>
-                    {property.tenant_email && <p className="text-xs text-gray-400">{property.tenant_email}</p>}
-                  </div>
-                  <Link to={createPageUrl(`Chat?propertyId=${propertyId}`)} className="ml-auto w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors">
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                  </Link>
-                </div>
-              ) : property.status === 'pending_invitation' ? (
-                <div className="flex items-center gap-3 text-yellow-700">
-                  <Mail className="w-4 h-4" />
-                  <p className="text-sm">Invitasjon sendt til {property.tenant_email}</p>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 text-center py-2">Ingen leietaker ennå</p>
-              )}
             </div>
           </div>
         </section>
