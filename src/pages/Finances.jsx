@@ -216,13 +216,32 @@ export default function Finances() {
       </div>
 
       {/* CSV Export */}
-      {yearEntries.length > 0 && (
-        <button
-          onClick={() => exportCsv(entries, properties, selectedYear)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
-        </button>
+      {entries.length > 0 && (
+        <div className="space-y-2">
+          <button
+            onClick={() => exportCsv(entries, properties, selectedYear)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white border border-blue-600 rounded-2xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
+          </button>
+          <details className="cursor-pointer">
+            <summary className="w-full flex items-center justify-between py-2.5 px-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm select-none">
+              <span>Andre år</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </summary>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {downloadYears.filter(y => y !== selectedYear).map(y => (
+                <button
+                  key={y}
+                  onClick={() => exportCsv(entries, properties, y)}
+                  className="py-2 px-3 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <Download className="w-3 h-3 inline mr-1" /> {y}
+                </button>
+              ))}
+            </div>
+          </details>
+        </div>
       )}
 
       {/* Monthly chart */}
