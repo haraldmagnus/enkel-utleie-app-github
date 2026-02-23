@@ -6,22 +6,37 @@ import { ArrowLeft, FileText, Send } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const STANDARD_TERMS = `1. LEIEFORHOLDET
-Denne avtalen regulerer leieforholdet mellom utleier og leietaker for den angitte boligen i henhold til Husleieloven.
+Denne avtalen regulerer leieforholdet mellom utleier og leietaker for den angitte boligen i henhold til Husleieloven. Leieforholdet gjelder bolig som definert i husleieloven § 1-1.
 
 2. LEIEBELØP OG BETALING
-Leien forfaller til betaling den angitte dato hver måned. Ved forsinket betaling påløper forsinkelsesrente.
+Leien forfaller til betaling forskuddsvis den avtalte datoen hver måned. Ved forsinket betaling påløper forsinkelsesrente etter forsinkelsesrenteloven. Utleier kan med én måneds skriftlig varsel kreve leien regulert i takt med endringene i konsumprisindeksen, jfr. husleieloven § 4-2. Regulering kan tidligst settes i verk ett år etter at siste leiefastsetting ble satt i verk.
 
-3. DEPOSITUM
-Depositumet skal stå på særskilt depositumskonto og tilbakebetales ved utflytting, fratrukket eventuelle krav.
+3. DEPOSITUM / SIKKERHET
+Leier stiller sikkerhet for skyldig leie, skader på boligen/inventar, manglende rengjøring ved utflytting, utgifter til fravikelse og for andre krav som reiser seg av avtalen. Depositumet skal stå på særskilt depositumskonto i leiers navn og tilbakebetales ved utflytting, fratrukket eventuelle krav. Sikkerhet må foreligge før leieforholdets startdato. Leier har ikke rett på nøkler eller tilgang til boligen før det er stilt depositum eller garanti etter avtalen.
 
 4. VEDLIKEHOLD
-Leietaker plikter å behandle boligen med tilbørlig aktsomhet. Større vedlikehold påhviler utleier.
+Leier plikter å vedlikeholde dørlåser, kraner, vannklosetter, elektriske kontakter og brytere, varmtvannsbeholdere og løst inventar i boligen. Leier plikter også å foreta nødvendig funksjonskontroll, rengjøring, batteriskift, testing og lignende av røykvarsler og brannslukkingsutstyr. Annet vedlikehold, og hvis gjenstander som tilhører utleieren må skiftes ut, påhviler dette utleieren hvis annet ikke er avtalt, jfr. husleieloven § 5-3.
 
-5. OPPSIGELSE
-Oppsigelse skal skje skriftlig. Oppsigelsestiden løper fra første dag i måneden etter oppsigelsen.
+5. FORSIKRING
+Leier må tegne egen innboforsikring. Dette sikrer både leier og utleier for økonomiske tap hvis noe skulle oppstå rundt eiendeler, ansvar eller rettshjelp. Hvis leier likevel ikke tegner egen innboforsikring, må dette avtales eksplisitt.
 
-6. UTFLYTTING
-Ved utflytting skal boligen tilbakeleveres i samme stand som ved overtakelse. Normal slitasje aksepteres.`;
+6. ORDENSREGLER
+Leier må behandle boligen med tilbørlig aktsomhet og ellers i samsvar med leieavtalen. Leier plikter å følge vanlige ordensregler og rimelige påbud fra utleier.
+
+7. FREMLEIE
+Fremleie er ikke tillatt uten utleiers skriftlige samtykke, med mindre annet følger av loven eller avtale.
+
+8. OPPSIGELSE
+Oppsigelse skal skje skriftlig. Oppsigelsestiden løper fra første dag i måneden etter at oppsigelsen er mottatt. Partene kan i leieperioden si opp leieforholdet med avtalt oppsigelsesfrist i henhold til husleieloven.
+
+9. LEIEFORHOLDETS OPPHØR
+I de siste 3 måneder av leieforholdet plikter leier å gi leiesøkende, eiendomsmegler, mulige kjøpere av eiendommen og håndverkere adgang til å besiktige boligen etter avtale med leier. Ved utflytting skal boligen og alt tilbehør stilles til utleiers disposisjon. Boligen skal være ryddet og rengjort. Utleier og leier befarer boligen i fellesskap og kontrollerer rengjøring og eventuelle brekkasjer eller unormal slitasje/elde. Alle nøkler til boligen skal tilbakeleveres.
+
+10. FRAVIKELSESKLAUSUL
+Leieren godtar at utkastelse (tvangsfravikelse) kan kreves hvis leien ikke blir betalt innen 14 dager etter at skriftlig varsel i henhold til tvangsloven § 4-18 er sendt. Varselet kan sendes tidligst på forfallsdagen, jfr. tvangsloven § 13-2, 3. ledd a. Leieren godtar at utkastelse kan kreves når leietiden er løpt ut, jfr. tvangsloven § 13-2, 3. ledd b.
+
+11. LOVVALG
+Denne avtalen er underlagt norsk rett. Tvister mellom partene søkes løst i minnelighet. Fører ikke dette frem, kan tvisten bringes inn for de ordinære domstolene med verneting der eiendommen er beliggende.`;
 
 export default function CreateAgreement() {
   const navigate = useNavigate();
