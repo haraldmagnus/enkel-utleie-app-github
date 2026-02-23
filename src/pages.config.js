@@ -49,12 +49,10 @@
  */
 import AcceptCoLandlord from './pages/AcceptCoLandlord';
 import AddProperty from './pages/AddProperty';
-import Chat from './pages/Chat';
 import CompleteProfile from './pages/CompleteProfile';
 import CreateAgreement from './pages/CreateAgreement';
 import EditProperty from './pages/EditProperty';
 import ErrorLogs from './pages/ErrorLogs';
-import Finances from './pages/Finances';
 import FinancesExpense from './pages/FinancesExpense';
 import FinancesIncome from './pages/FinancesIncome';
 import FinancesNet from './pages/FinancesNet';
@@ -63,11 +61,8 @@ import Help from './pages/Help';
 import Invite from './pages/Invite';
 import Notifications from './pages/Notifications';
 import PaymentReminders from './pages/PaymentReminders';
-import Properties from './pages/Properties';
 import RoleSelection from './pages/RoleSelection';
-import Settings from './pages/Settings';
 import SignAgreement from './pages/SignAgreement';
-import TenantDashboard from './pages/TenantDashboard';
 import TenantPhotos from './pages/TenantPhotos';
 import YearlyReport from './pages/YearlyReport';
 import __Layout from './Layout.jsx';
@@ -76,12 +71,10 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AcceptCoLandlord": AcceptCoLandlord,
     "AddProperty": AddProperty,
-    "Chat": Chat,
     "CompleteProfile": CompleteProfile,
     "CreateAgreement": CreateAgreement,
     "EditProperty": EditProperty,
     "ErrorLogs": ErrorLogs,
-    "Finances": Finances,
     "FinancesExpense": FinancesExpense,
     "FinancesIncome": FinancesIncome,
     "FinancesNet": FinancesNet,
@@ -90,11 +83,8 @@ export const PAGES = {
     "Invite": Invite,
     "Notifications": Notifications,
     "PaymentReminders": PaymentReminders,
-    "Properties": Properties,
     "RoleSelection": RoleSelection,
-    "Settings": Settings,
     "SignAgreement": SignAgreement,
-    "TenantDashboard": TenantDashboard,
     "TenantPhotos": TenantPhotos,
     "YearlyReport": YearlyReport,
 }
