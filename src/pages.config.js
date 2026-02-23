@@ -65,6 +65,7 @@ import Settings from './pages/Settings';
 import SignAgreement from './pages/SignAgreement';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantMaintenance from './pages/TenantMaintenance';
+import TransactionList from './pages/TransactionList';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +88,7 @@ export const PAGES = {
     "SignAgreement": SignAgreement,
     "TenantDashboard": TenantDashboard,
     "TenantMaintenance": TenantMaintenance,
+    "TransactionList": TransactionList,
 }
 
 export const pagesConfig = {
