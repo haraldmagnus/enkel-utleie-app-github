@@ -46,6 +46,7 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
         tenant_email: tenantEmail,
         landlord_id: user.id,
         rental_unit_id: propertyId,
+        star_rating: rating,
         payment_on_time: rating >= 4,
         property_damage: false,
         contract_breach: false,
