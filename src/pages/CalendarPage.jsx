@@ -41,7 +41,37 @@ export default function CalendarPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (d) => base44.entities.CalendarEvent.create(d),
+    mutationFn: async (d) => {
+      const event = await base44.entities.CalendarEvent.create(d);
+      
+      // Send notification to relevant users
+      const propertyData = myProps.find(p => p.id === d.rental_unit_id);
+      if (propertyData) {
+        const notificationRecipients = [];
+        if (!isLandlord && propertyData.landlord_ids?.length > 0) {
+          notificationRecipients.push(...propertyData.landlord_ids);
+        } else if (!isLandlord && propertyData.landlord_id) {
+          notificationRecipients.push(propertyData.landlord_id);
+        } else if (isLandlord && propertyData.tenant_ids?.length > 0) {
+          notificationRecipients.push(...propertyData.tenant_ids);
+        } else if (isLandlord && propertyData.tenant_id) {
+          notificationRecipients.push(propertyData.tenant_id);
+        }
+        
+        for (const recipientId of notificationRecipients) {
+          await base44.entities.Notification.create({
+            user_id: recipientId,
+            type: 'calendar_event',
+            title: d.title,
+            message: `Ny hendelse lagt til: ${d.title}`,
+            rental_unit_id: d.rental_unit_id,
+            related_id: event.id,
+            read: false
+          });
+        }
+      }
+      return event;
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['events'] }); setShowForm(false); setForm({ title: '', date: new Date().toISOString().split('T')[0], time: '', event_type: 'other', description: '', rental_unit_id: myProps[0]?.id || '' }); }
   });
 
