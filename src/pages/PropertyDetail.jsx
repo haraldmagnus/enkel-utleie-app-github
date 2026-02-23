@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Building2, Edit2, UserPlus, Mail, FileText,
-  Camera, Trash2, Users, MessageSquare, Wrench, Wallet, ChevronRight, Plus
+  Camera, Trash2, Users, MessageSquare, Wrench, Wallet, ChevronRight, Plus, Upload, Download
 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import MaintenanceSection from '@/components/property/MaintenanceSection';
