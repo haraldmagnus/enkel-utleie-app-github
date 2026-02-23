@@ -110,8 +110,12 @@ function TopBar({ user, currentPageName }) {
         <div className="flex items-center gap-2">
           <NotifBell user={user} navigate={navigate} />
           <Link to={createPageUrl('Settings')}>
-            <button className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold hover:bg-blue-400 transition-colors">
-              {user?.full_name?.charAt(0) || '?'}
+            <button className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold hover:bg-blue-400 transition-colors overflow-hidden">
+              {user?.profile_photo_url ? (
+                <img src={user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                user?.full_name?.charAt(0) || '?'
+              )}
             </button>
           </Link>
         </div>
