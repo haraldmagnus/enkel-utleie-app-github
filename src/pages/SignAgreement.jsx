@@ -113,16 +113,15 @@ export default function SignAgreement() {
 
   if (!agreement) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laster avtale...</p></div>;
 
-  // Determine role based on user's active_role, falling back to checking IDs
-  const role = user?.active_role || user?.user_role;
-  // A user could be both landlord and tenant in the system; use their active role
-  // But also allow signing as landlord if they created the agreement
-  const isLandlord = role === 'landlord' || (role !== 'tenant' && user?.id === agreement?.landlord_id);
-  const isTenant = !isLandlord;
+  // Determine who the user is based on their ID in the agreement, NOT their active role.
+  // A tenant might have selected "landlord" role by mistake - we must use IDs to be certain.
+  const isLandlordById = user?.id === agreement?.landlord_id;
+  const isTenantById = user?.id === agreement?.tenant_id;
+  
+  // Fallback: if user is not referenced by ID in the agreement, use their active role
+  const activeRole = user?.active_role || user?.user_role;
+  const isLandlord = isLandlordById || (!isTenantById && activeRole === 'landlord');
   const alreadySigned = isLandlord ? agreement.landlord_signed : agreement.tenant_signed;
-
-  // Debug: log relevant state
-  console.log('[SignAgreement] user role:', role, 'isLandlord:', isLandlord, 'alreadySigned:', alreadySigned, 'agreement.status:', agreement.status, 'landlord_signed:', agreement.landlord_signed, 'tenant_signed:', agreement.tenant_signed);
 
   const exportPdf = () => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
