@@ -533,13 +533,29 @@ export default function PropertyDetail() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">✓ Sjekkliste</h3>
-              <button onClick={() => { const newItem = { id: `${Date.now()}`, text: '', checked: false, type: 'moveIn' }; updateMutation.mutate({ checklist_items: [...(property.checklist_items || []), newItem] }); }} className="flex items-center gap-1.5 bg-blue-600 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors">
-                <Plus className="w-3 h-3" /> Legg til
+              <button onClick={() => { const newItem = { id: `${Date.now()}`, text: '', checked: false, type: 'moveIn' }; updateMutation.mutate({ checklist_items: [...(property.checklist_items || []), newItem] }); }} className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:text-blue-700">
+                <Plus className="w-4 h-4" /> Legg til
               </button>
             </div>
             <div className="p-4 space-y-2">
               {(property.checklist_items || []).length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-2">Ingen sjekkpunkter ennå</p>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400 text-center py-2">Ingen sjekkpunkter ennå</p>
+                  <div className="pt-2 space-y-2 text-gray-400">
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
+                      <span className="text-sm text-gray-500">Inspiser vegger for skader</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
+                      <span className="text-sm text-gray-500">Sjekk alle vinduer og dører</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
+                      <span className="text-sm text-gray-500">Kontroller vannrør for lekkasje</span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 (property.checklist_items || []).map(item => (
                   <div key={item.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
