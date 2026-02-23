@@ -40,7 +40,6 @@ export default function PropertyDetail() {
   const [rentSplits, setRentSplits] = useState([]);
   const [showCoLandlordDialog, setShowCoLandlordDialog] = useState(false);
   const [coLandlordEmail, setCoLandlordEmail] = useState('');
-  const [togglingShared, setTogglingShared] = useState(false);
   const [showSharedWarning, setShowSharedWarning] = useState(false);
 
   const { data: user } = useQuery({
@@ -91,180 +90,120 @@ export default function PropertyDetail() {
 
   const handleInviteTenant = async () => {
     if (!inviteEmail) return;
-    
     const cleanEmail = inviteEmail.toLowerCase().trim();
     const isSelfInvite = cleanEmail === user?.email?.toLowerCase();
     
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    
+    const invitation = await base44.entities.TenantInvitation.create({
+      rental_unit_id: propertyId,
+      landlord_id: user.id,
+      tenant_email: cleanEmail,
+      token,
+      status: 'pending',
+      expires_at: expiresAt.toISOString()
+    });
+    
+    const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
+    
+    let userExists = false;
+    let existingUserId = null;
     try {
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      
-      const invitation = await base44.entities.TenantInvitation.create({
-        rental_unit_id: propertyId,
-        landlord_id: user.id,
-        tenant_email: cleanEmail,
-        token: token,
-        status: 'pending',
-        expires_at: expiresAt.toISOString()
-      });
-      
-      const inviteUrl = `${window.location.origin}${createPageUrl('Invite')}?token=${token}`;
-      
-      let userExists = false;
-      let existingUserId = null;
-      try {
-        const existingUsers = await base44.entities.User.filter({ email: cleanEmail });
-        userExists = existingUsers.length > 0;
-        existingUserId = existingUsers[0]?.id;
-      } catch (e) {}
-      
-      const signupUrl = `${window.location.origin}${createPageUrl('RoleSelection')}`;
-      
-      const emailSubject = isSelfInvite 
-        ? `Bekreft tilknytning til ${property.name}` 
-        : `Invitasjon til ${property.name}`;
-      
-      const emailBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 100%;">
-          <tr>
-            <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px 24px; text-align: center;">
-              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 600;">
-                ${isSelfInvite ? '🏠 Bekreft boligtilknytning' : '🏠 Ny boliginvitasjon'}
-              </h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px 24px;">
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">Hei!</p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">
-                ${isSelfInvite ? 'Du har knyttet deg som leietaker til følgende bolig:' : 'Du er invitert til å bli leietaker i følgende bolig:'}
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb; margin: 24px 0;">
-                <tr>
-                  <td style="padding: 20px;">
-                    <p style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e40af;">${property.name}</p>
-                    <p style="margin: 0 0 8px 0; font-size: 15px; color: #4b5563;">📍 ${property.address}</p>
-                    ${property.monthly_rent ? `<p style="margin: 0; font-size: 16px; color: #059669; font-weight: 600;">💰 ${property.monthly_rent.toLocaleString()} kr/måned</p>` : ''}
-                  </td>
-                </tr>
-              </table>
-              ${user.full_name ? `<p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280;"><strong>Utleier:</strong> ${user.full_name}</p>` : ''}
-              ${!userExists ? `
-              <div style="margin: 32px 0; padding: 16px; background-color: #fef3c7; border-radius: 8px; border-left: 3px solid #f59e0b;">
-                <p style="margin: 0 0 12px 0; font-size: 15px; color: #78350f; font-weight: 600;">📝 Steg 1: Registrer deg i appen</p>
-                <p style="margin: 0 0 16px 0; font-size: 14px; color: #78350f;">Du har ikke konto ennå. Klikk her for å registrere deg først:</p>
-                <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-                  <a href="${signupUrl}" style="display: inline-block; background-color: #f59e0b; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600;">Registrer deg gratis</a>
-                </td></tr></table>
-              </div>
-              <div style="margin: 32px 0; padding: 16px; background-color: #dbeafe; border-radius: 8px; border-left: 3px solid #2563eb;">
-                <p style="margin: 0 0 12px 0; font-size: 15px; color: #1e40af; font-weight: 600;">🏠 Steg 2: Aksepter boliginvitasjonen</p>
-                <p style="margin: 0 0 16px 0; font-size: 14px; color: #1e40af;">Etter registrering, aksepter invitasjonen:</p>
-                <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-                  <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600;">Aksepter invitasjon</a>
-                </td></tr></table>
-              </div>
-              <p style="margin: 24px 0 0 0; font-size: 13px; color: #6b7280; text-align: center; font-style: italic;">💡 Invitasjonen vil også vente på deg i appen etter registrering</p>
-              ` : `
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;"><tr><td align="center">
-                <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-                  ${isSelfInvite ? 'Bekreft tilknytning' : 'Aksepter invitasjon'}
-                </a>
-              </td></tr></table>
-              `}
-              <p style="margin: 24px 0 0 0; font-size: 14px; color: #9ca3af; text-align: center;">⏰ Invitasjonen er gyldig i 7 dager</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background-color: #f9fafb; padding: 20px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; font-size: 14px; color: #6b7280;">Utleieoversikt - Din komplette utleieløsning</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+      const existingUsers = await base44.entities.User.filter({ email: cleanEmail });
+      userExists = existingUsers.length > 0;
+      existingUserId = existingUsers[0]?.id;
+    } catch (e) {}
+    
+    const signupUrl = `${window.location.origin}${createPageUrl('RoleSelection')}`;
+    const emailSubject = isSelfInvite 
+      ? `Bekreft tilknytning til ${property.name}` 
+      : `Invitasjon til ${property.name}`;
+    
+    const emailBody = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;font-family:sans-serif;background:#f5f5f5;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:white;border-radius:12px;overflow:hidden;max-width:100%;">
+      <tr><td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 24px;text-align:center;">
+        <h1 style="margin:0;color:white;font-size:24px;">${isSelfInvite ? '🏠 Bekreft boligtilknytning' : '🏠 Ny boliginvitasjon'}</h1>
+      </td></tr>
+      <tr><td style="padding:32px 24px;">
+        <p style="font-size:16px;color:#1f2937;">Hei!</p>
+        <p style="font-size:15px;color:#374151;">${isSelfInvite ? 'Du har knyttet deg som leietaker til:' : 'Du er invitert til å bli leietaker i:'}</p>
+        <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:8px;padding:20px;margin:20px 0;">
+          <p style="margin:0 0 8px;font-size:18px;font-weight:600;color:#1e40af;">${property.name}</p>
+          <p style="margin:0;font-size:14px;color:#4b5563;">📍 ${property.address}</p>
+          ${property.monthly_rent ? `<p style="margin:8px 0 0;font-size:15px;color:#059669;font-weight:600;">💰 ${property.monthly_rent.toLocaleString()} kr/måned</p>` : ''}
+        </div>
+        ${user.full_name ? `<p style="font-size:14px;color:#6b7280;"><strong>Utleier:</strong> ${user.full_name}</p>` : ''}
+        ${!userExists ? `
+        <div style="margin:24px 0;padding:16px;background:#fef3c7;border-radius:8px;">
+          <p style="margin:0 0 8px;font-weight:600;color:#78350f;">📝 Steg 1: Registrer deg</p>
+          <a href="${signupUrl}" style="display:inline-block;background:#f59e0b;color:white;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;">Registrer deg gratis</a>
+        </div>
+        <div style="margin:24px 0;padding:16px;background:#dbeafe;border-radius:8px;">
+          <p style="margin:0 0 8px;font-weight:600;color:#1e40af;">🏠 Steg 2: Aksepter invitasjonen</p>
+          <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;">Aksepter invitasjon</a>
+        </div>` : `
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
+          <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">
+            ${isSelfInvite ? 'Bekreft tilknytning' : 'Aksepter invitasjon'}
+          </a>
+        </td></tr></table>`}
+        <p style="font-size:13px;color:#9ca3af;text-align:center;">⏰ Gyldig i 7 dager</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`;
 
-      await base44.integrations.Core.SendEmail({
-        to: cleanEmail,
-        from_name: 'Enkel Utleie',
-        subject: emailSubject,
-        body: emailBody.trim()
-      });
-      
-      if (userExists && existingUserId) {
-        try {
-          await base44.entities.Notification.create({
-            user_id: existingUserId,
-            type: 'agreement',
-            title: 'Ny boliginvitasjon',
-            message: `${user.full_name || 'En utleier'} inviterer deg til ${property.name}`,
-            rental_unit_id: propertyId,
-            related_id: invitation.id,
-            read: false
-          });
-        } catch (e) {}
-        try {
-          await base44.entities.ChatMessage.create({
-            rental_unit_id: propertyId,
-            sender_id: user.id,
-            sender_name: user.full_name || 'Utleier',
-            message: `Hei! Du er invitert til å bli leietaker i ${property.name}. Aksepter invitasjonen for å få tilgang.`,
-            read: false
-          });
-        } catch (e) {}
-      }
-      
-      const existingEmails = property.tenant_emails || (property.tenant_email ? [property.tenant_email] : []);
-      const updatedEmails = [...new Set([...existingEmails, cleanEmail])];
-      updateMutation.mutate({
-        tenant_email: cleanEmail,
-        tenant_emails: updatedEmails,
-        status: 'pending_invitation'
-      });
-      
-      setShowInviteDialog(false);
-      setInviteEmail('');
-      
-      if (isSelfInvite) {
-        alert('✅ Invitasjon opprettet!\n\nSjekk e-posten din for å bekrefte.');
-      } else {
-        alert('✅ Invitasjon sendt!\n\nLeietaker vil motta én e-post med lenke for å akseptere.');
-      }
-    } catch (error) {
-      alert(error.message || 'Kunne ikke sende invitasjon');
+    await base44.integrations.Core.SendEmail({
+      to: cleanEmail,
+      from_name: 'Enkel Utleie',
+      subject: emailSubject,
+      body: emailBody
+    });
+    
+    if (userExists && existingUserId) {
+      try {
+        await base44.entities.Notification.create({
+          user_id: existingUserId,
+          type: 'agreement',
+          title: 'Ny boliginvitasjon',
+          message: `${user.full_name || 'En utleier'} inviterer deg til ${property.name}`,
+          rental_unit_id: propertyId,
+          related_id: invitation.id,
+          read: false
+        });
+      } catch (e) {}
     }
+    
+    const existingEmails = property.tenant_emails || (property.tenant_email ? [property.tenant_email] : []);
+    const updatedEmails = [...new Set([...existingEmails, cleanEmail])];
+    updateMutation.mutate({
+      tenant_email: cleanEmail,
+      tenant_emails: updatedEmails,
+      status: 'pending_invitation'
+    });
+    
+    setShowInviteDialog(false);
+    setInviteEmail('');
+    alert(`✅ Invitasjon sendt til ${cleanEmail}!`);
   };
 
   const handlePhotoUpload = async (e, type) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-
     setUploadingType(type);
     const uploadedUrls = [];
-
     for (const file of files) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       uploadedUrls.push(file_url);
     }
-
     const existingPhotos = type === 'move_in' 
       ? (property.move_in_photos || []) 
       : (property.move_out_photos || []);
-
     updateMutation.mutate({
       [type === 'move_in' ? 'move_in_photos' : 'move_out_photos']: [...existingPhotos, ...uploadedUrls]
     });
@@ -286,8 +225,8 @@ export default function PropertyDetail() {
 
   return (
     <div className="pb-20">
-      {/* Header – integrated, no global header on this page */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-40 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
         <div className="flex items-center gap-3 px-4 pt-4 pb-3">
           <Button 
             variant="ghost" 
@@ -322,50 +261,50 @@ export default function PropertyDetail() {
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Oversikt</h2>
 
-            {/* Shared Housing Toggle */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <BedDouble className="w-5 h-5 text-slate-500" />
-                    <div>
-                      <p className="font-medium text-slate-800">Bofellesskap</p>
-                      <p className="text-xs text-slate-500">Individuelle leietakere per soverom</p>
-                    </div>
+          {/* Shared Housing Toggle */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <BedDouble className="w-5 h-5 text-slate-500" />
+                  <div>
+                    <p className="font-medium text-slate-800">Bofellesskap</p>
+                    <p className="text-xs text-slate-500">Individuelle leietakere per soverom</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (property.is_shared_housing && hasRoomTenants) {
-                        setShowSharedWarning(true);
-                      } else {
-                        setShowSharedWarning(false);
-                        updateMutation.mutate({ is_shared_housing: !property.is_shared_housing });
-                      }
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${property.is_shared_housing ? 'bg-blue-600' : 'bg-slate-200'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.is_shared_housing ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
                 </div>
-                {showSharedWarning && hasRoomTenants && (
-                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    ⚠️ Kan ikke slå av bofellesskap mens det er leietakere i rom ({roomsWithTenants.length} rom har leietaker). Fjern alle leietakere fra rommene først.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                <button
+                  onClick={() => {
+                    if (property.is_shared_housing && hasRoomTenants) {
+                      setShowSharedWarning(true);
+                    } else {
+                      setShowSharedWarning(false);
+                      updateMutation.mutate({ is_shared_housing: !property.is_shared_housing });
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${property.is_shared_housing ? 'bg-blue-600' : 'bg-slate-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.is_shared_housing ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              {showSharedWarning && hasRoomTenants && (
+                <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  ⚠️ Kan ikke slå av bofellesskap mens det er leietakere i rom ({roomsWithTenants.length} rom har leietaker). Fjern alle leietakere fra rommene først.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Shared Housing Rooms */}
-            {property.is_shared_housing && (
-              <SharedHousingRooms
-                property={property}
-                user={user}
-                onUpdate={(data) => updateMutation.mutate(data)}
-              />
-            )}
+          {/* Shared Housing Rooms */}
+          {property.is_shared_housing && (
+            <SharedHousingRooms
+              property={property}
+              user={user}
+              onUpdate={(data) => updateMutation.mutate(data)}
+            />
+          )}
 
-            {/* Tenant Section – only when NOT shared housing */}
-            {!property.is_shared_housing && (
+          {/* Tenant Section – only when NOT shared housing */}
+          {!property.is_shared_housing && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -377,16 +316,10 @@ export default function PropertyDetail() {
                   <div className="text-center py-4">
                     <p className="text-slate-500 text-sm mb-3">Ingen leietaker tilknyttet</p>
                     <div className="flex flex-col gap-2">
-                      <Button 
-                        onClick={() => setShowInviteDialog(true)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
+                      <Button onClick={() => setShowInviteDialog(true)} className="bg-blue-600 hover:bg-blue-700">
                         <Mail className="w-4 h-4 mr-2" /> {t('inviteTenant')}
                       </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setShowManualTenantDialog(true)}
-                      >
+                      <Button variant="outline" onClick={() => setShowManualTenantDialog(true)}>
                         <UserPlus className="w-4 h-4 mr-2" /> Sett som utleid manuelt
                       </Button>
                     </div>
@@ -400,14 +333,12 @@ export default function PropertyDetail() {
                       <p className="text-xs text-yellow-600 mt-1">Venter på at leietaker aksepterer</p>
                     </div>
                     <Button 
-                      variant="outline"
-                      size="sm"
+                      variant="outline" size="sm"
                       className="w-full border-red-200 text-red-600 hover:bg-red-50"
                       onClick={async () => {
                         if (confirm('Er du sikker på at du vil kansellere invitasjonen?')) {
                           const invitations = await base44.entities.TenantInvitation.filter({
-                            rental_unit_id: propertyId,
-                            status: 'pending'
+                            rental_unit_id: propertyId, status: 'pending'
                           });
                           for (const inv of invitations) {
                             await base44.entities.TenantInvitation.update(inv.id, { status: 'cancelled' });
@@ -421,42 +352,27 @@ export default function PropertyDetail() {
                   </div>
                 ) : property.manual_tenant_name ? (
                   <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-                    <p className="text-sm text-blue-800">
-                      Leietaker: <strong>{property.manual_tenant_name}</strong>
-                    </p>
-                    {property.manual_tenant_phone && (
-                      <p className="text-xs text-blue-700">Tlf: {property.manual_tenant_phone}</p>
-                    )}
-                    {property.manual_tenant_email && (
-                      <p className="text-xs text-blue-700">E-post: {property.manual_tenant_email}</p>
-                    )}
+                    <p className="text-sm text-blue-800">Leietaker: <strong>{property.manual_tenant_name}</strong></p>
+                    {property.manual_tenant_phone && <p className="text-xs text-blue-700">Tlf: {property.manual_tenant_phone}</p>}
+                    {property.manual_tenant_email && <p className="text-xs text-blue-700">E-post: {property.manual_tenant_email}</p>}
                     {property.manual_lease_start && (
                       <p className="text-xs text-blue-600">
                         Leieperiode: {property.manual_lease_start} {property.manual_lease_end ? `- ${property.manual_lease_end}` : '→'}
                       </p>
                     )}
                     <div className="flex gap-2 mt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setShowManualTenantDialog(true)}
-                        className="flex-1"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => setShowManualTenantDialog(true)} className="flex-1">
                         <Edit2 className="w-3 h-3 mr-1" /> Rediger
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outline" size="sm"
                         className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
                         onClick={() => {
-                          if (confirm('Fjerne leietaker fra denne boligen? Historiske regnskapsdata beholdes.')) {
+                          if (confirm('Fjerne leietaker fra denne boligen?')) {
                             updateMutation.mutate({
-                              manual_tenant_name: null,
-                              manual_tenant_phone: null,
-                              manual_tenant_email: null,
-                              manual_lease_start: null,
-                              manual_lease_end: null,
-                              status: 'vacant'
+                              manual_tenant_name: null, manual_tenant_phone: null,
+                              manual_tenant_email: null, manual_lease_start: null,
+                              manual_lease_end: null, status: 'vacant'
                             });
                           }
                         }}
@@ -470,12 +386,9 @@ export default function PropertyDetail() {
                     <div className="bg-blue-50 p-3 rounded-lg space-y-1">
                       {(property.tenant_emails || (property.tenant_email ? [property.tenant_email] : [])).map((email, i) => (
                         <div key={i} className="flex items-center justify-between">
-                          <p className="text-sm text-blue-800">
-                            <strong>Leietaker {i + 1}:</strong> {email}
-                          </p>
+                          <p className="text-sm text-blue-800"><strong>Leietaker {i + 1}:</strong> {email}</p>
                           <Button
-                            variant="ghost"
-                            size="sm"
+                            variant="ghost" size="sm"
                             className="h-6 text-xs text-red-500 hover:text-red-700 px-2"
                             onClick={async () => {
                               if (confirm(`Fjerne ${email} som leietaker?`)) {
@@ -494,18 +407,12 @@ export default function PropertyDetail() {
                         </div>
                       ))}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setShowInviteDialog(true)}
-                    >
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowInviteDialog(true)}>
                       <Mail className="w-4 h-4 mr-2" /> Legg til leietaker
                     </Button>
                     {(property.tenant_emails || []).length > 1 && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outline" size="sm"
                         className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
                         onClick={() => {
                           const existing = property.rent_splits || [];
@@ -536,82 +443,73 @@ export default function PropertyDetail() {
                 )}
               </CardContent>
             </Card>
-            )}
+          )}
 
-            {/* Co-Landlords Section */}
+          {/* Co-Landlords */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4" /> Medutleiere
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {coLandlords.length === 0 ? (
+                <p className="text-sm text-slate-500 mb-3">Ingen medutleiere tilknyttet</p>
+              ) : (
+                <div className="space-y-2 mb-3">
+                  {coLandlords.map(u => (
+                    <div key={u.id} className="flex items-center justify-between bg-slate-50 rounded-lg p-2">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{u.full_name || u.email}</p>
+                        <p className="text-xs text-slate-500">{u.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="text-red-500 hover:text-red-700 text-xs px-2"
+                        onClick={async () => {
+                          if (confirm(`Fjerne ${u.email} som medutleier?`)) {
+                            const updatedIds = (property.landlord_ids || []).filter(id => id !== u.id);
+                            updateMutation.mutate({ landlord_ids: updatedIds });
+                          }
+                        }}
+                      >
+                        Fjern
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button variant="outline" size="sm" className="w-full" onClick={() => setShowCoLandlordDialog(true)}>
+                <UserPlus className="w-4 h-4 mr-2" /> Legg til medutleier
+              </Button>
+            </CardContent>
+          </Card>
+
+          {property.description && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Medutleiere
-                </CardTitle>
+                <CardTitle className="text-base">{t('description')}</CardTitle>
               </CardHeader>
               <CardContent>
-                {coLandlords.length === 0 ? (
-                  <p className="text-sm text-slate-500 mb-3">Ingen medutleiere tilknyttet</p>
-                ) : (
-                  <div className="space-y-2 mb-3">
-                    {coLandlords.map(u => (
-                      <div key={u.id} className="flex items-center justify-between bg-slate-50 rounded-lg p-2">
-                        <div>
-                          <p className="text-sm font-medium text-slate-800">{u.full_name || u.email}</p>
-                          <p className="text-xs text-slate-500">{u.email}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 text-xs px-2"
-                          onClick={async () => {
-                            if (confirm(`Fjerne ${u.email} som medutleier?`)) {
-                              const updatedIds = (property.landlord_ids || []).filter(id => id !== u.id);
-                              updateMutation.mutate({ landlord_ids: updatedIds });
-                            }
-                          }}
-                        >
-                          Fjern
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowCoLandlordDialog(true)}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" /> Legg til medutleier
-                </Button>
+                <p className="text-slate-600 text-sm">{property.description}</p>
               </CardContent>
             </Card>
+          )}
 
-            {property.description && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('description')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600 text-sm">{property.description}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => navigate(createPageUrl(`EditProperty?id=${propertyId}`))}
-              >
-                <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-red-600 border-red-200 hover:bg-red-50"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" className="flex-1"
+              onClick={() => navigate(createPageUrl(`EditProperty?id=${propertyId}`))}
+            >
+              <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
+            </Button>
+            <Button 
+              variant="outline" className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* ØKONOMI */}
@@ -623,129 +521,129 @@ export default function PropertyDetail() {
         {/* BILDER */}
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Bilder</h2>
-            <DocumentationChecklist 
-              property={property} 
-              onUpdate={(data) => updateMutation.mutate(data)}
-              isLoading={updateMutation.isPending}
-            />
+          <DocumentationChecklist 
+            property={property} 
+            onUpdate={(data) => updateMutation.mutate(data)}
+            isLoading={updateMutation.isPending}
+          />
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="w-4 h-4" /> {t('moveInPhotos')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {(property.move_in_photos || []).map((url, idx) => (
-                    <img key={idx} src={url} alt={`Innflytting ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                  ))}
-                </div>
-                <label className="block">
-                  <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, 'move_in')} />
-                  <Button variant="outline" className="w-full" asChild disabled={uploadingType === 'move_in'}>
-                    <span>{uploadingType === 'move_in' ? 'Laster opp...' : t('uploadPhotos')}</span>
-                  </Button>
-                </label>
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Camera className="w-4 h-4" /> {t('moveInPhotos')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {(property.move_in_photos || []).map((url, idx) => (
+                  <img key={idx} src={url} alt={`Innflytting ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+              <label className="block">
+                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, 'move_in')} />
+                <Button variant="outline" className="w-full" asChild disabled={uploadingType === 'move_in'}>
+                  <span>{uploadingType === 'move_in' ? 'Laster opp...' : t('uploadPhotos')}</span>
+                </Button>
+              </label>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="w-4 h-4" /> {t('moveOutPhotos')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {(property.move_out_photos || []).map((url, idx) => (
-                    <img key={idx} src={url} alt={`Utflytting ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                  ))}
-                </div>
-                <label className="block">
-                  <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, 'move_out')} />
-                  <Button variant="outline" className="w-full" asChild disabled={uploadingType === 'move_out'}>
-                    <span>{uploadingType === 'move_out' ? 'Laster opp...' : t('uploadPhotos')}</span>
-                  </Button>
-                </label>
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Camera className="w-4 h-4" /> {t('moveOutPhotos')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {(property.move_out_photos || []).map((url, idx) => (
+                  <img key={idx} src={url} alt={`Utflytting ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+              <label className="block">
+                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, 'move_out')} />
+                <Button variant="outline" className="w-full" asChild disabled={uploadingType === 'move_out'}>
+                  <span>{uploadingType === 'move_out' ? 'Laster opp...' : t('uploadPhotos')}</span>
+                </Button>
+              </label>
+            </CardContent>
+          </Card>
         </div>
 
         {/* AVTALE */}
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Avtale</h2>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Last opp leieavtale (PDF)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AgreementUpload 
+                property={property} 
+                onUpdate={(data) => updateMutation.mutate(data)}
+                isLoading={updateMutation.isPending}
+              />
+            </CardContent>
+          </Card>
+
+          {agreement ? (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Last opp leieavtale (PDF)</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Digital {t('rentalAgreement')}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <AgreementUpload 
-                  property={property} 
-                  onUpdate={(data) => updateMutation.mutate(data)}
-                  isLoading={updateMutation.isPending}
-                />
+              <CardContent className="space-y-3">
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">{t('startDate')}</span>
+                  <span className="font-medium">{agreement.start_date}</span>
+                </div>
+                {agreement.end_date && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-slate-500">{t('endDate')}</span>
+                    <span className="font-medium">{agreement.end_date}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">{t('monthlyRent')}</span>
+                  <span className="font-medium">{agreement.monthly_rent?.toLocaleString()} kr</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">Utleier signert</span>
+                  <span className={agreement.landlord_signed ? 'text-green-600' : 'text-amber-600'}>
+                    {agreement.landlord_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">Leietaker signert</span>
+                  <span className={agreement.tenant_signed ? 'text-green-600' : 'text-amber-600'}>
+                    {agreement.tenant_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  </span>
+                </div>
+                {agreement.status === 'draft' && (
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
+                    onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}&agreementId=${agreement.id}`))}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" /> Åpne og ferdigstill utkast
+                  </Button>
+                )}
               </CardContent>
             </Card>
-
-            {agreement ? (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Digital {t('rentalAgreement')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-slate-500">{t('startDate')}</span>
-                    <span className="font-medium">{agreement.start_date}</span>
-                  </div>
-                  {agreement.end_date && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-slate-500">{t('endDate')}</span>
-                      <span className="font-medium">{agreement.end_date}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-slate-500">{t('monthlyRent')}</span>
-                    <span className="font-medium">{agreement.monthly_rent?.toLocaleString()} kr</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-slate-500">Utleier signert</span>
-                    <span className={agreement.landlord_signed ? 'text-green-600' : 'text-amber-600'}>
-                      {agreement.landlord_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-slate-500">Leietaker signert</span>
-                    <span className={agreement.tenant_signed ? 'text-green-600' : 'text-amber-600'}>
-                      {agreement.tenant_signed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                    </span>
-                  </div>
-                  {agreement.status === 'draft' && (
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
-                      onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}&agreementId=${agreement.id}`))}
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" /> Åpne og ferdigstill utkast
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 text-sm mb-3">Ingen digital leieavtale opprettet</p>
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700"
-                    onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}`))}
-                  >
-                    {t('createAgreement')}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm mb-3">Ingen digital leieavtale opprettet</p>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigate(createPageUrl(`CreateAgreement?propertyId=${propertyId}`))}
+                >
+                  {t('createAgreement')}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -778,7 +676,7 @@ export default function PropertyDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Slett eiendom?</DialogTitle>
-            <DialogDescription>Er du sikker på at du vil slette denne eiendommen? Dette kan ikke angres.</DialogDescription>
+            <DialogDescription>Er du sikker? Dette kan ikke angres.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>{t('cancel')}</Button>
@@ -793,7 +691,7 @@ export default function PropertyDetail() {
           <DialogHeader>
             <DialogTitle>Husleiefordeling</DialogTitle>
             <DialogDescription>
-              Angi hvor stor andel av husleien ({property?.monthly_rent?.toLocaleString()} kr) hver leietaker skal betale.
+              Angi andel av husleien ({property?.monthly_rent?.toLocaleString()} kr) per leietaker.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
@@ -822,7 +720,7 @@ export default function PropertyDetail() {
           <DialogHeader>
             <DialogTitle>Legg til medutleier</DialogTitle>
             <DialogDescription>
-              Skriv inn e-postadressen til medutleieren du vil legge til. De må allerede ha en konto i appen.
+              Skriv inn e-postadressen. De må allerede ha en konto i appen.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -844,12 +742,10 @@ export default function PropertyDetail() {
                 const cleanEmail = coLandlordEmail.toLowerCase().trim();
 
                 const existingInvites = await base44.entities.CoLandlordInvitation.filter({
-                  rental_unit_id: propertyId,
-                  co_landlord_email: cleanEmail,
-                  status: 'pending'
+                  rental_unit_id: propertyId, co_landlord_email: cleanEmail, status: 'pending'
                 });
                 if (existingInvites.length > 0) {
-                  alert('Det er allerede sendt en invitasjon til denne e-postadressen som ikke er besvart ennå.');
+                  alert('Det er allerede sendt en invitasjon til denne e-postadressen.');
                   return;
                 }
 
@@ -868,8 +764,7 @@ export default function PropertyDetail() {
                   rental_unit_id: propertyId,
                   inviting_landlord_id: user.id,
                   co_landlord_email: cleanEmail,
-                  token,
-                  status: 'pending',
+                  token, status: 'pending',
                   expires_at: expiresAt.toISOString()
                 });
 
@@ -880,30 +775,12 @@ export default function PropertyDetail() {
                     to: cleanEmail,
                     from_name: 'Enkel Utleie',
                     subject: `Invitasjon til å bli medutleier på ${property.name}`,
-                    body: `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#f5f5f5;padding:20px;">
-<table width="600" style="background:white;border-radius:12px;overflow:hidden;margin:auto;">
-  <tr><td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 24px;text-align:center;">
-    <h1 style="margin:0;color:white;font-size:22px;">🏠 Invitasjon til medutleier</h1>
-  </td></tr>
-  <tr><td style="padding:32px 24px;">
-    <p style="font-size:16px;color:#1f2937;">Hei!</p>
-    <p style="font-size:15px;color:#374151;">${user?.full_name || 'En utleier'} inviterer deg til å bli medutleier på:</p>
-    <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:8px;padding:20px;margin:20px 0;">
-      <p style="margin:0 0 8px;font-size:18px;font-weight:600;color:#1e40af;">${property.name}</p>
-      <p style="margin:0;font-size:14px;color:#4b5563;">📍 ${property.address}</p>
-      ${property.monthly_rent ? `<p style="margin:8px 0 0;font-size:15px;color:#059669;font-weight:600;">💰 ${property.monthly_rent.toLocaleString()} kr/måned</p>` : ''}
-    </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td align="center">
-        <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">Aksepter invitasjon</a>
-      </td></tr>
-    </table>
-    <p style="font-size:13px;color:#9ca3af;text-align:center;">⏰ Invitasjonen er gyldig i 7 dager</p>
-  </td></tr>
-  <tr><td style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb;">
-    <p style="margin:0;font-size:13px;color:#9ca3af;">Enkel Utleie – Din komplette utleieløsning</p>
-  </td></tr>
-</table></body></html>`
+                    body: `<html><body style="font-family:sans-serif;padding:20px;">
+                      <h2>🏠 Invitasjon til medutleier</h2>
+                      <p>${user?.full_name || 'En utleier'} inviterer deg til å bli medutleier på <strong>${property.name}</strong>.</p>
+                      <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;margin:16px 0;">Aksepter invitasjon</a>
+                      <p style="color:#9ca3af;font-size:13px;">Gyldig i 7 dager</p>
+                    </body></html>`
                   });
                 } catch (e) {}
 
@@ -913,7 +790,7 @@ export default function PropertyDetail() {
                       user_id: existingUsers[0].id,
                       type: 'agreement',
                       title: 'Invitasjon til å bli medutleier',
-                      message: `${user?.full_name || 'En utleier'} inviterer deg til å bli medutleier på ${property.name}`,
+                      message: `${user?.full_name || 'En utleier'} inviterer deg til ${property.name}`,
                       rental_unit_id: propertyId,
                       related_id: invitation.id,
                       read: false
@@ -923,10 +800,10 @@ export default function PropertyDetail() {
 
                 setShowCoLandlordDialog(false);
                 setCoLandlordEmail('');
-                alert(`✅ Invitasjon sendt til ${cleanEmail}! De må akseptere før de får tilgang.`);
+                alert(`✅ Invitasjon sendt til ${cleanEmail}!`);
               }}
             >
-              Legg til
+              Send invitasjon
             </Button>
           </DialogFooter>
         </DialogContent>

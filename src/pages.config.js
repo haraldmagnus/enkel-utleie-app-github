@@ -47,12 +47,62 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AcceptCoLandlord from './pages/AcceptCoLandlord';
+import AddProperty from './pages/AddProperty';
+import CalendarPage from './pages/CalendarPage';
+import Chat from './pages/Chat';
+import CompleteProfile from './pages/CompleteProfile';
+import CreateAgreement from './pages/CreateAgreement';
+import Dashboard from './pages/Dashboard';
+import EditProperty from './pages/EditProperty';
+import ErrorLogs from './pages/ErrorLogs';
+import Finances from './pages/Finances';
+import FinancesExpense from './pages/FinancesExpense';
+import FinancesIncome from './pages/FinancesIncome';
+import FinancesNet from './pages/FinancesNet';
+import FinancesTax from './pages/FinancesTax';
+import Help from './pages/Help';
+import Invite from './pages/Invite';
+import Notifications from './pages/Notifications';
+import PaymentReminders from './pages/PaymentReminders';
+import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
+import RoleSelection from './pages/RoleSelection';
+import Settings from './pages/Settings';
+import SignAgreement from './pages/SignAgreement';
+import TenantDashboard from './pages/TenantDashboard';
+import TenantPhotos from './pages/TenantPhotos';
+import YearlyReport from './pages/YearlyReport';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AcceptCoLandlord": AcceptCoLandlord,
+    "AddProperty": AddProperty,
+    "CalendarPage": CalendarPage,
+    "Chat": Chat,
+    "CompleteProfile": CompleteProfile,
+    "CreateAgreement": CreateAgreement,
+    "Dashboard": Dashboard,
+    "EditProperty": EditProperty,
+    "ErrorLogs": ErrorLogs,
+    "Finances": Finances,
+    "FinancesExpense": FinancesExpense,
+    "FinancesIncome": FinancesIncome,
+    "FinancesNet": FinancesNet,
+    "FinancesTax": FinancesTax,
+    "Help": Help,
+    "Invite": Invite,
+    "Notifications": Notifications,
+    "PaymentReminders": PaymentReminders,
+    "Properties": Properties,
     "PropertyDetail": PropertyDetail,
+    "RoleSelection": RoleSelection,
+    "Settings": Settings,
+    "SignAgreement": SignAgreement,
+    "TenantDashboard": TenantDashboard,
+    "TenantPhotos": TenantPhotos,
+    "YearlyReport": YearlyReport,
 }
 
 export const pagesConfig = {

@@ -19,22 +19,11 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me()
   });
 
-  // Redirect if user is on wrong dashboard for their role
   React.useEffect(() => {
     if (user) {
       const roleOverride = localStorage.getItem('user_role_override');
       const effectiveRole = user.active_role || user.user_role || roleOverride;
-      
-      console.log('🔵 Dashboard (Landlord): Role check:', { 
-        active_role: user.active_role,
-        user_role: user.user_role, 
-        roleOverride, 
-        effectiveRole,
-        currentPage: 'Dashboard'
-      });
-      
       if (effectiveRole === 'tenant') {
-        console.log('⚠️ Dashboard: Tenant on landlord page - REDIRECTING to TenantDashboard');
         navigate(createPageUrl('TenantDashboard'), { replace: true });
       }
     }
@@ -92,7 +81,6 @@ export default function Dashboard() {
   return (
     <div className="pb-20">
       <div className="p-4 space-y-4">
-        {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-white shadow-sm">
             <CardContent className="p-4">
@@ -123,7 +111,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Financial Summary */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -153,7 +140,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Properties */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -212,7 +198,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
           <Card className="bg-white shadow-sm">
             <CardHeader className="pb-2">
@@ -248,7 +233,6 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Quick Actions */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">Hurtighandlinger</CardTitle>

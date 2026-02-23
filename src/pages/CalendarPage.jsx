@@ -50,7 +50,6 @@ export default function CalendarPage() {
       } else {
         const byTenantId = await base44.entities.RentalUnit.filter({ tenant_id: user?.id });
         if (byTenantId.length > 0) return byTenantId;
-        // Fallback: match by email for tenants not yet linked by ID
         return base44.entities.RentalUnit.filter({ tenant_email: user?.email });
       }
     },
@@ -100,12 +99,11 @@ export default function CalendarPage() {
     createMutation.mutate(formData);
   };
 
-  // Calendar logic
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthNames = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 
+  const monthNames = ['Januar', 'Februar', 'Mars', 'april', 'Mai', 'Juni', 
                       'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'];
   const dayNames = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
 
@@ -151,10 +149,8 @@ export default function CalendarPage() {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Calendar */}
         <Card>
           <CardContent className="p-4">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <Button variant="ghost" size="icon" onClick={prevMonth}>
                 <ChevronLeft className="w-5 h-5" />
@@ -167,7 +163,6 @@ export default function CalendarPage() {
               </Button>
             </div>
 
-            {/* Day names */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {dayNames.map(day => (
                 <div key={day} className="text-center text-xs font-medium text-slate-500 py-2">
@@ -176,7 +171,6 @@ export default function CalendarPage() {
               ))}
             </div>
 
-            {/* Days */}
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: firstDay }).map((_, i) => (
                 <div key={`empty-${i}`} className="h-10" />
@@ -206,9 +200,7 @@ export default function CalendarPage() {
                         {dayEvents.slice(0, 3).map((e, idx) => (
                           <div 
                             key={idx} 
-                            className={`w-1 h-1 rounded-full ${
-                              isSelected ? 'bg-white' : 'bg-blue-500'
-                            }`}
+                            className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-500'}`}
                           />
                         ))}
                       </div>
@@ -220,7 +212,6 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
 
-        {/* Selected Date Events */}
         {selectedDate && (
           <div className="space-y-2">
             <h3 className="font-semibold text-slate-900">
@@ -287,7 +278,6 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* Add Event Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
