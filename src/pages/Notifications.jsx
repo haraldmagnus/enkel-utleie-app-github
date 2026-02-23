@@ -122,6 +122,7 @@ function NotificationsInner() {
         effectiveRole,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifError]);
 
   const markReadMutation = useMutation({
