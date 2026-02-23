@@ -49,11 +49,9 @@
  */
 import AcceptCoLandlord from './pages/AcceptCoLandlord';
 import AddProperty from './pages/AddProperty';
-import CalendarPage from './pages/CalendarPage';
 import Chat from './pages/Chat';
 import CompleteProfile from './pages/CompleteProfile';
 import CreateAgreement from './pages/CreateAgreement';
-import Dashboard from './pages/Dashboard';
 import EditProperty from './pages/EditProperty';
 import ErrorLogs from './pages/ErrorLogs';
 import Finances from './pages/Finances';
@@ -66,7 +64,6 @@ import Invite from './pages/Invite';
 import Notifications from './pages/Notifications';
 import PaymentReminders from './pages/PaymentReminders';
 import Properties from './pages/Properties';
-import PropertyDetail from './pages/PropertyDetail';
 import RoleSelection from './pages/RoleSelection';
 import Settings from './pages/Settings';
 import SignAgreement from './pages/SignAgreement';
@@ -79,11 +76,9 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AcceptCoLandlord": AcceptCoLandlord,
     "AddProperty": AddProperty,
-    "CalendarPage": CalendarPage,
     "Chat": Chat,
     "CompleteProfile": CompleteProfile,
     "CreateAgreement": CreateAgreement,
-    "Dashboard": Dashboard,
     "EditProperty": EditProperty,
     "ErrorLogs": ErrorLogs,
     "Finances": Finances,
@@ -96,7 +91,6 @@ export const PAGES = {
     "Notifications": Notifications,
     "PaymentReminders": PaymentReminders,
     "Properties": Properties,
-    "PropertyDetail": PropertyDetail,
     "RoleSelection": RoleSelection,
     "Settings": Settings,
     "SignAgreement": SignAgreement,
@@ -106,7 +100,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "PropertyDetail",
+    mainPage: "AcceptCoLandlord",
     Pages: PAGES,
     Layout: __Layout,
 };
