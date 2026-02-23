@@ -20,7 +20,7 @@ const iconMap = {
 // Returns a URL if the notification should be clickable
 function getNotificationUrl(notification, effectiveRole) {
   if (notification.type === 'message' && notification.rental_unit_id) {
-    return createPageUrl('Chat');
+    return createPageUrl(`Chat?propertyId=${notification.rental_unit_id}`);
   }
   if (notification.type === 'agreement' && notification.related_id) {
     return createPageUrl(`SignAgreement?id=${notification.related_id}`);
