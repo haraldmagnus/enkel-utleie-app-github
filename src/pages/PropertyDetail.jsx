@@ -395,20 +395,23 @@ export default function PropertyDetail() {
                 </div>
               </form>
             )}
-            <div className="p-4">
+            <div className="p-4 space-y-4">
               {property.status === 'occupied' && (property.tenant_email || property.manual_tenant_name) ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{property.manual_tenant_name || property.tenant_email}</p>
+                      {property.tenant_email && <p className="text-xs text-gray-400">{property.tenant_email}</p>}
+                    </div>
+                    <Link to={createPageUrl(`Chat?propertyId=${propertyId}`)} className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors">
+                      <MessageSquare className="w-4 h-4 text-blue-600" />
+                    </Link>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{property.manual_tenant_name || property.tenant_email}</p>
-                    {property.tenant_email && <p className="text-xs text-gray-400">{property.tenant_email}</p>}
-                  </div>
-                  <Link to={createPageUrl(`Chat?propertyId=${propertyId}`)} className="ml-auto w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors">
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                  </Link>
-                </div>
+                  <TenantRatingSection propertyId={propertyId} tenantEmail={property.tenant_email} />
+                </>
               ) : property.status === 'pending_invitation' ? (
                 <div className="flex items-center gap-3 text-yellow-700">
                   <Mail className="w-4 h-4" />
