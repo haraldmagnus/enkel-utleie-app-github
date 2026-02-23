@@ -7,8 +7,6 @@ import { createPageUrl } from '@/utils';
 
 const CAT_LABELS = { rent: 'Leie', deposit: 'Depositum', maintenance: 'Vedlikehold', repairs: 'Reparasjoner', utilities: 'Strøm/vann', insurance: 'Forsikring', taxes: 'Skatt', other: 'Annet' };
 
-const CAT_LABELS = { rent: 'Leie', deposit: 'Depositum', maintenance: 'Vedlikehold', repairs: 'Reparasjoner', utilities: 'Strøm/vann', insurance: 'Forsikring', taxes: 'Skatt', other: 'Annet' };
-
 // Norwegian rental tax rates 2024
 const TAX_RATE = 0.22;
 const TAX_FREE_THRESHOLD = 10000; // NOK per year, tax-free if renting part of own home under this
