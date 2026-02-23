@@ -48,11 +48,17 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import CreateAgreement from './pages/CreateAgreement';
+import Dashboard from './pages/Dashboard';
+import CalendarPage from './pages/CalendarPage';
+import PropertyDetail from './pages/PropertyDetail';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "CreateAgreement": CreateAgreement,
+    "Dashboard": Dashboard,
+    "CalendarPage": CalendarPage,
+    "PropertyDetail": PropertyDetail,
 }
 
 export const pagesConfig = {
