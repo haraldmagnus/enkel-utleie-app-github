@@ -101,10 +101,39 @@ export default function CreateAgreement() {
     }
   }, [existing]);
 
+  const isFullySigned = existing?.landlord_signed && existing?.tenant_signed && existing?.status === 'active';
+
   const saveMutation = useMutation({
     mutationFn: (data) => agreementId
       ? base44.entities.RentalAgreement.update(agreementId, data)
       : base44.entities.RentalAgreement.create(data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['agreement', propertyId] }); navigate(createPageUrl(`PropertyDetail?id=${propertyId}`)); }
+  });
+
+  // Amendment: reset signatures and notify both parties
+  const amendMutation = useMutation({
+    mutationFn: async (data) => {
+      const updated = await base44.entities.RentalAgreement.update(agreementId, {
+        ...data,
+        status: 'draft',
+        landlord_signed: false,
+        tenant_signed: false,
+        landlord_signed_date: null,
+        tenant_signed_date: null,
+        landlord_signature_image: null,
+        tenant_signature_image: null,
+      });
+      // Notify both parties
+      const notifBase = { type: 'agreement', rental_unit_id: propertyId, related_id: agreementId, read: false };
+      const msg = `Leieavtalen for ${property?.name} er endret og må signeres på nytt.`;
+      if (existing?.landlord_id && existing.landlord_id !== user?.id) {
+        await base44.entities.Notification.create({ ...notifBase, user_id: existing.landlord_id, title: 'Leieavtale endret – ny signering kreves', message: msg });
+      }
+      if (existing?.tenant_id && existing.tenant_id !== user?.id) {
+        await base44.entities.Notification.create({ ...notifBase, user_id: existing.tenant_id, title: 'Leieavtale endret – ny signering kreves', message: msg });
+      }
+      return updated;
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['agreement', propertyId] }); navigate(createPageUrl(`PropertyDetail?id=${propertyId}`)); }
   });
 
