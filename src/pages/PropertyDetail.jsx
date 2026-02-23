@@ -9,7 +9,6 @@ import {
 import { createPageUrl } from '@/utils';
 import MaintenanceSection from '@/components/property/MaintenanceSection';
 import FinancesSection from '@/components/property/FinancesSection';
-import DocsSection from '@/components/property/DocsSection';
 
 
 
