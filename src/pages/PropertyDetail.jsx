@@ -9,6 +9,7 @@ import {
 import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
 import FinancesSection from '@/components/property/FinancesSection';
+import TenantRatingSection from '@/components/TenantRatingSection';
 
 
 
