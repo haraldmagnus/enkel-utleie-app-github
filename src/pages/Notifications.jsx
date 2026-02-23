@@ -148,7 +148,7 @@ export default function Notifications() {
           <div className="space-y-3">
             {notifications.map(notification => {
               const Icon = iconMap[notification.type] || Bell;
-              const url = getNotificationUrl(notification);
+              const url = getNotificationUrl(notification, effectiveRole);
               return (
                 <Card 
                   key={notification.id} 
