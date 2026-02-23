@@ -193,13 +193,41 @@ export default function SignAgreement() {
           <div className="bg-white rounded-2xl shadow-sm border border-blue-200 bg-blue-50/50 p-4 space-y-3">
             <p className="text-sm font-semibold text-gray-900 flex items-center gap-2"><PenLine className="w-4 h-4 text-blue-600" /> Signer avtalen</p>
             <p className="text-sm text-gray-600">Jeg, <strong>{isLandlord ? agreement.landlord_name : agreement.tenant_name}</strong>, bekrefter at jeg har lest og aksepterer alle vilkårene i denne leieavtalen.</p>
+
+            {/* Signature canvas */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs text-gray-500 font-medium">Tegn signaturen din nedenfor</p>
+                <button onClick={clearCanvas} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                  <Trash2 className="w-3 h-3" /> Tøm
+                </button>
+              </div>
+              <div className="border-2 border-dashed border-blue-300 rounded-xl bg-white overflow-hidden">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={180}
+                  className="w-full touch-none cursor-crosshair"
+                  style={{ display: 'block' }}
+                  onMouseDown={startDraw}
+                  onMouseMove={draw}
+                  onMouseUp={stopDraw}
+                  onMouseLeave={stopDraw}
+                  onTouchStart={startDraw}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDraw}
+                />
+              </div>
+              {!hasSigned && <p className="text-xs text-gray-400 text-center mt-1">Bruk finger, penn eller mus for å signere</p>}
+            </div>
+
             <label className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="mt-0.5 w-4 h-4 rounded accent-blue-600" />
               <span className="text-sm text-gray-700">Jeg har lest og godtar avtalen</span>
             </label>
             <button
               onClick={() => signMutation.mutate()}
-              disabled={!confirmed || signMutation.isPending}
+              disabled={!confirmed || !hasSigned || signMutation.isPending}
               className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               <PenLine className="w-4 h-4" />
