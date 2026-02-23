@@ -411,7 +411,7 @@ export default function PropertyDetail() {
                       <MessageSquare className="w-4 h-4 text-blue-600" />
                     </Link>
                   </div>
-                  <TenantRatingSection propertyId={propertyId} tenantEmail={property.tenant_email} />
+                  <TenantRatingSection propertyId={propertyId} tenantEmail={property.tenant_email} tenantId={property.tenant_id} />
                 </>
               ) : property.status === 'pending_invitation' ? (
                 <div className="flex items-center gap-3 text-yellow-700">
