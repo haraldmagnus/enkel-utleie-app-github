@@ -342,6 +342,9 @@ export default function PropertyDetail() {
                       Signer
                     </Link>
                   )}
+                  <button onClick={exportAgreementPdf} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 text-sm font-medium transition-colors">
+                    <Download className="w-4 h-4" /> PDF
+                  </button>
                 </div>
               </div>
             ) : (
