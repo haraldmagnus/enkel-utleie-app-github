@@ -258,9 +258,14 @@ export default function SignAgreement() {
             <h1 className="font-bold text-gray-900">Leieavtale</h1>
             <p className="text-xs text-gray-400">{property?.name}</p>
           </div>
-          <span className={`ml-auto text-xs px-2 py-1 rounded-full font-medium ${agreement.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-            {agreement.status === 'active' ? 'Aktiv' : agreement.status === 'pending_tenant' ? 'Venter signatur' : agreement.status}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={exportPdf} className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors">
+              <Download className="w-3.5 h-3.5" /> PDF
+            </button>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${agreement.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+              {agreement.status === 'active' ? 'Aktiv' : agreement.status === 'pending_tenant' ? 'Venter signatur' : agreement.status}
+            </span>
+          </div>
         </div>
       </div>
 
