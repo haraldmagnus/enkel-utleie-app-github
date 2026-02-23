@@ -34,13 +34,14 @@ export default function SignAgreement() {
 
   const signMutation = useMutation({
     mutationFn: async () => {
-      // Use the same ID-based logic as the render
-      const signingAsLandlord = user?.id === agreement?.landlord_id || 
+      // Use ID-based role detection
+      const signingAsLandlord = user?.id === agreement?.landlord_id ||
         (user?.id !== agreement?.tenant_id && (user?.active_role || user?.user_role) === 'landlord');
       const now = new Date().toISOString();
+      const signatureDataUrl = canvasRef.current?.toDataURL('image/png');
       const updates = signingAsLandlord
-        ? { landlord_signed: true, landlord_signed_date: now }
-        : { tenant_signed: true, tenant_signed_date: now };
+        ? { landlord_signed: true, landlord_signed_date: now, landlord_signature_image: signatureDataUrl }
+        : { tenant_signed: true, tenant_signed_date: now, tenant_signature_image: signatureDataUrl };
 
       const updated = await base44.entities.RentalAgreement.update(agreementId, updates);
       const landlordOk = signingAsLandlord ? true : updated.landlord_signed;
