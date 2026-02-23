@@ -52,6 +52,7 @@ import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
 import AddProperty from './pages/AddProperty';
 import Settings from './pages/Settings';
+import PropertyDetail from './pages/PropertyDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +62,7 @@ export const PAGES = {
     "Properties": Properties,
     "AddProperty": AddProperty,
     "Settings": Settings,
+    "PropertyDetail": PropertyDetail,
 }
 
 export const pagesConfig = {
