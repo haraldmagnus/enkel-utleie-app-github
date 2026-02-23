@@ -58,8 +58,39 @@ export default function MaintenanceSection({ propertyId, landlordId, property })
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.MaintenanceTask.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance', propertyId] })
+    mutationFn: async ({ id, data, task }) => {
+      const updated = await base44.entities.MaintenanceTask.update(id, data);
+
+      const wasCompleted = task.status !== 'completed' && data.status === 'completed';
+      const wasUncompleted = task.status === 'completed' && data.status !== 'completed';
+
+      if (wasCompleted && (task.actual_cost || task.estimated_cost)) {
+        // Create a financial expense entry
+        const cost = task.actual_cost || task.estimated_cost;
+        const entry = await base44.entities.FinancialEntry.create({
+          rental_unit_id: propertyId,
+          landlord_id: task.landlord_id,
+          type: 'expense',
+          category: 'maintenance',
+          amount: cost,
+          description: task.title + (task.vendor_name ? ` (${task.vendor_name})` : ''),
+          date: data.completed_date || new Date().toISOString().split('T')[0],
+        });
+        // Store the financial entry id on the task so we can delete it later
+        await base44.entities.MaintenanceTask.update(id, { financial_entry_id: entry.id });
+      }
+
+      if (wasUncompleted && task.financial_entry_id) {
+        await base44.entities.FinancialEntry.delete(task.financial_entry_id);
+        await base44.entities.MaintenanceTask.update(id, { financial_entry_id: null });
+      }
+
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['financialEntries', propertyId] });
+    }
   });
 
   const deleteMutation = useMutation({
