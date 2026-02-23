@@ -9,6 +9,13 @@ import PageHeader from '@/components/PageHeader';
 import { createPageUrl } from '@/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Pages that render their own internal header (no global header on these)
+const SELF_HEADER_PAGES = [
+  'PropertyDetail', 'AddProperty', 'EditProperty', 'CreateAgreement',
+  'SignAgreement', 'TenantPhotos', 'Invite', 'AcceptCoLandlord',
+  'PaymentReminders', 'YearlyReport'
+];
+
 function LayoutContent({ children, currentPageName }) {
   const navigate = useNavigate();
   const { setLanguage } = useLanguage();
@@ -19,7 +26,6 @@ function LayoutContent({ children, currentPageName }) {
   });
 
   useEffect(() => {
-    // Handle localStorage/auth errors
     if (error) {
       console.error('Auth error:', error);
       try {
@@ -33,77 +39,40 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      console.log('🔵 Layout: User loaded:', { 
-        email: user.email,
-        active_role: user.active_role, 
-        user_role: user.user_role,
-        currentPage: currentPageName,
-        timestamp: new Date().toISOString()
-      });
-      
       if (user.language) {
         setLanguage(user.language);
       }
       
-      // Determine effective role (single source of truth)
       const roleOverride = localStorage.getItem('user_role_override');
       const effectiveUserRole = user.active_role || user.user_role || roleOverride;
       
-      console.log('🔵 Layout: Role determination:', { 
-        priority1_active_role: user.active_role,
-        priority2_user_role: user.user_role,
-        priority3_localStorage: roleOverride,
-        EFFECTIVE_ROLE: effectiveUserRole,
-        currentPage: currentPageName
-      });
-      
-      // (Profile completion redirect removed - profile is now managed in Settings)
-      
-      // If no role is determined, redirect to role selection
       if (!effectiveUserRole && currentPageName !== 'RoleSelection') {
-        console.log('⚠️ Layout: No role determined → RoleSelection');
         navigate(createPageUrl('RoleSelection'), { replace: true });
         return;
       }
       
-      // FAILSAFE: Detect if on wrong dashboard
       const isOnLandlordDash = currentPageName === 'Dashboard';
       const isOnTenantDash = currentPageName === 'TenantDashboard';
       
       if (effectiveUserRole === 'landlord' && isOnTenantDash) {
-        console.log('🚨 FAILSAFE: Landlord stuck on TenantDashboard → Dashboard');
         navigate(createPageUrl('Dashboard'), { replace: true });
         return;
       }
       
       if (effectiveUserRole === 'tenant' && isOnLandlordDash) {
-        console.log('🚨 FAILSAFE: Tenant stuck on Dashboard → TenantDashboard');
         navigate(createPageUrl('TenantDashboard'), { replace: true });
         return;
       }
     }
   }, [user, isLoading, currentPageName, navigate, setLanguage]);
 
-  // Show nav on all pages except RoleSelection
   const noNavPages = ['RoleSelection'];
   const roleOverride = typeof window !== 'undefined' ? localStorage.getItem('user_role_override') : null;
-  
-  // Determine effective role: active_role > user_role > roleOverride
   const effectiveRole = user?.active_role || user?.user_role || roleOverride;
   
-  console.log('🔵 Layout: Navigation render:', {
-    activeRole: user?.active_role,
-    userRole: user?.user_role,
-    roleOverride,
-    effectiveRole,
-    currentPage: currentPageName,
-    showingNav: effectiveRole && !noNavPages.includes(currentPageName)
-  });
-  
   const showNav = effectiveRole && !noNavPages.includes(currentPageName);
-  const showHeader = effectiveRole && !noNavPages.includes(currentPageName);
+  const showHeader = effectiveRole && !noNavPages.includes(currentPageName) && !SELF_HEADER_PAGES.includes(currentPageName);
 
-  // Page-specific header titles
   const pageTitles = {
     Dashboard: user ? `Hei, ${user?.first_name || user?.full_name?.split(' ')[0] || 'deg'}!` : '',
     TenantDashboard: user ? `Hei, ${user?.full_name?.split(' ')[0] || 'Leietaker'}!` : '',
@@ -114,19 +83,10 @@ function LayoutContent({ children, currentPageName }) {
     Settings: 'Innstillinger',
     Help: 'Hjelp',
     Notifications: 'Varsler',
-    YearlyReport: 'Årsrapport',
     FinancesIncome: 'Inntekter',
     FinancesExpense: 'Utgifter',
     FinancesNet: 'Netto',
     FinancesTax: 'Skatt',
-    AddProperty: 'Legg til eiendom',
-    EditProperty: 'Rediger eiendom',
-    PropertyDetail: 'Eiendom',
-    PaymentReminders: 'Betalingspåminnelser',
-    TenantPhotos: 'Bilder',
-    SignAgreement: 'Signer avtale',
-    CreateAgreement: 'Leiekontrakt',
-    Invite: 'Inviter leietaker',
   };
 
   const pageSubtitles = {
@@ -162,17 +122,7 @@ function LayoutContent({ children, currentPageName }) {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <style>{`
         ${themeStyles}
-        
-        /* Safe area for iPhone */
-        .pb-safe {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-        
-        /* Sticky header offset */
-        .page-content-with-header {
-          padding-top: 0;
-        }
-        
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
         .bg-blue-50 { background-color: rgb(239 246 255); }
         .bg-blue-100 { background-color: rgb(219 234 254); }
         .bg-blue-200 { background-color: rgb(191 219 254); }
@@ -180,7 +130,6 @@ function LayoutContent({ children, currentPageName }) {
         .bg-blue-600 { background-color: rgb(37 99 235); }
         .bg-blue-700 { background-color: rgb(29 78 216); }
         .bg-blue-800 { background-color: rgb(30 64 175); }
-        
         .text-blue-50 { color: rgb(239 246 255); }
         .text-blue-100 { color: rgb(219 234 254); }
         .text-blue-500 { color: rgb(59 130 246); }
@@ -188,17 +137,14 @@ function LayoutContent({ children, currentPageName }) {
         .text-blue-700 { color: rgb(29 78 216); }
         .text-blue-800 { color: rgb(30 64 175); }
         .text-blue-900 { color: rgb(30 58 138); }
-        
         .border-blue-200 { border-color: rgb(191 219 254); }
         .border-blue-300 { border-color: rgb(147 197 253); }
-        
         .from-blue-50 { --tw-gradient-from: rgb(239 246 255); }
         .from-blue-100 { --tw-gradient-from: rgb(219 234 254); }
         .from-blue-600 { --tw-gradient-from: rgb(37 99 235); }
         .to-blue-50 { --tw-gradient-to: rgb(239 246 255); }
         .to-blue-700 { --tw-gradient-to: rgb(29 78 216); }
         .to-blue-800 { --tw-gradient-to: rgb(30 64 175); }
-        
         .hover\\:bg-blue-500:hover { background-color: rgb(59 130 246); }
         .hover\\:bg-blue-700:hover { background-color: rgb(29 78 216); }
       `}</style>
