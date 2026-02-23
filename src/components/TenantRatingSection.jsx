@@ -3,23 +3,30 @@ import { Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-export default function TenantRatingSection({ propertyId, tenantEmail }) {
+export default function TenantRatingSection({ propertyId, tenantEmail, tenantId }) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
   const rateMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.TenantRating.create(data);
+      const result = await base44.entities.TenantRating.create(data);
+      return result;
     },
     onSuccess: () => {
       setRating(0);
       setComment('');
+      setError('');
       setSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['tenantRatings'] });
       setTimeout(() => setSubmitted(false), 3000);
+    },
+    onError: (err) => {
+      setError(err.message || 'Feil ved lagring av vurdering');
+      console.error('Rating error:', err);
     }
   });
 
@@ -27,17 +34,28 @@ export default function TenantRatingSection({ propertyId, tenantEmail }) {
     e.preventDefault();
     if (rating === 0) return;
     
-    const user = await base44.auth.me();
-    rateMutation.mutate({
-      tenant_email: tenantEmail,
-      landlord_id: user.id,
-      rental_unit_id: propertyId,
-      payment_on_time: rating >= 4,
-      property_damage: false,
-      contract_breach: false,
-      neighbor_complaints: 0,
-      comment
-    });
+    try {
+      const user = await base44.auth.me();
+      if (!tenantId || !tenantEmail) {
+        setError('Leietaker-info mangler');
+        return;
+      }
+      
+      rateMutation.mutate({
+        tenant_id: tenantId,
+        tenant_email: tenantEmail,
+        landlord_id: user.id,
+        rental_unit_id: propertyId,
+        payment_on_time: rating >= 4,
+        property_damage: false,
+        contract_breach: false,
+        neighbor_complaints: 0,
+        comment
+      });
+    } catch (err) {
+      setError(err.message || 'Feil ved autentisering');
+      console.error('Submit error:', err);
+    }
   };
 
   return (
