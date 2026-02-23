@@ -83,6 +83,25 @@ export default function PropertyDetail() {
     setPhotoUploading(false);
   };
 
+  const handleUploadAgreement = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') { alert('Kun PDF-filer støttes'); return; }
+    setUploadingPdf(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    updateMutation.mutate({ uploaded_agreement_url: file_url, uploaded_agreement_date: new Date().toISOString() });
+    setUploadingPdf(false);
+  };
+
+  const handleMoveOutPhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setPhotoUploading(true);
+    const urls = await Promise.all(files.map(f => base44.integrations.Core.UploadFile({ file: f }).then(r => r.file_url)));
+    updateMutation.mutate({ move_out_photos: [...(property.move_out_photos || []), ...urls] });
+    setPhotoUploading(false);
+  };
+
   const handleDelete = () => {
     if (window.confirm('Slette denne eiendommen? Kan ikke angres.')) deleteMutation.mutate();
   };
