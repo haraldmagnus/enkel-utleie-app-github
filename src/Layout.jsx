@@ -131,9 +131,9 @@ function NotifBell({ user, navigate }) {
   return (
     <button
       onClick={() => navigate(createPageUrl('Notifications'))}
-      className="relative w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+      className="relative w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-400 transition-colors"
     >
-      <Bell className="w-4 h-4 text-gray-600" />
+      <Bell className="w-4 h-4 text-white" />
       {notifs.length > 0 && (
         <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
           {notifs.length > 9 ? '9+' : notifs.length}
