@@ -34,16 +34,17 @@ export default function SignAgreement() {
 
   const signMutation = useMutation({
     mutationFn: async () => {
-      const role = user?.active_role || user?.user_role;
-      const isLandlord = role === 'landlord' || user?.id === agreement?.landlord_id;
+      const userRole = user?.active_role || user?.user_role;
+      const signingAsLandlord = userRole === 'landlord';
       const now = new Date().toISOString();
-      const updates = isLandlord
+      const updates = signingAsLandlord
         ? { landlord_signed: true, landlord_signed_date: now }
         : { tenant_signed: true, tenant_signed_date: now };
 
       const updated = await base44.entities.RentalAgreement.update(agreementId, updates);
-      const bothSigned = (isLandlord ? true : updated.landlord_signed) && (!isLandlord ? true : updated.tenant_signed);
-      if (bothSigned) {
+      const landlordOk = signingAsLandlord ? true : updated.landlord_signed;
+      const tenantOk = signingAsLandlord ? updated.tenant_signed : true;
+      if (landlordOk && tenantOk) {
         await base44.entities.RentalAgreement.update(agreementId, { status: 'active' });
         if (property) await base44.entities.RentalUnit.update(property.id, { status: 'occupied' });
       }
