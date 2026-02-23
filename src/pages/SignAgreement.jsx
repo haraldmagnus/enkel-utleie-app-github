@@ -112,9 +112,123 @@ export default function SignAgreement() {
 
   if (!agreement) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laster avtale...</p></div>;
 
+  // Determine role based on user's active_role, falling back to checking IDs
   const role = user?.active_role || user?.user_role;
-  const isLandlord = role === 'landlord' || user?.id === agreement?.landlord_id;
+  const isLandlord = role === 'landlord';
   const alreadySigned = isLandlord ? agreement.landlord_signed : agreement.tenant_signed;
+
+  const exportPdf = () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const colW = pageW - margin * 2;
+    let y = 20;
+
+    const addText = (text, size = 10, bold = false, color = [30, 30, 30]) => {
+      doc.setFontSize(size);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(String(text || ''), colW);
+      lines.forEach(line => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += size * 0.45;
+      });
+      y += 2;
+    };
+
+    // Title
+    addText('LEIEAVTALE', 20, true, [30, 64, 175]);
+    if (property?.name) addText(property.name, 11, false, [100, 100, 100]);
+    y += 4;
+
+    // Divider
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    // Fields
+    const fieldPairs = [
+      ['Utleier', agreement.landlord_name],
+      ['Utleiers adresse', agreement.landlord_address],
+      ['Leietaker', agreement.tenant_name],
+      ['Adresse', property?.address],
+      ['Startdato', agreement.start_date],
+      agreement.end_date && ['Sluttdato', agreement.end_date],
+      ['Månedlig leie', `${agreement.monthly_rent?.toLocaleString()} kr`],
+      agreement.deposit && ['Depositum', `${agreement.deposit?.toLocaleString()} kr`],
+      agreement.rent_due_day && ['Forfallsdag', `${agreement.rent_due_day}. i måneden`],
+      agreement.rent_account && ['Kontonr. for leie', agreement.rent_account],
+      agreement.deposit_account && ['Kontonr. for depositum', agreement.deposit_account],
+      ['Oppsigelsestid', `${agreement.notice_period_months} måneder`],
+      ['Kjæledyr', agreement.pets_allowed ? 'Tillatt' : 'Ikke tillatt'],
+      ['Røyking', agreement.smoking_allowed ? 'Tillatt' : 'Ikke tillatt'],
+      ['Strøm/vann', agreement.utilities_included ? 'Inkludert' : 'Ikke inkludert'],
+    ].filter(Boolean);
+
+    fieldPairs.forEach(([label, value]) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label + ':', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+      doc.text(String(value || ''), margin + 55, y);
+      y += 6;
+    });
+
+    if (agreement.utilities_description) {
+      y += 2;
+      addText('Inkluderte utgifter: ' + agreement.utilities_description, 9);
+    }
+
+    y += 4;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    // Terms
+    if (agreement.terms) {
+      addText('VILKÅR OG BETINGELSER', 11, true);
+      addText(agreement.terms, 8.5);
+      y += 4;
+    }
+
+    // Signatures
+    if (y > 220) { doc.addPage(); y = 20; }
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+    addText('SIGNATURER', 11, true);
+    y += 4;
+
+    const sigY = y;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Utleier: ' + (agreement.landlord_name || ''), margin, sigY);
+    doc.text('Leietaker: ' + (agreement.tenant_name || ''), pageW / 2 + 5, sigY);
+    y = sigY + 20;
+    doc.setDrawColor(150, 150, 150);
+    doc.line(margin, y, margin + 70, y);
+    doc.line(pageW / 2 + 5, y, pageW / 2 + 75, y);
+    y += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    if (agreement.landlord_signed && agreement.landlord_signed_date) {
+      doc.text('Signert ' + new Date(agreement.landlord_signed_date).toLocaleDateString('nb-NO'), margin, y);
+    } else {
+      doc.text('Ikke signert', margin, y);
+    }
+    if (agreement.tenant_signed && agreement.tenant_signed_date) {
+      doc.text('Signert ' + new Date(agreement.tenant_signed_date).toLocaleDateString('nb-NO'), pageW / 2 + 5, y);
+    } else {
+      doc.text('Ikke signert', pageW / 2 + 5, y);
+    }
+
+    doc.save(`leieavtale-${property?.name || 'avtale'}.pdf`);
+  };
 
   const fields = [
     { label: 'Utleier', value: agreement.landlord_name },
