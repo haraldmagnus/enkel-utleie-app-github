@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, ChevronRight, ArrowLeftRight, Camera, HelpCircle, FileText, Bell } from 'lucide-react';
+import { User, LogOut, ChevronRight, ArrowLeftRight, Camera, HelpCircle, FileText, Bell, Star } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
+import TenantRatingsSection from '@/components/TenantRatingsSection';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -46,6 +48,11 @@ export default function Settings() {
     await base44.auth.updateMe({ active_role: newRole, user_role: newRole });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     navigate(createPageUrl(newRole === 'landlord' ? 'Dashboard' : 'TenantDashboard'), { replace: true });
+  };
+
+  const toggleRatingOptIn = async () => {
+    await base44.auth.updateMe({ rating_opt_in: !user?.rating_opt_in });
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
   const menuItems = [
