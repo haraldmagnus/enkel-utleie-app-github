@@ -99,7 +99,7 @@ function TopBar({ user, currentPageName }) {
   if (!title) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-40 bg-blue-600 shadow-md rounded-bl-2xl rounded-br-2xl">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
         <div>
           <h1 className={`font-bold text-white ${currentPageName === 'Dashboard' || currentPageName === 'TenantDashboard' ? 'text-xl' : 'text-lg'}`}>{title}</h1>
