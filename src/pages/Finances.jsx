@@ -224,6 +224,23 @@ export default function Finances() {
           >
             <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
           </button>
+          <details className="cursor-pointer">
+            <summary className="w-full flex items-center justify-between py-2.5 px-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm select-none">
+              <span>Andre år</span>
+              <span className="text-xs text-gray-400">▼</span>
+            </summary>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {downloadYears.filter(y => y !== selectedYear).map(y => (
+                <button
+                  key={y}
+                  onClick={() => exportCsv(entries, properties, y)}
+                  className="py-2 px-3 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <Download className="w-3 h-3 inline mr-1" /> {y}
+                </button>
+              ))}
+            </div>
+          </details>
         </div>
       )}
 
