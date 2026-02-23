@@ -161,7 +161,9 @@ export default function Finances() {
 
   const maxVal = Math.max(...months.map(m => Math.max(m.income, m.expense)), 1);
 
-  const years = Array.from({ length: 3 }, (_, i) => String(new Date().getFullYear() - i));
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 3 }, (_, i) => String(currentYear - i));
+  const downloadYears = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
 
   // Per property breakdown
   const propBreakdown = properties.map(p => {
