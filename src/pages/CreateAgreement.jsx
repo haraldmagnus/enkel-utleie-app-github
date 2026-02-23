@@ -125,13 +125,6 @@ export default function CreateAgreement() {
   });
 
   const toggle = (key) => setForm(f => ({ ...f, [key]: !f[key] }));
-  const F = ({ label, k, type = 'text', required }) => (
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}{required && <span className="text-red-400 ml-1">*</span>}</label>
-      <input type={type} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={required}
-        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
