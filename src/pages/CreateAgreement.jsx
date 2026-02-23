@@ -272,19 +272,45 @@ export default function CreateAgreement() {
         {/* Terms */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <h2 className="font-semibold text-gray-900 text-sm mb-3">Vilkår og betingelser</h2>
-          <textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={8} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono" />
+          <textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={8} disabled={isFullySigned} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono disabled:bg-gray-50 disabled:text-gray-400" />
         </div>
 
+        {/* Locked banner */}
+        {isFullySigned && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+            <Lock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">Kontrakten er låst</p>
+              <p className="text-xs text-amber-600 mt-0.5">Denne avtalen er signert av begge parter. Endringer vil nullstille begge signaturer og kreve ny signering fra begge.</p>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => saveMutation.mutate(buildPayload())} disabled={saveMutation.isPending || !form.start_date || !form.monthly_rent} className="bg-gray-100 text-gray-700 rounded-2xl py-4 font-semibold text-sm hover:bg-gray-200 disabled:opacity-50 transition-colors">
-            {saveMutation.isPending ? 'Lagrer...' : 'Lagre utkast'}
+        {isFullySigned ? (
+          <button
+            onClick={() => {
+              if (window.confirm('Er du sikker? Endringer vil nullstille begge signaturer og avtalen må signeres på nytt av begge parter.')) {
+                amendMutation.mutate(buildPayload());
+              }
+            }}
+            disabled={amendMutation.isPending || !form.start_date || !form.monthly_rent}
+            className="w-full bg-amber-500 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-amber-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            {amendMutation.isPending ? 'Lagrer...' : 'Lagre endringer og be om ny signering'}
           </button>
-          <button onClick={() => sendToTenantMutation.mutate(buildPayload())} disabled={sendToTenantMutation.isPending || !form.start_date || !form.monthly_rent || !property?.tenant_id} className="bg-blue-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-            <Send className="w-4 h-4" /> {sendToTenantMutation.isPending ? 'Sender...' : 'Send til leietaker'}
-          </button>
-        </div>
-        {!property?.tenant_id && (
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => saveMutation.mutate(buildPayload())} disabled={saveMutation.isPending || !form.start_date || !form.monthly_rent} className="bg-gray-100 text-gray-700 rounded-2xl py-4 font-semibold text-sm hover:bg-gray-200 disabled:opacity-50 transition-colors">
+              {saveMutation.isPending ? 'Lagrer...' : 'Lagre utkast'}
+            </button>
+            <button onClick={() => sendToTenantMutation.mutate(buildPayload())} disabled={sendToTenantMutation.isPending || !form.start_date || !form.monthly_rent || !property?.tenant_id} className="bg-blue-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+              <Send className="w-4 h-4" /> {sendToTenantMutation.isPending ? 'Sender...' : 'Send til leietaker'}
+            </button>
+          </div>
+        )}
+        {!isFullySigned && !property?.tenant_id && (
           <p className="text-xs text-center text-gray-400">Send krever at en leietaker er invitert og har akseptert</p>
         )}
       </div>
