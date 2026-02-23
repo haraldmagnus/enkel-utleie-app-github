@@ -207,6 +207,16 @@ export default function Finances() {
         </div>
       )}
 
+      {/* Tax estimate card */}
+      {totalIncome > 0 && (
+        <TaxCard
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          selectedYear={selectedYear}
+          properties={properties}
+        />
+      )}
+
       {entries.length === 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
           <Wallet className="w-12 h-12 text-gray-200 mx-auto mb-3" />
