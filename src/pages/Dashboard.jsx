@@ -34,7 +34,7 @@ export default function Dashboard() {
       
       if (effectiveRole === 'tenant') {
         console.log('⚠️ Dashboard: Tenant on landlord page - REDIRECTING to TenantDashboard');
-        window.location.href = createPageUrl('TenantDashboard');
+        navigate(createPageUrl('TenantDashboard'), { replace: true });
       }
     }
   }, [user]);
