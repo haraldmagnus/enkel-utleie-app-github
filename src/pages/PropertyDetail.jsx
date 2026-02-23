@@ -524,10 +524,54 @@ export default function PropertyDetail() {
           </div>
         </section>
 
-        {/* ── ØKONOMI ── */}
+        {/* ── SJEKKLISTE ── */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Økonomi</h2>
-          <FinancesSection propertyId={propertyId} landlordId={user?.id} property={property} onUpdateProperty={(d) => updateMutation.mutate(d)} />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">✓ Sjekkliste</h3>
+              <button onClick={() => { const newItem = { id: `${Date.now()}`, text: '', checked: false, type: 'moveIn' }; updateMutation.mutate({ checklist_items: [...(property.checklist_items || []), newItem] }); }} className="flex items-center gap-1.5 bg-blue-600 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors">
+                <Plus className="w-3 h-3" /> Legg til
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              {(property.checklist_items || []).length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-2">Ingen sjekkpunkter ennå</p>
+              ) : (
+                (property.checklist_items || []).map(item => (
+                  <div key={item.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={e => {
+                        const updated = property.checklist_items.map(i => i.id === item.id ? { ...i, checked: e.target.checked } : i);
+                        updateMutation.mutate({ checklist_items: updated });
+                      }}
+                      className="w-5 h-5 rounded border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={item.text}
+                      onChange={e => {
+                        const updated = property.checklist_items.map(i => i.id === item.id ? { ...i, text: e.target.value } : i);
+                        updateMutation.mutate({ checklist_items: updated });
+                      }}
+                      placeholder="Sjekkpunkt..."
+                      className={`flex-1 bg-transparent text-sm focus:outline-none ${item.checked ? 'line-through text-gray-400' : 'text-gray-900'}`}
+                    />
+                    <button
+                      onClick={() => {
+                        const updated = property.checklist_items.filter(i => i.id !== item.id);
+                        updateMutation.mutate({ checklist_items: updated });
+                      }}
+                      className="text-gray-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </section>
 
         {/* ── DOKUMENTER (utflyttingsbilder) ── */}
