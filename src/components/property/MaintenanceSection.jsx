@@ -175,7 +175,7 @@ export default function MaintenanceSection({ propertyId, landlordId, property })
                   )}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <select value={task.status} onChange={e => updateMutation.mutate({ id: task.id, data: { status: e.target.value, ...(e.target.value === 'completed' ? { completed_date: new Date().toISOString().split('T')[0] } : {}) } })} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none">
+                  <select value={task.status} onChange={e => updateMutation.mutate({ id: task.id, task, data: { status: e.target.value, ...(e.target.value === 'completed' ? { completed_date: new Date().toISOString().split('T')[0] } : {}) } })} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none">
                     <option value="pending">Venter</option>
                     <option value="in_progress">Pågår</option>
                     <option value="completed">Fullført</option>
