@@ -122,6 +122,24 @@ export default function Settings() {
       </button>
 
 
+       {/* Landlord rating settings */}
+       {role === 'landlord' && (
+         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+           <div className="flex items-center gap-3">
+             <div className="w-9 h-9 bg-yellow-100 rounded-xl flex items-center justify-center">
+               <Star className="w-4 h-4 text-yellow-600" />
+             </div>
+             <div className="flex-1">
+               <p className="font-medium text-gray-900">Vurderingssystem</p>
+               <p className="text-xs text-gray-400">Utleier</p>
+             </div>
+           </div>
+           <p className="text-xs text-gray-600 leading-relaxed">
+             Du kan legge igjen objektive vurderinger av leietakere etter endt leieforhold. Vurderinger er basert på faktiske forhold og følger GDPR-krav.
+           </p>
+         </div>
+       )}
+
        {/* Tenant rating opt-in */}
        {role === 'tenant' && (
          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
