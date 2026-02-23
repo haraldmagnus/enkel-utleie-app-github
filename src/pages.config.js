@@ -47,13 +47,16 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import PropertyDetail from './pages/PropertyDetail';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "PropertyDetail": PropertyDetail,
 }
 
 export const pagesConfig = {
+    mainPage: "PropertyDetail",
     Pages: PAGES,
     Layout: __Layout,
 };
