@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, FileText, Check, PenLine } from 'lucide-react';
+import { ArrowLeft, FileText, Check, PenLine, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 export default function SignAgreement() {
