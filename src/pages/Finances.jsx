@@ -98,44 +98,40 @@ function exportCsv(entries, properties, year) {
   const rows = [
     ['Dato', 'Type', 'Kategori', 'Eiendom', 'Beskrivelse', 'Beløp (kr)']
   ];
-  entries
-    .filter(e => e.date?.startsWith(year))
-    .sort((a, b) => a.date?.localeCompare(b.date))
-    .forEach(e => {
-      rows.push([
-        e.date || '',
-        e.type === 'income' ? 'Inntekt' : 'Utgift',
-        CAT_LABELS[e.category] || e.category || '',
-        propMap[e.rental_unit_id] || '',
-        e.description || '',
-        e.type === 'expense' ? -e.amount : e.amount,
-      ]);
-    });
+  
+  const yearEntries = entries.filter(e => e.date?.startsWith(year));
+  yearEntries.forEach(e => {
+    rows.push([
+      e.date,
+      e.type === 'income' ? 'Inntekt' : 'Utgift',
+      CAT_LABELS[e.category] || e.category,
+      propMap[e.rental_unit_id] || '',
+      e.description || '',
+      e.amount
+    ]);
+  });
 
-  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const csv = rows.map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `aarsoppgave-${year}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  link.setAttribute('href', url);
+  link.setAttribute('download', `økonomi-${year}.csv`);
+  link.click();
   URL.revokeObjectURL(url);
 }
 
 export default function Finances() {
   const navigate = useNavigate();
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
-  const { data: allProps = [] } = useQuery({
+  const { data: properties = [] } = useQuery({
     queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryFn: () => base44.entities.RentalUnit.filter({ landlord_id: user?.id }, '-updated_date', 100),
     enabled: !!user?.id
   });
-  const properties = allProps.filter(p => p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id));
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['finances-all', user?.id],
@@ -205,33 +201,27 @@ export default function Finances() {
         </div>
       </div>
 
+      {/* Year selector */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {downloadYears.map(y => (
+          <button
+            key={y}
+            onClick={() => setSelectedYear(y)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${selectedYear === y ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+          >
+            {y}
+          </button>
+        ))}
+      </div>
+
       {/* CSV Export */}
       {entries.length > 0 && (
-        <div className="space-y-2">
-          <button
-            onClick={() => exportCsv(entries, properties, selectedYear)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white border border-blue-600 rounded-2xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
-          </button>
-          <details className="cursor-pointer">
-            <summary className="w-full flex items-center justify-between py-2.5 px-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm select-none">
-              <span>Andre år</span>
-              <span className="text-xs text-gray-400">▼</span>
-            </summary>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {downloadYears.filter(y => y !== selectedYear).map(y => (
-                <button
-                  key={y}
-                  onClick={() => exportCsv(entries, properties, y)}
-                  className="py-2 px-3 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  <Download className="w-3 h-3 inline mr-1" /> {y}
-                </button>
-              ))}
-            </div>
-          </details>
-        </div>
+        <button
+          onClick={() => exportCsv(entries, properties, selectedYear)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white border border-blue-600 rounded-2xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
+        </button>
       )}
 
       {/* Monthly chart */}
@@ -248,50 +238,61 @@ export default function Finances() {
             </div>
           ))}
         </div>
-        <div className="flex gap-4 mt-2 justify-center">
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-green-400" /><span className="text-xs text-gray-500">Inntekt</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-red-400" /><span className="text-xs text-gray-500">Utgift</span></div>
+        <div className="flex gap-4 mt-4 text-xs text-gray-500 justify-center">
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-green-400 rounded-sm" /> Inntekter</div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-red-400 rounded-sm" /> Utgifter</div>
         </div>
       </div>
 
-      {/* Per property */}
-      {propBreakdown.length > 0 && (
+      {/* Tax estimate */}
+      <TaxCard totalIncome={totalIncome} totalExpenses={totalExpenses} selectedYear={selectedYear} properties={properties} />
+
+      {/* Category breakdown */}
+      {yearEntries.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Building2 className="w-4 h-4 text-blue-500" /> Per eiendom</h3>
+          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+            <h3 className="font-semibold text-blue-900 flex items-center gap-2"><span className="text-lg">📊</span> Fordeling etter kategori</h3>
           </div>
           <div className="divide-y divide-gray-50">
-            {propBreakdown.map(p => (
-              <Link key={p.id} to={createPageUrl(`PropertyDetail?id=${p.id}`)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                  <div className="flex gap-3 mt-0.5">
-                    <span className="text-xs text-green-600">+{p.income.toLocaleString()} kr</span>
-                    <span className="text-xs text-red-500">-{p.expenses.toLocaleString()} kr</span>
-                  </div>
-                </div>
-                <p className={`text-sm font-bold ${(p.income - p.expenses) >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{(p.income - p.expenses).toLocaleString()} kr</p>
-              </Link>
+            {Object.entries(
+              yearEntries.reduce((acc, e) => {
+                const cat = e.category;
+                if (!acc[cat]) acc[cat] = { income: 0, expense: 0 };
+                if (e.type === 'income') acc[cat].income += e.amount;
+                else acc[cat].expense += e.amount;
+                return acc;
+              }, {})
+            ).map(([cat, data]) => (
+              <div key={cat} className="p-4 space-y-2">
+                <p className="font-medium text-gray-900">{CAT_LABELS[cat] || cat}</p>
+                {data.income > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Inntekter</span><span className="text-green-600 font-medium">+ {data.income.toLocaleString()} kr</span></div>}
+                {data.expense > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Utgifter</span><span className="text-red-600 font-medium">- {data.expense.toLocaleString()} kr</span></div>}
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Tax estimate card */}
-      {totalIncome > 0 && (
-        <TaxCard
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          selectedYear={selectedYear}
-          properties={properties}
-        />
-      )}
-
-      {entries.length === 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
-          <Wallet className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">Ingen transaksjoner ennå</p>
-          <p className="text-gray-400 text-xs mt-1">Legg til transaksjoner fra en eiendom</p>
+      {/* Properties breakdown */}
+      {propBreakdown.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 bg-purple-50 border-b border-purple-100">
+            <h3 className="font-semibold text-purple-900 flex items-center gap-2"><Building2 className="w-4 h-4 text-purple-600" /> Per eiendom</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {propBreakdown.map(p => (
+              <div key={p.id} className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">{p.name}</p>
+                  <p className="text-xs text-gray-400">{p.address}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-green-600">+{p.income.toLocaleString()}</p>
+                  <p className="text-xs text-red-600">-{p.expenses.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
