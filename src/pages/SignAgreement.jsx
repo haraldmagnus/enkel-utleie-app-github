@@ -12,6 +12,10 @@ export default function SignAgreement() {
   const agreementId = urlParams.get('id');
 
   const [confirmed, setConfirmed] = useState(false);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+  const lastPos = useRef(null);
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
