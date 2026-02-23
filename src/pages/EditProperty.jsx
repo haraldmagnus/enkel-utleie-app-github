@@ -15,16 +15,10 @@ export default function EditProperty() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useLanguage();
-  
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('id');
 
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    description: '',
-    monthly_rent: ''
-  });
+  const [formData, setFormData] = useState({ name: '', address: '', description: '', monthly_rent: '' });
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', propertyId],
@@ -35,12 +29,7 @@ export default function EditProperty() {
 
   useEffect(() => {
     if (property) {
-      setFormData({
-        name: property.name || '',
-        address: property.address || '',
-        description: property.description || '',
-        monthly_rent: property.monthly_rent?.toString() || ''
-      });
+      setFormData({ name: property.name || '', address: property.address || '', description: property.description || '', monthly_rent: property.monthly_rent?.toString() || '' });
     }
   }, [property]);
 
@@ -55,85 +44,43 @@ export default function EditProperty() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateMutation.mutate({
-      ...formData,
-      monthly_rent: formData.monthly_rent ? Number(formData.monthly_rent) : null
-    });
+    updateMutation.mutate({ ...formData, monthly_rent: formData.monthly_rent ? Number(formData.monthly_rent) : null });
   };
 
-  if (isLoading) {
-    return <div className="p-4">Laster...</div>;
-  }
+  if (isLoading) return <div className="p-4">Laster...</div>;
 
   return (
     <div className="pb-20">
       <div className="bg-white border-b px-4 py-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5" /></Button>
           <h1 className="text-xl font-bold text-slate-900">{t('edit')} eiendom</h1>
         </div>
       </div>
-
       <div className="p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Eiendomsdetaljer</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Eiendomsdetaljer</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="name">{t('propertyName')} *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
+                <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
-
               <div>
                 <Label htmlFor="address">{t('address')} *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  required
-                />
+                <Input id="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} required />
               </div>
-
               <div>
                 <Label htmlFor="monthly_rent">{t('monthlyRent')} (kr)</Label>
-                <Input
-                  id="monthly_rent"
-                  type="number"
-                  value={formData.monthly_rent}
-                  onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
-                />
+                <Input id="monthly_rent" type="number" value={formData.monthly_rent} onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })} />
               </div>
-
               <div>
                 <Label htmlFor="description">{t('description')}</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
+                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
               </div>
             </CardContent>
           </Card>
-
-          <Button 
-            type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={updateMutation.isPending}
-          >
+          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={updateMutation.isPending}>
             {updateMutation.isPending ? 'Lagrer...' : t('save')}
           </Button>
         </form>
