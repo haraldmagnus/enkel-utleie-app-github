@@ -62,10 +62,69 @@ export default function PropertyDetail() {
       expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString()
     });
     await updateMutation.mutateAsync({ tenant_email: inviteEmail.toLowerCase(), status: 'pending_invitation' });
+    const inviteUrl = `${window.location.origin}/Invite?token=${token}`;
     await base44.integrations.Core.SendEmail({
       to: inviteEmail,
-      subject: 'Invitasjon til Enkel Utleie',
-      body: `Hei!\n\nDu er invitert til å se din leiebolig (${property?.name}) i Enkel Utleie.\n\nAksepter her: ${window.location.origin}/Invite?token=${token}\n\nInvitasjonen utløper om 7 dager.`
+      subject: `Du er invitert til ${property?.name} – Enkel Utleie`,
+      body: `<!DOCTYPE html>
+<html lang="no">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:36px 32px;text-align:center;">
+            <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:16px;padding:12px 16px;margin-bottom:16px;">
+              <span style="font-size:28px;">🏠</span>
+            </div>
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Enkel Utleie</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Din digitale utleiehjelper</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 32px;">
+            <h2 style="margin:0 0 12px;color:#1e293b;font-size:20px;font-weight:700;">Du har fått en invitasjon! 🎉</h2>
+            <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6;">
+              Du er invitert til å få tilgang til din leiebolig i Enkel Utleie:
+            </p>
+            <!-- Property card -->
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:22px;">🏡</span>
+                <div>
+                  <p style="margin:0;font-weight:700;color:#1e293b;font-size:15px;">${property?.name || 'Din leiebolig'}</p>
+                  ${property?.address ? `<p style="margin:4px 0 0;color:#64748b;font-size:13px;">📍 ${property.address}</p>` : ''}
+                </div>
+              </div>
+            </div>
+            <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6;">
+              Gjennom Enkel Utleie kan du enkelt kommunisere med utleier, se leiekontrakt, holde oversikt over betalinger og mye mer.
+            </p>
+            <!-- CTA Button -->
+            <div style="text-align:center;margin-bottom:28px;">
+              <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:15px 36px;border-radius:12px;letter-spacing:0.1px;">
+                Aksepter invitasjon →
+              </a>
+            </div>
+            <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">
+              Invitasjonen er gyldig i 7 dager. Har du spørsmål? Kontakt din utleier direkte.
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 32px;text-align:center;">
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} Enkel Utleie · Denne e-posten ble sendt av din utleier</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
     });
     setInviteEmail('');
     setShowInviteForm(false);
