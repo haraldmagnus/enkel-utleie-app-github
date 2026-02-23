@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { createPageUrl } from '@/utils';
+import { useLogger } from '@/components/useLogger';
+import NotificationErrorBoundary from '@/components/NotificationErrorBoundary';
 
 const iconMap = {
   calendar_event: Calendar,
@@ -17,7 +19,6 @@ const iconMap = {
   invitation: Home,
 };
 
-// Returns a URL if the notification should be clickable
 function getNotificationUrl(notification, effectiveRole) {
   if (notification.type === 'message' && notification.rental_unit_id) {
     return createPageUrl(`Chat?propertyId=${notification.rental_unit_id}`);
@@ -29,7 +30,6 @@ function getNotificationUrl(notification, effectiveRole) {
     return createPageUrl('CalendarPage');
   }
   if (notification.type === 'maintenance' && notification.rental_unit_id) {
-    // Landlords go to property detail, tenants stay on dashboard
     return effectiveRole === 'landlord'
       ? createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`)
       : createPageUrl('TenantDashboard');
@@ -44,7 +44,6 @@ function getNotificationUrl(notification, effectiveRole) {
       ? createPageUrl(`PropertyDetail?id=${notification.rental_unit_id}`)
       : createPageUrl('TenantDashboard');
   }
-  // Invitation notifications
   if (notification.type === 'invitation' || (notification.title && notification.title.toLowerCase().includes('invitasjon'))) {
     return createPageUrl('TenantDashboard');
   }
@@ -59,7 +58,7 @@ const typeLabels = {
   maintenance: 'Vedlikehold',
 };
 
-export default function Notifications() {
+function NotificationsInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -70,49 +69,133 @@ export default function Notifications() {
 
   const effectiveRole = user?.active_role || user?.user_role || localStorage.getItem('user_role_override');
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const logger = useLogger({ route: 'Notifications', userId: user?.id });
+
+  // Log page mount
+  useEffect(() => {
+    logger.info('PAGE_MOUNT', 'Notifications page mounted', {
+      effectiveRole,
+      userId: user?.id,
+      route: window.location.pathname,
+      search: window.location.search,
+    });
+    return () => {
+      logger.info('PAGE_UNMOUNT', 'Notifications page unmounted');
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Log when user/role is resolved
+  useEffect(() => {
+    if (user?.id) {
+      logger.info('USER_RESOLVED', 'User and role determined', {
+        effectiveRole,
+        hasActiveRole: !!user?.active_role,
+        hasUserRole: !!user?.user_role,
+      });
+    }
+  }, [user?.id, effectiveRole]);
+
+  const { data: notifications = [], isLoading, error: notifError } = useQuery({
     queryKey: ['notifications', user?.id, effectiveRole],
     queryFn: async () => {
-      const all = await base44.entities.Notification.filter({ user_id: user?.id }, '-created_date', 50);
-      return all.filter(n => !n.role || n.role === effectiveRole);
+      return logger.loggedCall('FETCH_NOTIFICATIONS', async () => {
+        const all = await base44.entities.Notification.filter({ user_id: user?.id }, '-created_date', 50);
+        const filtered = all.filter(n => !n.role || n.role === effectiveRole);
+        logger.info('FETCH_NOTIFICATIONS_RESULT', `Fetched ${filtered.length} notifications`, {
+          total: all.length,
+          filtered: filtered.length,
+          effectiveRole,
+        });
+        return filtered;
+      }, { userId: user?.id, effectiveRole });
     },
     enabled: !!user?.id && !!effectiveRole
   });
 
-  const markReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.update(id, { read: true }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  // Log fetch error if it occurs
+  useEffect(() => {
+    if (notifError) {
+      logger.error('FETCH_NOTIFICATIONS_FAILED', 'Failed to load notifications', notifError, {
+        userId: user?.id,
+        effectiveRole,
+      });
     }
+  }, [notifError]);
+
+  const markReadMutation = useMutation({
+    mutationFn: async (id) => {
+      return logger.loggedCall('MARK_READ', () => base44.entities.Notification.update(id, { read: true }), { notificationId: id });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onError: (err, id) => logger.error('MARK_READ_FAILED', 'Failed to mark notification as read', err, { notificationId: id })
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+    mutationFn: async (id) => {
+      return logger.loggedCall('DELETE_NOTIFICATION', () => base44.entities.Notification.delete(id), { notificationId: id });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onError: (err, id) => logger.error('DELETE_NOTIFICATION_FAILED', 'Failed to delete notification', err, { notificationId: id })
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      const unread = notifications.filter(n => !n.read);
-      await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { read: true })));
+      return logger.loggedCall('MARK_ALL_READ', async () => {
+        const unread = notifications.filter(n => !n.read);
+        await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { read: true })));
+      }, { unreadCount: notifications.filter(n => !n.read).length });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onError: (err) => logger.error('MARK_ALL_READ_FAILED', 'Failed to mark all as read', err)
   });
+
+  const handleNotificationClick = (notification) => {
+    const url = getNotificationUrl(notification, effectiveRole);
+    logger.info('NOTIFICATION_CLICK', 'User clicked notification', {
+      notificationId: notification.id,
+      notificationType: notification.type,
+      notificationTitle: notification.title,
+      hasUrl: !!url,
+      targetUrl: url,
+      rentalUnitId: notification.rental_unit_id,
+      relatedId: notification.related_id,
+      effectiveRole,
+    });
+
+    if (url) {
+      if (!notification.read) markReadMutation.mutate(notification.id);
+      logger.info('NAVIGATE', `Navigating to ${url}`, { targetUrl: url });
+      navigate(url);
+    } else {
+      logger.warn('NOTIFICATION_NO_URL', 'Notification has no navigable URL', {
+        notificationId: notification.id,
+        notificationType: notification.type,
+        rentalUnitId: notification.rental_unit_id,
+        relatedId: notification.related_id,
+      });
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="pb-20">
+      {logger.debugMode && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-700 font-mono">
+          🐛 Debug mode | correlationId: <strong>{logger.correlationId}</strong>
+        </div>
+      )}
+
       <div className="bg-white border-b px-4 py-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              logger.info('NAV_BACK', 'User navigated back from Notifications');
+              navigate(-1);
+            }}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -123,10 +206,13 @@ export default function Notifications() {
             )}
           </div>
           {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
-              onClick={() => markAllReadMutation.mutate()}
+              onClick={() => {
+                logger.info('MARK_ALL_READ_CLICK', 'User clicked mark all as read', { unreadCount });
+                markAllReadMutation.mutate();
+              }}
             >
               <Check className="w-4 h-4 mr-1" /> Marker alle
             </Button>
@@ -150,15 +236,10 @@ export default function Notifications() {
               const Icon = iconMap[notification.type] || Bell;
               const url = getNotificationUrl(notification, effectiveRole);
               return (
-                <Card 
-                  key={notification.id} 
+                <Card
+                  key={notification.id}
                   className={`${!notification.read ? 'border-blue-200 bg-blue-50/50' : ''} ${url ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-                  onClick={() => {
-                    if (url) {
-                      if (!notification.read) markReadMutation.mutate(notification.id);
-                      navigate(url);
-                    }
-                  }}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
@@ -193,8 +274,8 @@ export default function Notifications() {
                         </div>
                         <p className="text-sm text-slate-500 mt-1">{notification.message}</p>
                         <p className="text-xs text-slate-400 mt-2">
-                          {new Date(notification.created_date).toLocaleDateString('no', { 
-                            day: 'numeric', 
+                          {new Date(notification.created_date).toLocaleDateString('no', {
+                            day: 'numeric',
                             month: 'long',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -203,20 +284,26 @@ export default function Notifications() {
                       </div>
                       <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
                         {!notification.read && (
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => markReadMutation.mutate(notification.id)}
+                            onClick={() => {
+                              logger.info('MARK_READ_CLICK', 'User clicked mark single as read', { notificationId: notification.id });
+                              markReadMutation.mutate(notification.id);
+                            }}
                           >
                             <Check className="w-4 h-4 text-blue-600" />
                           </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-slate-400 hover:text-red-600"
-                          onClick={() => deleteMutation.mutate(notification.id)}
+                          onClick={() => {
+                            logger.info('DELETE_CLICK', 'User clicked delete notification', { notificationId: notification.id });
+                            deleteMutation.mutate(notification.id);
+                          }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -230,5 +317,13 @@ export default function Notifications() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Notifications() {
+  return (
+    <NotificationErrorBoundary>
+      <NotificationsInner />
+    </NotificationErrorBoundary>
   );
 }
