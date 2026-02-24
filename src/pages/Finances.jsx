@@ -140,33 +140,47 @@ export default function Finances() {
 
   if (isLoading) return <div className="p-4 space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}</div>;
 
+  const estimatedTax = calcTax(totalIncome, totalExpenses, properties);
+  const netAfterTax = net - estimatedTax;
+
   return (
     <div className="max-w-lg mx-auto p-4 space-y-4">
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Summary 2x2 grid like the original design */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Inntekt */}
         <button
           onClick={() => navigate(createPageUrl(`TransactionList?type=income&year=${selectedYear}`))}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center hover:border-green-200 hover:shadow-md transition-all active:scale-95"
+          className="bg-green-50 rounded-2xl border border-green-100 p-4 text-center hover:shadow-md transition-all active:scale-95"
         >
-          <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-2" />
-          <p className="text-lg font-bold text-green-700">{totalIncome.toLocaleString()}</p>
-          <p className="text-xs text-gray-400">Inntekter (kr)</p>
-          <p className="text-[10px] text-green-500 mt-1 flex items-center justify-center gap-0.5">Se alle <ChevronRight className="w-2.5 h-2.5" /></p>
+          <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-1" />
+          <p className="text-xs text-green-600 font-medium mb-1">Inntekt</p>
+          <p className="text-xl font-bold text-green-700">{totalIncome.toLocaleString()} kr</p>
         </button>
+        {/* Utgift */}
         <button
           onClick={() => navigate(createPageUrl(`TransactionList?type=expense&year=${selectedYear}`))}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center hover:border-red-200 hover:shadow-md transition-all active:scale-95"
+          className="bg-red-50 rounded-2xl border border-red-100 p-4 text-center hover:shadow-md transition-all active:scale-95"
         >
-          <TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-2" />
-          <p className="text-lg font-bold text-red-700">{totalExpenses.toLocaleString()}</p>
-          <p className="text-xs text-gray-400">Utgifter (kr)</p>
-          <p className="text-[10px] text-red-500 mt-1 flex items-center justify-center gap-0.5">Se alle <ChevronRight className="w-2.5 h-2.5" /></p>
+          <TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-1" />
+          <p className="text-xs text-red-600 font-medium mb-1">Utgift</p>
+          <p className="text-xl font-bold text-red-700">{totalExpenses.toLocaleString()} kr</p>
         </button>
-        <div className={`rounded-2xl shadow-sm border p-4 text-center ${net >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
-          <Wallet className={`w-5 h-5 mx-auto mb-2 ${net >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
-          <p className={`text-lg font-bold ${net >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{net.toLocaleString()}</p>
-          <p className="text-xs text-gray-400">Netto (kr)</p>
+        {/* Netto */}
+        <div className={`rounded-2xl border p-4 text-center ${net >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
+          <Wallet className={`w-5 h-5 mx-auto mb-1 ${net >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
+          <p className={`text-xs font-medium mb-1 ${net >= 0 ? 'text-blue-600' : 'text-red-600'}`}>Netto</p>
+          <p className={`text-xl font-bold ${net >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{net.toLocaleString()} kr</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">etter skatt: {netAfterTax.toLocaleString()} kr</p>
         </div>
+        {/* Skatt - clickable */}
+        <button
+          onClick={() => navigate(createPageUrl('TaxEstimate'))}
+          className="bg-purple-50 rounded-2xl border border-purple-100 p-4 text-center hover:shadow-md transition-all active:scale-95"
+        >
+          <FileText className="w-5 h-5 text-purple-500 mx-auto mb-1" />
+          <p className="text-xs text-purple-600 font-medium mb-1">Skatt</p>
+          <p className="text-xl font-bold text-purple-700">-{estimatedTax.toLocaleString()} kr</p>
+        </button>
       </div>
 
       {/* Export CSV button */}
