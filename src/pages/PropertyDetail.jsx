@@ -1,15 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft, Building2, Edit2, UserPlus, Mail, FileText,
-  Camera, Trash2, Users, MessageSquare, Wallet, ChevronRight, Plus, Upload, Download
+  ArrowLeft, Edit2, UserPlus, Mail, FileText,
+  Camera, Trash2, Users, MessageSquare, Plus, Upload, Download, Image
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
 import FinancesSection from '@/components/property/FinancesSection';
 import TenantRatingSection from '@/components/TenantRatingSection';
+
+function ChecklistSection({ title, colorClass, items, allItems, itemType, onUpdate, onPhotoUpload, photoUploading }) {
+  const fileRefs = useRef({});
+
+  const addItem = () => {
+    const newItem = { id: `${Date.now()}`, text: '', checked: false, type: itemType, photo_url: null };
+    onUpdate([...allItems, newItem]);
+  };
+
+  const toggleCheck = (id, checked) => {
+    onUpdate(allItems.map(i => i.id === id ? { ...i, checked } : i));
+  };
+
+  const updateText = (id, text) => {
+    onUpdate(allItems.map(i => i.id === id ? { ...i, text } : i));
+  };
+
+  const deleteItem = (id) => {
+    onUpdate(allItems.filter(i => i.id !== id));
+  };
+
+  const handleItemPhoto = async (id, file) => {
+    if (!file) return;
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    onUpdate(allItems.map(i => i.id === id ? { ...i, photo_url: file_url } : i));
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+        <h3 className={`font-semibold text-gray-900 flex items-center gap-2`}>
+          <Camera className={`w-4 h-4 ${colorClass}`} /> {title}
+        </h3>
+        <button onClick={addItem} className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700">
+          <Plus className="w-4 h-4" /> Legg til
+        </button>
+      </div>
+      <div className="p-3 space-y-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-3">Ingen sjekkpunkter ennå</p>
+        ) : (
+          items.map(item => (
+            <div key={item.id} className="rounded-xl border border-gray-100 bg-gray-50 p-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={e => toggleCheck(item.id, e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 cursor-pointer flex-shrink-0"
+                />
+                <input
+                  type="text"
+                  value={item.text}
+                  onChange={e => updateText(item.id, e.target.value)}
+                  placeholder="Sjekkpunkt..."
+                  className={`flex-1 bg-transparent text-sm focus:outline-none ${item.checked ? 'line-through text-gray-400' : 'text-gray-900'}`}
+                />
+                <label className="cursor-pointer text-gray-400 hover:text-blue-500 transition-colors">
+                  <Image className="w-4 h-4" />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleItemPhoto(item.id, e.target.files?.[0])} />
+                </label>
+                <button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              {item.photo_url && (
+                <a href={item.photo_url} target="_blank" rel="noopener noreferrer">
+                  <img src={item.photo_url} alt="" className="w-full max-h-40 object-cover rounded-lg" />
+                </a>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 
 
