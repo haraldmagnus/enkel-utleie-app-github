@@ -5,9 +5,8 @@ import { TrendingUp, TrendingDown, Wallet, Calendar, Building2, Info, Download, 
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-// Norwegian rental tax rates 2024
 const TAX_RATE = 0.22;
-const TAX_FREE_THRESHOLD = 10000; // NOK per year, tax-free if renting part of own home under this
+const TAX_FREE_THRESHOLD = 10000;
 
 const CAT_LABELS = {
   'rent': 'Leieinntekt',
@@ -22,16 +21,10 @@ const CAT_LABELS = {
 
 function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
   const [showInfo, setShowInfo] = useState(false);
-
-  // Check if any property is primary partial (renting part of own home)
   const hasPrimaryPartial = properties.some(p => p.tax_type === 'primary_partial');
   const hasSecondary = properties.some(p => !p.tax_type || p.tax_type === 'secondary');
-
-  // Taxable income: income minus deductible expenses
-  const deductibleExpenses = totalExpenses; // maintenance, repairs etc
+  const deductibleExpenses = totalExpenses;
   const taxableIncome = Math.max(0, totalIncome - deductibleExpenses);
-
-  // For primary partial: first 10 000 kr is tax-free
   const taxFreeAmount = hasPrimaryPartial && !hasSecondary ? TAX_FREE_THRESHOLD : 0;
   const taxableAfterThreshold = Math.max(0, taxableIncome - taxFreeAmount);
   const estimatedTax = Math.round(taxableAfterThreshold * TAX_RATE);
@@ -46,7 +39,6 @@ function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
           <Info className="w-4 h-4" />
         </button>
       </div>
-
       {showInfo && (
         <div className="px-4 py-3 bg-amber-50/50 border-b border-amber-100 text-xs text-amber-800 space-y-2">
           <p><strong>Slik beregnes skatten:</strong></p>
@@ -57,10 +49,9 @@ function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
             <li>Leier du ut sekundærbolig: hele beløpet er skattepliktig</li>
             <li>Depositum er ikke skattepliktig</li>
           </ul>
-          <p className="text-amber-600 font-medium">Dette er kun et estimat. Konsulter en regnskapsfører for nøyaktig skatteberegning.</p>
+          <p className="text-amber-600 font-medium">Dette er kun et estimat.</p>
         </div>
       )}
-
       <div className="p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Totale leieinntekter</span>
@@ -72,7 +63,7 @@ function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
         </div>
         {taxFreeAmount > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Skattefritt beløp (del av bolig)</span>
+            <span className="text-gray-500">Skattefritt beløp</span>
             <span className="font-medium text-green-600">- {Math.min(taxFreeAmount, taxableIncome).toLocaleString()} kr</span>
           </div>
         )}
@@ -93,37 +84,68 @@ function TaxCard({ totalIncome, totalExpenses, selectedYear, properties }) {
   );
 }
 
-function exportCsv(entries, properties, year) {
-  const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
-  const rows = [
-    ['Dato', 'Type', 'Kategori', 'Eiendom', 'Beskrivelse', 'Beløp (kr)']
-  ];
-  
-  const yearEntries = entries.filter(e => e.date?.startsWith(year));
-  yearEntries.forEach(e => {
-    rows.push([
-      e.date,
-      e.type === 'income' ? 'Inntekt' : 'Utgift',
-      CAT_LABELS[e.category] || e.category,
-      propMap[e.rental_unit_id] || '',
-      e.description || '',
-      e.amount
-    ]);
-  });
+function ExportYearModal({ entries, properties, onClose }) {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
+  const [selectedExportYear, setSelectedExportYear] = useState(String(currentYear));
 
-  const csv = rows.map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `økonomi-${year}.csv`);
-  link.click();
-  URL.revokeObjectURL(url);
+  const handleExport = () => {
+    const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
+    const rows = [['Dato', 'Type', 'Kategori', 'Eiendom', 'Beskrivelse', 'Beløp (kr)']];
+    const yearEntries = entries.filter(e => e.date?.startsWith(selectedExportYear));
+    yearEntries.forEach(e => {
+      rows.push([
+        e.date,
+        e.type === 'income' ? 'Inntekt' : 'Utgift',
+        CAT_LABELS[e.category] || e.category,
+        propMap[e.rental_unit_id] || '',
+        e.description || '',
+        e.amount
+      ]);
+    });
+    const csv = rows.map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.setAttribute('href', URL.createObjectURL(blob));
+    link.setAttribute('download', `økonomi-${selectedExportYear}.csv`);
+    link.click();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-gray-900 text-lg">Eksporter årsoppgave</h3>
+        <p className="text-sm text-gray-500">Velg hvilket år du vil eksportere for:</p>
+        <div className="grid grid-cols-3 gap-2">
+          {years.map(y => (
+            <button
+              key={y}
+              onClick={() => setSelectedExportYear(y)}
+              className={`py-2.5 rounded-xl text-sm font-medium transition-colors ${selectedExportYear === y ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              {y}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleExport}
+          className="w-full py-3 bg-blue-600 text-white rounded-2xl font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <Download className="w-4 h-4" /> Eksporter {selectedExportYear} (CSV)
+        </button>
+        <button onClick={onClose} className="w-full py-3 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-sm hover:bg-gray-200 transition-colors">
+          Avbryt
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function Finances() {
   const navigate = useNavigate();
-  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [showExportModal, setShowExportModal] = useState(false);
+  const selectedYear = String(new Date().getFullYear());
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
@@ -157,10 +179,6 @@ export default function Finances() {
 
   const maxVal = Math.max(...months.map(m => Math.max(m.income, m.expense)), 1);
 
-  const currentYear = new Date().getFullYear();
-  const downloadYears = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
-
-  // Per property breakdown
   const propBreakdown = properties.map(p => {
     const pEntries = yearEntries.filter(e => e.rental_unit_id === p.id);
     return {
@@ -169,6 +187,10 @@ export default function Finances() {
       expenses: pEntries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0),
     };
   }).filter(p => p.income > 0 || p.expenses > 0);
+
+  // Last 10 transactions across all properties
+  const recentTransactions = entries.slice(0, 10);
+  const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
 
   if (isLoading) return <div className="p-4 space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}</div>;
 
@@ -201,28 +223,46 @@ export default function Finances() {
         </div>
       </div>
 
-      {/* Year selector */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {downloadYears.map(y => (
-          <button
-            key={y}
-            onClick={() => setSelectedYear(y)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${selectedYear === y ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100 text-gray-600 hover:bg-gray-50'}`}
-          >
-            {y}
-          </button>
-        ))}
-      </div>
-
-      {/* CSV Export */}
+      {/* Export CSV button */}
       {entries.length > 0 && (
         <button
-          onClick={() => exportCsv(entries, properties, selectedYear)}
+          onClick={() => setShowExportModal(true)}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white border border-blue-600 rounded-2xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
         >
-          <Download className="w-4 h-4" /> Eksporter årsoppgave {selectedYear} (CSV)
+          <Download className="w-4 h-4" /> Eksporter årsoppgave
         </button>
       )}
+
+      {/* Recent transactions across all properties */}
+      {recentTransactions.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Siste transaksjoner</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {recentTransactions.map(e => (
+              <div key={e.id} className="flex items-center gap-3 px-4 py-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${e.type === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
+                  {e.type === 'income'
+                    ? <TrendingUp className="w-4 h-4 text-green-600" />
+                    : <TrendingDown className="w-4 h-4 text-red-600" />
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{CAT_LABELS[e.category] || e.category}{e.description ? ` – ${e.description}` : ''}</p>
+                  <p className="text-xs text-gray-400">{propMap[e.rental_unit_id] || ''} · {e.date}</p>
+                </div>
+                <span className={`text-sm font-semibold flex-shrink-0 ${e.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                  {e.type === 'income' ? '+' : '-'}{e.amount.toLocaleString()} kr
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tax card */}
+      <TaxCard totalIncome={totalIncome} totalExpenses={totalExpenses} selectedYear={selectedYear} properties={properties} />
 
       {/* Monthly chart */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
@@ -243,9 +283,6 @@ export default function Finances() {
           <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-red-400 rounded-sm" /> Utgifter</div>
         </div>
       </div>
-
-      {/* Tax estimate */}
-      <TaxCard totalIncome={totalIncome} totalExpenses={totalExpenses} selectedYear={selectedYear} properties={properties} />
 
       {/* Category breakdown */}
       {yearEntries.length > 0 && (
@@ -294,6 +331,10 @@ export default function Finances() {
             ))}
           </div>
         </div>
+      )}
+
+      {showExportModal && (
+        <ExportYearModal entries={entries} properties={properties} onClose={() => setShowExportModal(false)} />
       )}
     </div>
   );
