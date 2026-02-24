@@ -507,115 +507,34 @@ export default function PropertyDetail() {
           </div>
         </section>
 
-        {/* ── INNFLYTTINGSBILDER ── */}
+        {/* ── INNFLYTTINGSJEKKLISTE ── */}
         <section>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Camera className="w-4 h-4 text-green-500" /> Innflyttingsbilder</h3>
-              <label className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer">
-                <Plus className="w-4 h-4" /> Legg til
-                <input type="file" accept="image/*" multiple onChange={e => handlePhotoUpload(e, 'move_in')} className="hidden" />
-              </label>
-            </div>
-            {(property.move_in_photos || []).length > 0 ? (
-              <div className="p-3 grid grid-cols-4 gap-2">
-                {property.move_in_photos.map((url, i) => (
-                  <img key={i} src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400 p-4 text-center">Ingen bilder ennå</p>
-            )}
-          </div>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Innflytting</h2>
+          <ChecklistSection
+            title="Innflyttingsjekkliste"
+            colorClass="text-green-500"
+            items={(property.checklist_items || []).filter(i => i.type !== 'moveOut')}
+            allItems={property.checklist_items || []}
+            itemType="moveIn"
+            onUpdate={(updated) => updateMutation.mutate({ checklist_items: updated })}
+            onPhotoUpload={handlePhotoUpload}
+            photoUploading={photoUploading}
+          />
         </section>
 
-        {/* ── SJEKKLISTE ── */}
+        {/* ── UTFLYTTINGSJEKKLISTE ── */}
         <section>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">✓ Sjekkliste</h3>
-              <button onClick={() => { const newItem = { id: `${Date.now()}`, text: '', checked: false, type: 'moveIn' }; updateMutation.mutate({ checklist_items: [...(property.checklist_items || []), newItem] }); }} className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:text-blue-700">
-                <Plus className="w-4 h-4" /> Legg til
-              </button>
-            </div>
-            <div className="p-4 space-y-2">
-              {(property.checklist_items || []).length === 0 ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400 text-center py-2">Ingen sjekkpunkter ennå</p>
-                  <div className="pt-2 space-y-2 text-gray-400">
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
-                      <span className="text-sm text-gray-500">Inspiser vegger for skader</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
-                      <span className="text-sm text-gray-500">Sjekk alle vinduer og dører</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <input type="checkbox" disabled className="w-5 h-5 rounded border-gray-300 cursor-not-allowed opacity-50" />
-                      <span className="text-sm text-gray-500">Kontroller vannrør for lekkasje</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                (property.checklist_items || []).map(item => (
-                  <div key={item.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onChange={e => {
-                        const updated = property.checklist_items.map(i => i.id === item.id ? { ...i, checked: e.target.checked } : i);
-                        updateMutation.mutate({ checklist_items: updated });
-                      }}
-                      className="w-5 h-5 rounded border-gray-300 cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={item.text}
-                      onChange={e => {
-                        const updated = property.checklist_items.map(i => i.id === item.id ? { ...i, text: e.target.value } : i);
-                        updateMutation.mutate({ checklist_items: updated });
-                      }}
-                      placeholder="Sjekkpunkt..."
-                      className={`flex-1 bg-transparent text-sm focus:outline-none ${item.checked ? 'line-through text-gray-400' : 'text-gray-900'}`}
-                    />
-                    <button
-                      onClick={() => {
-                        const updated = property.checklist_items.filter(i => i.id !== item.id);
-                        updateMutation.mutate({ checklist_items: updated });
-                      }}
-                      className="text-gray-300 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ── DOKUMENTER (utflyttingsbilder) ── */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Utflyttingsbilder</h2>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Camera className="w-4 h-4 text-red-500" /> Utflyttingsbilder</h3>
-              <label className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer">
-                <Plus className="w-4 h-4" /> Legg til
-                <input type="file" accept="image/*" multiple onChange={handleMoveOutPhotoUpload} className="hidden" />
-              </label>
-            </div>
-            {(property.move_out_photos || []).length > 0 ? (
-              <div className="p-3 grid grid-cols-4 gap-2">
-                {property.move_out_photos.map((url, i) => (
-                  <img key={i} src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400 p-4 text-center">Ingen bilder ennå</p>
-            )}
-          </div>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Utflytting</h2>
+          <ChecklistSection
+            title="Utflyttingsjekkliste"
+            colorClass="text-red-500"
+            items={(property.checklist_items || []).filter(i => i.type === 'moveOut')}
+            allItems={property.checklist_items || []}
+            itemType="moveOut"
+            onUpdate={(updated) => updateMutation.mutate({ checklist_items: updated })}
+            onPhotoUpload={handlePhotoUpload}
+            photoUploading={photoUploading}
+          />
         </section>
 
         {/* ── SLETT ── */}
