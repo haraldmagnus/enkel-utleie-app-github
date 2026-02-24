@@ -8,6 +8,15 @@ import { createPageUrl } from '@/utils';
 const TAX_RATE = 0.22;
 const TAX_FREE_THRESHOLD = 10000;
 
+function calcTax(totalIncome, totalExpenses, properties) {
+  const hasPrimaryPartial = properties.some(p => p.tax_type === 'primary_partial');
+  const hasSecondary = properties.some(p => !p.tax_type || p.tax_type === 'secondary');
+  const taxableIncome = Math.max(0, totalIncome - totalExpenses);
+  const taxFreeAmount = hasPrimaryPartial && !hasSecondary ? TAX_FREE_THRESHOLD : 0;
+  const taxableAfterThreshold = Math.max(0, taxableIncome - taxFreeAmount);
+  return Math.round(taxableAfterThreshold * TAX_RATE);
+}
+
 const CAT_LABELS = {
   'rent': 'Leieinntekt',
   'deposit': 'Depositum',
