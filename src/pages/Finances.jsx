@@ -221,9 +221,6 @@ export default function Finances() {
         </div>
       )}
 
-      {/* Tax card */}
-      <TaxCard totalIncome={totalIncome} totalExpenses={totalExpenses} selectedYear={selectedYear} properties={properties} />
-
       {/* Monthly chart */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><Calendar className="w-4 h-4 text-blue-500" /> Månedsoversikt {selectedYear}</h3>
