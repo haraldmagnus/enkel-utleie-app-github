@@ -198,6 +198,10 @@ export default function CreateAgreement() {
             <label className="block text-xs font-medium text-gray-600 mb-1">Utleiers adresse</label>
             <input type="text" value={form.landlord_address} onChange={e => setForm(f => ({ ...f, landlord_address: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Eiendomsnummer / leilighetsnummer</label>
+            <input type="text" value={form.property_number} onChange={e => setForm(f => ({ ...f, property_number: e.target.value }))} placeholder="F.eks. H0101" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
           {property && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-500">Leietaker: <strong>{property.manual_tenant_name || property.tenant_email || 'Ikke satt'}</strong></p>
