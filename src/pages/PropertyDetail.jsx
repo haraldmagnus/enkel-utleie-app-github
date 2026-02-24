@@ -211,13 +211,7 @@ export default function PropertyDetail() {
   };
 
   const handlePhotoUpload = async (e, type) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    setPhotoUploading(true);
-    const urls = await Promise.all(files.map(f => base44.integrations.Core.UploadFile({ file: f }).then(r => r.file_url)));
-    const key = type === 'move_in' ? 'move_in_photos' : 'move_out_photos';
-    await updateMutation.mutateAsync({ [key]: [...(property[key] || []), ...urls] });
-    setPhotoUploading(false);
+    // kept for compatibility but checklist handles its own uploads
   };
 
   const handleUploadAgreement = async (e) => {
