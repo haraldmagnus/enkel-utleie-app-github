@@ -50,7 +50,6 @@ function BottomNav({ user }) {
 
   const isActive = (to) => {
     if (to === 'Dashboard') return path.includes('/Dashboard') && !path.includes('TenantDashboard');
-    if (to === 'Dashboard') return path.includes('/Dashboard') && !path.includes('TenantDashboard');
     if (to === 'Properties') return path.includes('Properties') || path.includes('PropertyDetail') || path.includes('AddProperty') || path.includes('EditProperty');
     return path.includes(to);
   };
