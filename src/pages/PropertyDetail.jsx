@@ -197,6 +197,7 @@ export default function PropertyDetail() {
     const fieldPairs = [
       ['Utleier', agreement.landlord_name],
       ['Utleiers adresse', agreement.landlord_address],
+      agreement.property_number && ['Eiendomsnummer', agreement.property_number],
       ['Leietaker', agreement.tenant_name],
       ['Adresse', property?.address],
       ['Startdato', agreement.start_date],
