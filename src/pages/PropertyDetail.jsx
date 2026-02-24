@@ -224,14 +224,7 @@ export default function PropertyDetail() {
     setUploadingPdf(false);
   };
 
-  const handleMoveOutPhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    setPhotoUploading(true);
-    const urls = await Promise.all(files.map(f => base44.integrations.Core.UploadFile({ file: f }).then(r => r.file_url)));
-    updateMutation.mutate({ move_out_photos: [...(property.move_out_photos || []), ...urls] });
-    setPhotoUploading(false);
-  };
+
 
   const handleDelete = () => {
     if (window.confirm('Slette denne eiendommen? Kan ikke angres.')) deleteMutation.mutate();
