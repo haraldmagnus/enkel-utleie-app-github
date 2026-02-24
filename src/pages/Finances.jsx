@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Wallet, Calendar, Building2, Info, Download, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Calendar, Building2, FileText, Download, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
