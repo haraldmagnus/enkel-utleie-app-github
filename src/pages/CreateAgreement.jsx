@@ -46,7 +46,7 @@ export default function CreateAgreement() {
   const agreementId = urlParams.get('agreementId');
 
   const [form, setForm] = useState({
-    landlord_name: '', landlord_address: '', start_date: '', end_date: '', monthly_rent: '',
+    landlord_name: '', landlord_address: '', property_number: '', start_date: '', end_date: '', monthly_rent: '',
     deposit: '', deposit_account: '', rent_due_day: '1', rent_account: '',
     utilities_included: false, utilities_description: '', notice_period_months: '3',
     pets_allowed: false, smoking_allowed: false, terms: STANDARD_TERMS
