@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Edit2, UserPlus, Mail, FileText,
-  Camera, Trash2, Users, MessageSquare, Plus, Upload, Download, Image
+  Camera, Trash2, Users, MessageSquare, Plus, Upload, Download, Image, Building2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
