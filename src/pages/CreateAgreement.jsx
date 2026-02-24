@@ -159,6 +159,7 @@ export default function CreateAgreement() {
     rental_unit_id: propertyId, landlord_id: user.id,
     tenant_id: property?.tenant_id || null,
     landlord_name: form.landlord_name, landlord_address: form.landlord_address,
+    property_number: form.property_number || null,
     tenant_name: property?.manual_tenant_name || property?.tenant_email || '',
     start_date: form.start_date, end_date: form.end_date || null,
     monthly_rent: Number(form.monthly_rent), deposit: form.deposit ? Number(form.deposit) : null,
