@@ -32,10 +32,10 @@ function BottomNav({ user }) {
 
   const landlordLinks = [
     { to: 'Dashboard', icon: Home, label: 'Hjem' },
-    { to: 'Properties', icon: Building2, label: 'Eiendommer' },
     { to: 'Finances', icon: Wallet, label: 'Økonomi' },
     { to: 'CalendarPage', icon: Calendar, label: 'Kalender' },
     { to: 'Chat', icon: MessageSquare, label: 'Chat', badge: unread },
+    { to: 'Settings', icon: Settings, label: 'Innstillinger' },
   ];
 
   const tenantLinks = [
