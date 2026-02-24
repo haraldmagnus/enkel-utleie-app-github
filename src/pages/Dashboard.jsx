@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Plus, TrendingUp, AlertCircle, Wrench, ArrowRight, Calendar, Users } from 'lucide-react';
+import { Building2, Plus, TrendingUp, TrendingDown, AlertCircle, Wrench, ArrowRight, Calendar, Users, Wallet } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 export default function Dashboard() {
@@ -20,9 +20,11 @@ export default function Dashboard() {
     p.landlord_id === user?.id || (p.landlord_ids || []).includes(user?.id)
   );
 
+  const currentYear = String(new Date().getFullYear());
+
   const { data: finances = [] } = useQuery({
     queryKey: ['finances-dash'],
-    queryFn: () => base44.entities.FinancialEntry.filter({ landlord_id: user?.id }, '-date', 200),
+    queryFn: () => base44.entities.FinancialEntry.filter({ landlord_id: user?.id }, '-date', 500),
     enabled: !!user?.id
   });
 
@@ -53,8 +55,11 @@ export default function Dashboard() {
     enabled: properties.length > 0
   });
 
-  const thisMonth = new Date().toISOString().slice(0, 7);
-  const monthlyIncome = finances.filter(e => e.type === 'income' && e.date?.startsWith(thisMonth)).reduce((s, e) => s + e.amount, 0);
+  const yearEntries = finances.filter(e => e.date?.startsWith(currentYear));
+  const totalIncome = yearEntries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0);
+  const totalExpenses = yearEntries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
+  const net = totalIncome - totalExpenses;
+
   const occupied = properties.filter(p => p.status === 'occupied').length;
   const vacant = properties.filter(p => p.status === 'vacant').length;
 
@@ -67,30 +72,58 @@ export default function Dashboard() {
   return (
     <div className="max-w-lg mx-auto p-4 space-y-5">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
-          <Building2 className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-          <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
-          <p className="text-[11px] text-gray-400">Eiendommer</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Building2 className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
+            <p className="text-xs text-gray-400">Eiendommer</p>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
-          <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-1" />
-          <p className="text-lg font-bold text-gray-900">{monthlyIncome > 0 ? `${monthlyIncome.toLocaleString()}` : '–'}</p>
-          <p className="text-[11px] text-gray-400">kr/mnd inntekt</p>
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{occupied}</p>
+            <p className="text-xs text-gray-400">Utleid</p>
+          </div>
         </div>
-        <div className={`rounded-2xl p-3 shadow-sm border text-center ${vacant > 0 ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
-          <AlertCircle className={`w-5 h-5 mx-auto mb-1 ${vacant > 0 ? 'text-amber-500' : 'text-gray-300'}`} />
-          <p className={`text-2xl font-bold ${vacant > 0 ? 'text-amber-600' : 'text-gray-400'}`}>{vacant}</p>
-          <p className={`text-[11px] ${vacant > 0 ? 'text-amber-500' : 'text-gray-400'}`}>Ledige</p>
+      </div>
+
+      {/* Finance summary card (like old version) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900">Økonomi {currentYear}</h2>
+          <Link to={createPageUrl('Finances')} className="text-blue-600 text-sm font-medium flex items-center gap-1">
+            Se alle <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+        <div className="space-y-2.5">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">Total inntekt</span>
+            <span className="font-semibold text-green-600">+{totalIncome.toLocaleString('no')} kr</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">Totale utgifter</span>
+            <span className="font-semibold text-red-600">-{totalExpenses.toLocaleString('no')} kr</span>
+          </div>
+          <div className="h-px bg-gray-100 my-1" />
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Netto inntekt</span>
+            <span className={`font-bold text-lg ${net >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{net.toLocaleString('no')} kr</span>
+          </div>
         </div>
       </div>
 
       {/* Properties */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-          <h2 className="font-semibold text-gray-900">Mine eiendommer</h2>
-          <Link to={createPageUrl('Properties')} className="text-blue-600 text-sm font-medium flex items-center gap-1">
-            Se alle <ArrowRight className="w-3 h-3" />
+          <h2 className="font-semibold text-gray-900">Eiendommer</h2>
+          <Link to={createPageUrl('AddProperty')} className="flex items-center gap-1.5 bg-blue-600 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors">
+            <Plus className="w-3 h-3" /> Legg til
           </Link>
         </div>
         {properties.length === 0 ? (
@@ -103,7 +136,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {properties.slice(0, 4).map(p => (
+            {properties.map(p => (
               <Link key={p.id} to={createPageUrl(`PropertyDetail?id=${p.id}`)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Building2 className="w-5 h-5 text-blue-600" />
@@ -121,11 +154,6 @@ export default function Dashboard() {
                 </span>
               </Link>
             ))}
-            <div className="px-4 py-2">
-              <Link to={createPageUrl('AddProperty')} className="flex items-center gap-2 text-blue-600 text-sm font-medium py-1">
-                <Plus className="w-4 h-4" /> Legg til eiendom
-              </Link>
-            </div>
           </div>
         )}
       </div>
