@@ -84,6 +84,7 @@ export default function CreateAgreement() {
         ...f,
         landlord_name: existing.landlord_name || '',
         landlord_address: existing.landlord_address || '',
+        property_number: existing.property_number || '',
         start_date: existing.start_date || '',
         end_date: existing.end_date || '',
         monthly_rent: existing.monthly_rent?.toString() || '',
