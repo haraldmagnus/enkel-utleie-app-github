@@ -9,6 +9,7 @@ import {
 import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
 import FinancesSection from '@/components/property/FinancesSection';
+import TenantRatingSection from '@/components/TenantRatingSection';
 
 function ChecklistSection({ title, colorClass, items, allItems, itemType, onUpdate, onPhotoUpload, photoUploading }) {
   const fileRefs = useRef({});
@@ -130,71 +131,84 @@ export default function PropertyDetail() {
 
   const handleInvite = async (e) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
+    const email = (inviteEmail || '').trim().toLowerCase();
+    if (!email) return;
+
     setInviteLoading(true);
-    const token = `${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
-    await base44.entities.TenantInvitation.create({
-      rental_unit_id: propertyId, landlord_id: user.id,
-      tenant_email: inviteEmail.toLowerCase(), token, status: 'pending',
-      expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString()
-    });
-    await updateMutation.mutateAsync({ tenant_email: inviteEmail.toLowerCase(), status: 'pending_invitation' });
-    const inviteUrl = `${window.location.origin}/Invite?token=${token}`;
-    await base44.integrations.Core.SendEmail({
-      to: inviteEmail,
-      subject: `Du er invitert til ${property?.name} – Enkel Utleie`,
-      body: `<!DOCTYPE html>
+
+    try {
+      // If there is already a pending invitation for this email/property, don't create a duplicate
+      const existing = await base44.entities.TenantInvitation.filter({ rental_unit_id: propertyId, tenant_email: email, status: 'pending' }, '-created_date', 10);
+      if (existing?.length) {
+        setInviteLoading(false);
+        setInviteEmail('');
+        return;
+      }
+
+      const token = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      await base44.entities.TenantInvitation.create({
+        rental_unit_id: propertyId,
+        landlord_id: user.id,
+        tenant_email: email,
+        token,
+        status: 'pending',
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      });
+
+      // Notify landlord in-app that invite was created (role-separated)
+      try {
+        await base44.entities.Notification.create({
+          user_id: user.id,
+          target_role: 'landlord',
+          type: 'invite_sent',
+          title: 'Invitasjon sendt',
+          message: `Invitasjon er opprettet for ${email}.`,
+          rental_unit_id: propertyId,
+          token,
+          read: false
+        });
+      } catch (_) {}
+
+      const inviteUrl = `${window.location.origin}/Invite?token=${token}`;
+
+      // Send email (with error handling)
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: email,
+          subject: `Du er invitert til ${property?.name || 'en bolig'} – Enkel Utleie`,
+          body: `<!DOCTYPE html>
 <html lang="no">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-        <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:36px 32px;text-align:center;">
             <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:16px;padding:12px 16px;margin-bottom:16px;">
               <span style="font-size:28px;">🏠</span>
             </div>
-            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Enkel Utleie</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Din digitale utleiehjelper</p>
+            <h1 style="margin:0;color:#fff;font-size:20px;">Du er invitert</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;line-height:1.4;">
+              Klikk på knappen under for å godta invitasjonen og bli lagt til som leietaker.
+            </p>
           </td>
         </tr>
-        <!-- Body -->
         <tr>
-          <td style="padding:36px 32px;">
-            <h2 style="margin:0 0 12px;color:#1e293b;font-size:20px;font-weight:700;">Du har fått en invitasjon! 🎉</h2>
-            <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6;">
-              Du er invitert til å få tilgang til din leiebolig i Enkel Utleie:
+          <td style="padding:28px 32px;">
+            <p style="margin:0 0 14px;color:#0f172a;font-size:14px;line-height:1.6;">
+              Utleier har invitert deg til <strong>${property?.name || 'en bolig'}</strong>.
             </p>
-            <!-- Property card -->
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:22px;">🏡</span>
-                <div>
-                  <p style="margin:0;font-weight:700;color:#1e293b;font-size:15px;">${property?.name || 'Din leiebolig'}</p>
-                  ${property?.address ? `<p style="margin:4px 0 0;color:#64748b;font-size:13px;">📍 ${property.address}</p>` : ''}
-                </div>
-              </div>
-            </div>
-            <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6;">
-              Gjennom Enkel Utleie kan du enkelt kommunisere med utleier, se leiekontrakt, holde oversikt over betalinger og mye mer.
-            </p>
-            <!-- CTA Button -->
-            <div style="text-align:center;margin-bottom:28px;">
-              <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:15px 36px;border-radius:12px;letter-spacing:0.1px;">
-                Aksepter invitasjon →
+            <div style="text-align:center;margin:22px 0;">
+              <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 18px;border-radius:14px;font-weight:600;font-size:14px;">
+                Godta invitasjon
               </a>
             </div>
-            <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">
-              Invitasjonen er gyldig i 7 dager. Har du spørsmål? Kontakt din utleier direkte.
+            <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">
+              Hvis knappen ikke fungerer, kopier denne lenken i nettleseren:<br/>
+              <span style="word-break:break-all;color:#2563eb;">${inviteUrl}</span>
             </p>
-          </td>
-        </tr>
-        <!-- Footer -->
-        <tr>
-          <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 32px;text-align:center;">
-            <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} Enkel Utleie · Denne e-posten ble sendt av din utleier</p>
           </td>
         </tr>
       </table>
@@ -202,11 +216,32 @@ export default function PropertyDetail() {
   </table>
 </body>
 </html>`
-    });
-    setInviteEmail('');
-    setShowInviteForm(false);
-    setInviteLoading(false);
-    queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+        });
+      } catch (err) {
+        // Notify landlord that email failed (invite is still pending and can be resent/cancelled)
+        try {
+          await base44.entities.Notification.create({
+            user_id: user.id,
+            target_role: 'landlord',
+            type: 'invite_failed',
+            title: 'E-post kunne ikke sendes',
+            message: `Invitasjon ble opprettet, men e-posten til ${email} kunne ikke sendes. Du kan prøve igjen eller kansellere invitasjonen.`,
+            rental_unit_id: propertyId,
+            token,
+            read: false
+          });
+        } catch (_) {}
+      }
+
+      // IMPORTANT: Do not attach tenant to the RentalUnit until invitation is accepted.
+      // This prevents accidental access before acceptance.
+
+      queryClient.invalidateQueries({ queryKey: ['tenantInvitations', propertyId] });
+
+      setInviteEmail('');
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   const handlePhotoUpload = async (e, type) => {
@@ -459,6 +494,27 @@ export default function PropertyDetail() {
                   <button type="submit" disabled={inviteLoading} className="bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">{inviteLoading ? '...' : 'Send'}</button>
                 </div>
               </form>
+          {invitationsForProperty.filter(i => i.status === 'pending').length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-700">Ventende invitasjoner</p>
+              {invitationsForProperty.filter(i => i.status === 'pending').map(inv => (
+                <div key={inv.id} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{inv.tenant_email}</p>
+                    <p className="text-xs text-gray-500">Utløper {inv.expires_at ? new Date(inv.expires_at).toLocaleDateString('no-NO') : ''}</p>
+                  </div>
+                  <button
+                    onClick={() => cancelInvitationMutation.mutate(inv.id)}
+                    className="text-xs font-semibold text-red-600 hover:text-red-700"
+                    disabled={cancelInvitationMutation.isPending}
+                  >
+                    Kanseller
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
             )}
             <div className="p-4 space-y-4">
               {property.status === 'occupied' && (property.tenant_email || property.manual_tenant_name) ? (
@@ -475,6 +531,7 @@ export default function PropertyDetail() {
                       <MessageSquare className="w-4 h-4 text-blue-600" />
                     </Link>
                   </div>
+                  <TenantRatingSection propertyId={propertyId} tenantEmail={property.tenant_email} tenantId={property.tenant_id} />
                 </>
               ) : property.status === 'pending_invitation' ? (
                 <div className="flex items-center gap-3 text-yellow-700">

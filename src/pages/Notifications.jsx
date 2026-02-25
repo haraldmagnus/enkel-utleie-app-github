@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, Calendar, MessageSquare, Wrench, FileText, CreditCard } from 'lucide-react';
+import { Bell, Check, Calendar, MessageSquare, Wrench, FileText, CreditCard, Home } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const ICON_MAP = {
@@ -11,6 +11,11 @@ const ICON_MAP = {
   message: { Icon: MessageSquare, bg: 'bg-blue-100', color: 'text-blue-600' },
   agreement: { Icon: FileText, bg: 'bg-orange-100', color: 'text-orange-600' },
   maintenance: { Icon: Wrench, bg: 'bg-yellow-100', color: 'text-yellow-600' },
+  invite: { Icon: Home, bg: 'bg-indigo-100', color: 'text-indigo-600' },
+  invite_sent: { Icon: Home, bg: 'bg-indigo-100', color: 'text-indigo-600' },
+  invite_accepted: { Icon: Home, bg: 'bg-indigo-100', color: 'text-indigo-600' },
+  invite_cancelled: { Icon: Home, bg: 'bg-gray-100', color: 'text-gray-600' },
+  invite_failed: { Icon: Home, bg: 'bg-red-100', color: 'text-red-600' },
 };
 
 export default function Notifications() {
@@ -50,12 +55,52 @@ export default function Notifications() {
   });
 
   const handleClick = (n) => {
+    if (!n) return;
     if (!n.read) markReadMutation.mutate(n.id);
-    const role = user?.active_role || user?.user_role;
-    if (n.type === 'message' && n.rental_unit_id) navigate(createPageUrl(`Chat?propertyId=${n.rental_unit_id}`));
-    else if (n.type === 'agreement' && n.related_id) navigate(createPageUrl(`SignAgreement?id=${n.related_id}`));
-    else if (n.type === 'maintenance' && n.rental_unit_id && role === 'landlord') navigate(createPageUrl(`PropertyDetail?id=${n.rental_unit_id}`));
-    else if (n.type === 'calendar_event') navigate(createPageUrl('CalendarPage'));
+
+    const currentRole = user?.active_role || user?.user_role;
+
+    // Normalize type for legacy notifications
+    const t = (n.type || '').toLowerCase();
+
+    // Chat
+    if ((t === 'message' || t.includes('chat')) && n.rental_unit_id) {
+      navigate(createPageUrl(`Chat?propertyId=${n.rental_unit_id}`));
+      return;
+    }
+
+    // Agreements
+    if ((t === 'agreement' || t.includes('contract')) && (n.related_id || n.agreement_id)) {
+      const id = n.related_id || n.agreement_id;
+      navigate(createPageUrl(`SignAgreement?id=${id}`));
+      return;
+    }
+
+    // Maintenance
+    if (t.includes('maintenance') && n.rental_unit_id) {
+      // Landlord: go to property detail, Tenant: go to tenant dashboard (or property)
+      if (currentRole === 'landlord') navigate(createPageUrl(`PropertyDetail?id=${n.rental_unit_id}`));
+      else navigate(createPageUrl('TenantDashboard'));
+      return;
+    }
+
+    // Invites
+    if (t.startsWith('invite')) {
+      // If invite has token, take user to Invite landing (accept flow)
+      if (n.token) navigate(createPageUrl(`Invite?token=${n.token}`));
+      else if (n.rental_unit_id) navigate(createPageUrl(`PropertyDetail?id=${n.rental_unit_id}`));
+      else navigate(createPageUrl('Dashboard'));
+      return;
+    }
+
+    // Calendar
+    if (t === 'calendar_event' || t.includes('calendar')) {
+      navigate(createPageUrl('CalendarPage'));
+      return;
+    }
+
+    // Default fallback
+    navigate(createPageUrl('Dashboard'));
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

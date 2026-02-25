@@ -6,6 +6,7 @@ import { User, LogOut, ChevronRight, ArrowLeftRight, Camera, HelpCircle, FileTex
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
+import TenantRatingsSection from '@/components/TenantRatingsSection';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ export default function Settings() {
     navigate(createPageUrl(newRole === 'landlord' ? 'Dashboard' : 'TenantDashboard'), { replace: true });
   };
 
+  const toggleRatingOptIn = async () => {
+    await base44.auth.updateMe({ rating_opt_in: !user?.rating_opt_in });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
@@ -119,6 +122,7 @@ export default function Settings() {
       </button>
 
 
+       {/* Landlord rating settings */}
        {role === 'landlord' && (
          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
            <div className="flex items-center gap-3">
@@ -136,6 +140,7 @@ export default function Settings() {
          </div>
        )}
 
+       {/* Tenant rating opt-in */}
        {role === 'tenant' && (
          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
            <div className="flex items-center gap-3 mb-4">
@@ -147,6 +152,8 @@ export default function Settings() {
                <p className="text-xs text-gray-400">Leietaker</p>
              </div>
              <Switch
+               checked={user?.rating_opt_in || false}
+               onCheckedChange={toggleRatingOptIn}
              />
            </div>
            <p className="text-xs text-gray-600 leading-relaxed">
@@ -155,8 +162,11 @@ export default function Settings() {
          </div>
        )}
 
+       {/* Tenant ratings view */}
+       {role === 'tenant' && user?.rating_opt_in && (
          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
            <p className="font-medium text-gray-900 mb-4">Dine vurderinger fra utleiere</p>
+           <TenantRatingsSection userId={user?.id} />
          </div>
        )}
 

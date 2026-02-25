@@ -26,6 +26,7 @@ export default function Invite() {
 
     if (!invitation) { setStatus('error'); setMessage('Ugyldig invitasjonslenke.'); return; }
     if (invitation.status === 'accepted') { setStatus('already'); setMessage('Denne invitasjonen er allerede akseptert.'); return; }
+    if (invitation.status === 'cancelled') { setStatus('error'); setMessage('Invitasjonen er kansellert av utleier.'); return; }
     if (invitation.status === 'expired' || new Date(invitation.expires_at) < new Date()) {
       setStatus('error'); setMessage('Invitasjonen har utløpt. Be utleieren om å sende en ny.'); return;
     }
@@ -47,7 +48,20 @@ export default function Invite() {
       });
     }
 
-    await base44.auth.updateMe({ active_role: 'tenant', user_role: 'tenant' });
+    // Notify landlord
+    try {
+      await base44.entities.Notification.create({
+        user_id: invitation.landlord_id,
+        target_role: 'landlord',
+        type: 'invite_accepted',
+        title: 'Invitasjon akseptert',
+        message: `${user.full_name || user.email} aksepterte invitasjonen til ${property?.name || 'boligen'}.`,
+        rental_unit_id: invitation.rental_unit_id,
+        read: false
+      });
+    } catch (_) {}
+
+    await base44.auth.updateMe({ active_role: 'tenant' });
     setStatus('success');
     setTimeout(() => navigate(createPageUrl('TenantDashboard'), { replace: true }), 2000);
   };
