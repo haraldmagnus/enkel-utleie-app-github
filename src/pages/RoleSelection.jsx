@@ -13,7 +13,7 @@ export default function RoleSelection() {
 
   const selectRole = async (role) => {
     setLoading(true);
-    await base44.auth.updateMe({ active_role: role, user_role: role });
+    await base44.auth.updateMe({ active_role: role });
     navigate(createPageUrl(role === 'landlord' ? 'Dashboard' : 'TenantDashboard'), { replace: true });
   };
 

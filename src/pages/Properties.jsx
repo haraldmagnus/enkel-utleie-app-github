@@ -11,8 +11,8 @@ export default function Properties() {
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
   const { data: allProperties = [], isLoading } = useQuery({
-    queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryKey: ['rentalUnits', user?.id],
+    queryFn: () => base44.entities.RentalUnit.filter({ landlord_id: user?.id }, '-created_date', 100),
     enabled: !!user?.id
   });
 

@@ -10,8 +10,13 @@ export default function TenantDashboard() {
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
   const { data: allProps = [] } = useQuery({
-    queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryKey: ['rentalUnits', user?.id, user?.email],
+    queryFn: async () => {
+      const byId = user?.id ? await base44.entities.RentalUnit.filter({ tenant_id: user.id }, '-created_date', 100) : [];
+      if (byId?.length) return byId;
+      const byEmail = user?.email ? await base44.entities.RentalUnit.filter({ tenant_email: user.email }, '-created_date', 100) : [];
+      return byEmail || [];
+    },
     enabled: !!user?.id
   });
 

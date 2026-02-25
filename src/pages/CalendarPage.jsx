@@ -17,8 +17,17 @@ export default function CalendarPage() {
   const isLandlord = role === 'landlord';
 
   const { data: allProps = [] } = useQuery({
-    queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryKey: ['rentalUnits', user?.id, user?.email, role],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      if (role === 'landlord') {
+        return await base44.entities.RentalUnit.filter({ landlord_id: user.id }, '-created_date', 100);
+      }
+      const byId = await base44.entities.RentalUnit.filter({ tenant_id: user.id }, '-created_date', 100);
+      if (byId?.length) return byId;
+      const byEmail = user?.email ? await base44.entities.RentalUnit.filter({ tenant_email: user.email }, '-created_date', 100) : [];
+      return byEmail || [];
+    },
     enabled: !!user?.id
   });
 
@@ -42,6 +51,7 @@ export default function CalendarPage() {
 
   const createMutation = useMutation({
     mutationFn: async (d) => {
+      if (role !== 'landlord') throw new Error('Kun utleier kan opprette hendelser');
       const event = await base44.entities.CalendarEvent.create(d);
       
       // Send notification to relevant users
@@ -61,6 +71,7 @@ export default function CalendarPage() {
         for (const recipientId of notificationRecipients) {
           await base44.entities.Notification.create({
             user_id: recipientId,
+            target_role: recipientId === propertyData.landlord_id ? 'landlord' : 'tenant',
             type: 'calendar_event',
             title: d.title,
             message: `Ny hendelse lagt til: ${d.title}`,
@@ -76,7 +87,10 @@ export default function CalendarPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CalendarEvent.delete(id),
+    mutationFn: async (id) => {
+      if (role !== 'landlord') throw new Error('Kun utleier kan slette hendelser');
+      return await base44.entities.CalendarEvent.delete(id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] })
   });
 

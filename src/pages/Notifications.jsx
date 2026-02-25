@@ -19,15 +19,26 @@ export default function Notifications() {
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications-page', user?.id],
+  const role = user?.active_role || user?.user_role;
+
+  const { data: notificationsRaw = [], isLoading } = useQuery({
+    queryKey: ['notifications-page', user?.id, role],
+    // Fetch by user_id then filter by role to keep backwards compatibility with older notifications
     queryFn: () => base44.entities.Notification.filter({ user_id: user?.id }, '-created_date', 50),
-    enabled: !!user?.id
+    enabled: !!user?.id && !!role
+  });
+
+  const notifications = (notificationsRaw || []).filter(n => {
+    if (!role) return true;
+    // New notifications: filter by target_role
+    if (n?.target_role) return n.target_role === role;
+    // Legacy notifications: fall back to user_role (if present) or show in current role to avoid hiding everything
+    return (user?.user_role ? user.user_role === role : true);
   });
 
   const markReadMutation = useMutation({
     mutationFn: (id) => base44.entities.Notification.update(id, { read: true }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications-page'] })
+    onSuccess: () => queryClient.invalidateQueries({ predicate: q => q.queryKey?.[0] === 'notifications-page' })
   });
 
   const markAllMutation = useMutation({
@@ -35,7 +46,7 @@ export default function Notifications() {
       const unread = notifications.filter(n => !n.read);
       await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { read: true })));
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['notifications-page'] }); queryClient.invalidateQueries({ queryKey: ['notifsBell'] }); }
+    onSuccess: () => { queryClient.invalidateQueries({ predicate: q => q.queryKey?.[0] === 'notifications-page' }); queryClient.invalidateQueries({ queryKey: ['notifsBell', user?.id, role] }); }
   });
 
   const handleClick = (n) => {

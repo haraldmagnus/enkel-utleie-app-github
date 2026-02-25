@@ -13,8 +13,14 @@ export default function TenantMaintenance() {
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
 
   const { data: allProps = [] } = useQuery({
-    queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryKey: ['rentalUnits', user?.id, user?.email],
+    queryFn: async () => {
+      // Server-side filtering to avoid exposing all rental units in the client
+      const byId = user?.id ? await base44.entities.RentalUnit.filter({ tenant_id: user.id }, '-created_date', 100) : [];
+      if (byId?.length) return byId;
+      const byEmail = user?.email ? await base44.entities.RentalUnit.filter({ tenant_email: user.email }, '-created_date', 100) : [];
+      return byEmail || [];
+    },
     enabled: !!user?.id
   });
 
@@ -30,7 +36,11 @@ export default function TenantMaintenance() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (d) => base44.entities.MaintenanceTask.create(d),
+    mutationFn: async (d) => {
+      const role = user?.active_role || user?.user_role;
+      if (role !== 'tenant') throw new Error('Kun leietaker kan opprette vedlikeholdsforespørsel');
+      return await base44.entities.MaintenanceTask.create(d);
+    },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-maintenance'] });
       setShowForm(false);
@@ -38,8 +48,10 @@ export default function TenantMaintenance() {
       // Notify landlord
       if (myProperty?.landlord_id) {
         await base44.entities.Notification.create({
-          user_id: myProperty.landlord_id, type: 'maintenance',
-          title: 'Ny vedlikeholdsforespørsel', message: `${user.full_name} har meldt en feil: ${form.title}`,
+          user_id: myProperty.landlord_id,
+          target_role: 'landlord',
+          type: 'maintenance',
+          title: 'Ny vedlikeholdsforespørsel', message: `${user.full_name} har meldt en feil: ${d.title}`,
           rental_unit_id: myProperty.id, read: false
         });
       }

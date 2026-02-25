@@ -20,7 +20,11 @@ export default function AddProperty() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.RentalUnit.create(data),
+    mutationFn: async (data) => {
+      const role = user?.active_role || user?.user_role;
+      if (role !== 'landlord') throw new Error('Kun utleier kan legge til eiendom');
+      return await base44.entities.RentalUnit.create(data);
+    },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['rentalUnits'] });
       navigate(createPageUrl(`PropertyDetail?id=${res.id}`));

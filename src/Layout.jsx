@@ -14,19 +14,40 @@ function BottomNav({ user }) {
   const role = user?.active_role || user?.user_role;
 
   const { data: unread = 0 } = useQuery({
-    queryKey: ['unreadMsgs', user?.id],
+    queryKey: ['unreadMsgs', user?.id, role],
     queryFn: async () => {
-      const msgs = await base44.entities.ChatMessage.filter({ read: false }, '-created_date', 100);
-      return msgs.filter(m => m.sender_id !== user?.id).length;
+      if (!user?.id || !role) return 0;
+      // Limit message queries to rental units the user is associated with
+      let units = [];
+      if (role === 'landlord') {
+        units = await base44.entities.RentalUnit.filter({ landlord_id: user.id }, '-created_date', 100);
+      } else {
+        const byId = await base44.entities.RentalUnit.filter({ tenant_id: user.id }, '-created_date', 100);
+        units = byId?.length ? byId : (user?.email ? await base44.entities.RentalUnit.filter({ tenant_email: user.email }, '-created_date', 100) : []);
+      }
+      const unitIds = (units || []).map(u => u.id).filter(Boolean).slice(0, 20);
+      const counts = await Promise.all(unitIds.map(async (rid) => {
+        const msgs = await base44.entities.ChatMessage.filter({ rental_unit_id: rid, read: false }, '-created_date', 50);
+        return (msgs || []).filter(m => m.sender_id !== user.id).length;
+      }));
+      return counts.reduce((a, b) => a + b, 0);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!role,
     refetchInterval: 20000
   });
 
   const { data: unreadNotifs = 0 } = useQuery({
-    queryKey: ['unreadNotifs', user?.id],
-    queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 50).then(r => r.length),
-    enabled: !!user?.id,
+    queryKey: ['unreadNotifs', user?.id, role],
+    queryFn: async () => {
+      if (!user?.id || !role) return 0;
+      const r = await base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 50);
+      const filtered = (r || []).filter(n => {
+        if (n?.target_role) return n.target_role === role;
+        return (user?.user_role ? user.user_role === role : true);
+      });
+      return filtered.length;
+    },
+    enabled: !!user?.id && !!role,
     refetchInterval: 30000
   });
 
@@ -127,10 +148,18 @@ function TopBar({ user, currentPageName }) {
 function NotifBell({ user, navigate }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const role = user?.active_role || user?.user_role;
   const { data: notifs = [] } = useQuery({
-    queryKey: ['notifsBell', user?.id],
-    queryFn: () => base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 20),
-    enabled: !!user?.id,
+    queryKey: ['notifsBell', user?.id, role],
+    queryFn: async () => {
+      if (!user?.id || !role) return [];
+      const r = await base44.entities.Notification.filter({ user_id: user?.id, read: false }, '-created_date', 20);
+      return (r || []).filter(n => {
+        if (n?.target_role) return n.target_role === role;
+        return (user?.user_role ? user.user_role === role : true);
+      });
+    },
+    enabled: !!user?.id && !!role,
     refetchInterval: 30000
   });
 

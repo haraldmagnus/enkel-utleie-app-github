@@ -37,7 +37,7 @@ export default function MaintenanceSection({ propertyId, landlordId, property })
       if (tenantId) {
         await base44.entities.Notification.create({
           user_id: tenantId,
-          role: 'tenant',
+          target_role: 'tenant',
           type: 'maintenance',
           title: 'Ny vedlikeholdsoppgave',
           message: `${d.title}${d.due_date ? ` – planlagt ${new Date(d.due_date).toLocaleDateString('nb-NO')}` : ''}`,

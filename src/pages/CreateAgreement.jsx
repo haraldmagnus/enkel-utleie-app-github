@@ -128,10 +128,10 @@ export default function CreateAgreement() {
       const notifBase = { type: 'agreement', rental_unit_id: propertyId, related_id: agreementId, read: false };
       const msg = `Leieavtalen for ${property?.name} er endret og må signeres på nytt.`;
       if (existing?.landlord_id && existing.landlord_id !== user?.id) {
-        await base44.entities.Notification.create({ ...notifBase, user_id: existing.landlord_id, title: 'Leieavtale endret – ny signering kreves', message: msg });
+        await base44.entities.Notification.create({ ...notifBase, user_id: existing.landlord_id, target_role: 'landlord', title: 'Leieavtale endret – ny signering kreves', message: msg });
       }
       if (existing?.tenant_id && existing.tenant_id !== user?.id) {
-        await base44.entities.Notification.create({ ...notifBase, user_id: existing.tenant_id, title: 'Leieavtale endret – ny signering kreves', message: msg });
+        await base44.entities.Notification.create({ ...notifBase, user_id: existing.tenant_id, target_role: 'tenant', title: 'Leieavtale endret – ny signering kreves', message: msg });
       }
       return updated;
     },
@@ -145,7 +145,9 @@ export default function CreateAgreement() {
         : base44.entities.RentalAgreement.create({ ...data, status: 'pending_tenant' }));
       if (property?.tenant_id) {
         await base44.entities.Notification.create({
-          user_id: property.tenant_id, type: 'agreement',
+          user_id: property.tenant_id,
+          target_role: 'tenant',
+          type: 'agreement',
           title: 'Ny leieavtale til signering', message: `${user.full_name} har sendt deg en leieavtale for ${property.name}`,
           rental_unit_id: propertyId, related_id: agreement.id, read: false
         });

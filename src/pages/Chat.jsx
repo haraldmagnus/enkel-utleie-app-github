@@ -21,8 +21,17 @@ export default function Chat() {
   const isLandlord = role === 'landlord';
 
   const { data: allProps = [] } = useQuery({
-    queryKey: ['rentalUnits'],
-    queryFn: () => base44.entities.RentalUnit.list('-created_date', 100),
+    queryKey: ['rentalUnits', user?.id, user?.email, role],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      if (role === 'landlord') {
+        return await base44.entities.RentalUnit.filter({ landlord_id: user.id }, '-created_date', 100);
+      }
+      const byId = await base44.entities.RentalUnit.filter({ tenant_id: user.id }, '-created_date', 100);
+      if (byId?.length) return byId;
+      const byEmail = user?.email ? await base44.entities.RentalUnit.filter({ tenant_email: user.email }, '-created_date', 100) : [];
+      return byEmail || [];
+    },
     enabled: !!user?.id
   });
 
@@ -67,7 +76,7 @@ export default function Chat() {
           : [prop.landlord_id, ...(prop.landlord_ids || [])].filter(Boolean);
         const msgPreview = message.substring(0, 60) || '📷 Bilde';
         otherIds.forEach(uid => {
-          base44.entities.Notification.create({ user_id: uid, type: 'message', title: 'Ny melding', message: `${user.full_name}: ${msgPreview}`, rental_unit_id: selectedPropertyId, read: false });
+          base44.entities.Notification.create({ user_id: uid, target_role: isLandlord ? 'tenant' : 'landlord', type: 'message', title: 'Ny melding', message: `${user.full_name}: ${msgPreview}`, rental_unit_id: selectedPropertyId, read: false });
         });
       }
     }
