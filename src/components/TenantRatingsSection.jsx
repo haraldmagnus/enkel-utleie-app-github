@@ -3,20 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, AlertCircle, Star } from 'lucide-react';
 
-export default function TenantRatingsSection({ userId }) {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState(null);
 
-  const { data: ratings = [] } = useQuery({
-    queryKey: ['tenantRatings', userId],
-    queryFn: () => base44.entities.TenantRating.filter({ tenant_id: userId }, '-created_date', 100),
     enabled: !!userId
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.TenantRating.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenantRatings', userId] });
       setDeleteId(null);
     }
   });
@@ -33,25 +27,19 @@ export default function TenantRatingsSection({ userId }) {
         </div>
       </div>
 
-      {ratings.length === 0 ? (
         <div className="text-center py-6 text-gray-400">
           <p>Ingen vurderinger registrert</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {ratings.map(rating => (
-            <div key={rating.id} className="bg-white rounded-2xl border border-gray-100 p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-gray-500">Fra: Eiendommen #{rating.rental_unit_id.slice(0, 8)}</p>
-                    {rating.star_rating && (
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map(star => (
                           <Star
                             key={star}
                             className={`w-4 h-4 ${
-                              star <= rating.star_rating
                                 ? 'fill-yellow-400 text-yellow-400'
                                 : 'text-gray-300'
                             }`}
@@ -60,12 +48,9 @@ export default function TenantRatingsSection({ userId }) {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400">{new Date(rating.created_date).toLocaleDateString('no')}</p>
                 </div>
-                {deleteId === rating.id ? (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => deleteMutation.mutate(rating.id)}
                       disabled={deleteMutation.isPending}
                       className="text-xs px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
                     >
@@ -80,7 +65,6 @@ export default function TenantRatingsSection({ userId }) {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setDeleteId(rating.id)}
                     className="text-gray-400 hover:text-red-600 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -89,31 +73,20 @@ export default function TenantRatingsSection({ userId }) {
               </div>
 
               <div className="space-y-2 text-sm">
-                {rating.payment_on_time !== undefined && (
                   <p className="text-gray-700">
-                    <span className="font-medium">Husleie i tide:</span> {rating.payment_on_time ? 'Ja ✓' : 'Nei ✗'}
                   </p>
                 )}
-                {rating.property_damage !== undefined && (
                   <p className="text-gray-700">
-                    <span className="font-medium">Skader utover normal slitasje:</span> {rating.property_damage ? 'Ja ✗' : 'Nei ✓'}
                   </p>
                 )}
-                {rating.contract_breach !== undefined && (
                   <p className="text-gray-700">
-                    <span className="font-medium">Kontraktbrudd:</span> {rating.contract_breach ? 'Ja ✗' : 'Nei ✓'}
-                    {rating.breach_type && <span className="text-gray-500"> ({rating.breach_type})</span>}
                   </p>
                 )}
-                {rating.neighbor_complaints > 0 && (
                   <p className="text-gray-700">
-                    <span className="font-medium">Klager fra naboer:</span> {rating.neighbor_complaints}
                   </p>
                 )}
-                {rating.comment && (
                   <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <p className="text-xs text-gray-500 mb-1">Kommentar:</p>
-                    <p className="text-gray-700 text-sm">{rating.comment}</p>
                   </div>
                 )}
               </div>

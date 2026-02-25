@@ -3,9 +3,6 @@ import { Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-export default function TenantRatingSection({ propertyId, tenantEmail, tenantId }) {
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -13,26 +10,21 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
 
   const rateMutation = useMutation({
     mutationFn: async (data) => {
-      const result = await base44.entities.TenantRating.create(data);
       return result;
     },
     onSuccess: () => {
-      setRating(0);
       setComment('');
       setError('');
       setSubmitted(true);
-      queryClient.invalidateQueries({ queryKey: ['tenantRatings'] });
       setTimeout(() => setSubmitted(false), 3000);
     },
     onError: (err) => {
       setError(err.message || 'Feil ved lagring av vurdering');
-      console.error('Rating error:', err);
     }
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) return;
     
     try {
       const user = await base44.auth.me();
@@ -46,8 +38,6 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
         tenant_email: tenantEmail,
         landlord_id: user.id,
         rental_unit_id: propertyId,
-        star_rating: rating,
-        payment_on_time: rating >= 4,
         property_damage: false,
         contract_breach: false,
         neighbor_complaints: 0,
@@ -68,14 +58,10 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
             <button
               key={star}
               type="button"
-              onMouseEnter={() => setHoverRating(star)}
-              onMouseLeave={() => setHoverRating(0)}
-              onClick={() => { setRating(star); setError(''); }}
               className="transition-transform hover:scale-110"
             >
               <Star
                 className={`w-6 h-6 ${
-                  star <= (hoverRating || rating)
                     ? 'fill-yellow-400 text-yellow-400'
                     : 'text-gray-300'
                 }`}
@@ -85,7 +71,6 @@ export default function TenantRatingSection({ propertyId, tenantEmail, tenantId 
         </div>
       </div>
       
-      {rating > 0 && (
         <>
           <textarea
             value={comment}

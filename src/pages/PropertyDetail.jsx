@@ -9,7 +9,6 @@ import {
 import jsPDF from 'jspdf';
 import { createPageUrl } from '@/utils';
 import FinancesSection from '@/components/property/FinancesSection';
-import TenantRatingSection from '@/components/TenantRatingSection';
 
 function ChecklistSection({ title, colorClass, items, allItems, itemType, onUpdate, onPhotoUpload, photoUploading }) {
   const fileRefs = useRef({});
@@ -476,7 +475,6 @@ export default function PropertyDetail() {
                       <MessageSquare className="w-4 h-4 text-blue-600" />
                     </Link>
                   </div>
-                  <TenantRatingSection propertyId={propertyId} tenantEmail={property.tenant_email} tenantId={property.tenant_id} />
                 </>
               ) : property.status === 'pending_invitation' ? (
                 <div className="flex items-center gap-3 text-yellow-700">
