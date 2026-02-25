@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, ChevronRight, ArrowLeftRight, Camera, HelpCircle, FileText, Bell, Star } from 'lucide-react';
+import { User, LogOut, ChevronRight, ArrowLeftRight, Camera, HelpCircle, FileText, Bell } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+<<<<<<< HEAD
 import { Switch } from '@/components/ui/switch';
 import TenantRatingsSection from '@/components/TenantRatingsSection';
+=======
+>>>>>>> 075b6683bbefef957ad4a787888f032a36d22d1c
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -50,11 +53,14 @@ export default function Settings() {
     navigate(createPageUrl(newRole === 'landlord' ? 'Dashboard' : 'TenantDashboard'), { replace: true });
   };
 
+<<<<<<< HEAD
   const toggleRatingOptIn = async () => {
     await base44.auth.updateMe({ rating_opt_in: !user?.rating_opt_in });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
+=======
+>>>>>>> 075b6683bbefef957ad4a787888f032a36d22d1c
   const menuItems = [
     { icon: Bell, label: 'Varsler', to: 'Notifications' },
     { icon: HelpCircle, label: 'Hjelp & Support', to: 'Help' },
@@ -121,6 +127,7 @@ export default function Settings() {
         <ChevronRight className="w-5 h-5 text-gray-300" />
       </button>
 
+<<<<<<< HEAD
 
        {/* Landlord rating settings */}
        {role === 'landlord' && (
@@ -170,6 +177,8 @@ export default function Settings() {
          </div>
        )}
 
+=======
+>>>>>>> 075b6683bbefef957ad4a787888f032a36d22d1c
       {/* Menu */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {menuItems.map(({ icon: Icon, label, to }, i) => (
